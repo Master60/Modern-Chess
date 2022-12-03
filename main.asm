@@ -35,10 +35,14 @@
     ;Cells can have 2 colors: white and gray. The codes of those colors are stored here, and will be used when drawing the board.
     cell_colors      db 31d, 28d
 
+    ;Board Colors used for reference
+    board_colors     db 4 DUP( 31d, 28d ), 28d
+
     ;Stores the color of the cell being drawn at a specific iteration.
     temp_color       db ?
 
-
+    ;No. of loops that the delay function will execute
+    delay_loops      dw ?
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;VARIABLES USED TO ACCESS AND DRAW CHESS PIECES:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -276,7 +280,7 @@ pass_file_header proc
                           mov  dx, offset bitmap_buffer
                           int  21h
 
-    ;Moves file pointer to the beginning of the data we wish to read. Bytes 10d and 20d in the header contain the needed information to position
+    ;Moves file pointer to the beginning of the data we wish to read. Bytes 10d and 12d in the header contain the needed information to position
     ;the file pointer at the starting point of the actual image.
                           mov  bx, offset bitmap_buffer
                           mov  dx, [bx+10d]
@@ -321,9 +325,9 @@ load_piece proc
 
     loop_x_bitmap:        
     ;Load the color of the current pixel to AL, since AL stored the color when drawing a pixel using INT 10H
-                          mov  bx, offset bitmap_buffer
-                          add  bx, di
-                          mov  al, byte ptr [bx]
+                        ;   mov  bx, offset bitmap_buffer
+                        ;   add  bx, di
+                          mov  al, byte ptr bitmap_buffer[di]
                           cmp  al, 0ffh                            ;Do not draw any white pixels, to preserve the background color of the board.
                          
                           je   continue_bitmap_loop
@@ -363,6 +367,19 @@ close_file endp
 
     ;-------------------------------------------------------------------------------------------------------------------------------------------------
 
+
+    ;Returns color of the cell specified by SI(x-pos) & DI(y-pos) in AL
+get_cell_colour PROC
+
+    push di
+    
+    and di,1
+    add di,si
+    mov al,board_colors[di]
+                          
+    pop di 
+    
+get_cell_colour ENDP
 
     ;Draws a piece
 draw_piece proc
@@ -467,7 +484,7 @@ draw_cell proc
                           mov  bl, ah
                           shl  bl, 1
     ;Move the offset of the file we wish to access and draw to dx
-                          mov  dx, word ptr [black_pieces - bx]
+                          mov  dx, word ptr [black_pieces + bx]
                           call draw_piece
                           jmp  finish_draw_cell
     ;White Mate
@@ -532,6 +549,25 @@ draw_board proc
 draw_board endp
 
 
+;delays according to no. of 'delay_loops' in memory
+delay PROC
+    push cx
+    push ax
+    pushf
+    mov cx, delay_loops
+
+    loop1:
+            mov ax, 65535d
+            loop2:  dec ax 
+                    jnz loop2
+            
+            loop loop1 
+    popf
+    pop ax  
+    pop cx  
+    ret 
+delay ENDP
+
 main proc far
     ;Initializing the data segment register
                           mov  ax, @data
@@ -552,6 +588,56 @@ main proc far
 
                           call draw_board                          ;Draw the board
                          
+    ;Listen for keyboard press and change its colour
+                          mov si,0
+                          mov di,7d
+
+                          
+
+
+    start:                call get_cell_colour
+                          mov temp_color, al
+                          cmp ax,ax 
+                          
+                          
+
+    breathe:              cmp al, temp_color
+                          jne lighten 
+                          jmp darken  
+
+              
+
+    draw:                 call draw_cell
+                          
+                          mov delay_loops,20d
+                          call delay                
+
+                          mov ah,1 
+                          int 16h 
+
+                          jnz check
+                          jmp breathe 
+    
+    
+    lighten:              add al,7d   
+                          jmp draw                      
+
+
+    darken:               sub al,7d   
+                          jmp draw  
+
+
+    check:                mov al, temp_color
+
+                          call draw_cell
+
+                          mov ah, 0Ch
+                          mov al,0
+                          int 21h
+
+                          inc si
+
+                          jmp start
 
                           hlt
 main endp

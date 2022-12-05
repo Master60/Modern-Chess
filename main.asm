@@ -33,10 +33,10 @@
     margin_y         dw 2
 
     ;Cells can have 2 colors: white and gray. The codes of those colors are stored here, and will be used when drawing the board.
-    cell_colors      db 31d, 28d
+    board_colors     db 31d, 28d
 
-    ;Board Colors used for reference
-    board_colors     db 4 DUP( 31d, 28d ), 28d
+    ; Used for highlighting (hover effect)
+    highlighted_cell_color  db 14d
 
     ;Stores the color of the cell being drawn at a specific iteration.
     temp_color       db ?
@@ -373,11 +373,13 @@ get_cell_colour PROC
 
     push di
     
-    and di,1
     add di,si
+    and di,1
     mov al,board_colors[di]
                           
     pop di 
+
+    ret
     
 get_cell_colour ENDP
 
@@ -511,35 +513,36 @@ draw_board proc
                           mov  si, 0
                           mov  di, 0
     ;Color of the first cell
-                          mov  al, byte ptr cell_colors
+                        ;   mov  al, byte ptr cell_colors
                          
     loop_y_board:         
                           mov  si, 0
     loop_x_board:         
     ;Draw the current cell
-                          push ax
+                          call get_cell_colour
+                        ;   push ax
                           call draw_cell
-                          pop  ax
+                        ;   pop  ax
     ;Update the color of the cell for the next iteration
-                          cmp  al, byte ptr cell_colors
-                          jz   change_to_dark_color
-    change_to_light_color:
-                          mov  al, byte ptr cell_colors
-                          jmp  continue_board_loop
-    change_to_dark_color: 
-                          mov  al, byte ptr cell_colors + 1
-    continue_board_loop:  
+    ;                       cmp  al, byte ptr cell_colors
+    ;                       jz   change_to_dark_color
+    ; ; change_to_light_color:
+    ;                       mov  al, byte ptr cell_colors
+    ;                       jmp  continue_board_loop
+    ; change_to_dark_color: 
+    ;                       mov  al, byte ptr cell_colors + 1
+    ; continue_board_loop:  
                           inc  si
                           cmp  si, 8
                           jnz  loop_x_board
                          
     ;Before going to the next iteration of the outer loop, reverse the color of the cell
-                          cmp  al, byte ptr cell_colors
-                          jz   set_dark_color
-                          mov  al, byte ptr cell_colors
-                          jmp  new_iteration
-    set_dark_color:       
-                          mov  al, byte ptr cell_colors + 1
+    ;                       cmp  al, byte ptr cell_colors
+    ;                       jz   set_dark_color
+    ;                       mov  al, byte ptr cell_colors
+    ;                       jmp  new_iteration
+    ; set_dark_color:       
+    ;                       mov  al, byte ptr cell_colors + 1
     new_iteration:        
                           inc  di
                           cmp  di, 8
@@ -567,6 +570,85 @@ delay PROC
     pop cx  
     ret 
 delay ENDP
+
+
+clear_keyboard_buffer PROC 
+
+    push ax
+    
+    mov ah, 0Ch
+    mov al,0
+    int 21h
+
+    pop ax
+
+    ret
+clear_keyboard_buffer ENDP 
+
+;Moves the piece (if possible) according to the scan codes of keys pressed (A->1E, D->20, W->11, S->1F)
+hover PROC
+
+            push cx 
+            push dx
+
+            ; Storing current positons [DX,CX]
+            mov cx,si 
+            mov dx,di 
+    
+            cmp ah, 1Eh 
+            jz move_left
+
+            cmp ah, 20h
+            jz move_right
+
+            cmp ah, 11h
+            jz move_up
+
+            cmp ah, 1Fh
+            jz move_down
+
+            jmp dont_move
+
+move_left:
+            cmp si, 0
+            jz dont_move
+            dec si
+            jmp redraw        
+
+move_right:
+            cmp si, 7h
+            jz dont_move
+            inc si
+            jmp redraw        
+move_up:
+            cmp di, 0h
+            jz dont_move
+            dec di
+            jmp redraw        
+move_down:
+            cmp di, 7h
+            jz dont_move
+            inc di
+            jmp redraw        
+
+
+redraw:     
+            ; Redraw the prev cell with its original color
+            push si
+            push di
+            mov si, cx
+            mov di, dx
+            mov al, temp_color
+            call draw_cell
+            pop di
+            pop si
+
+dont_move:  
+            pop dx
+            pop cx
+            ret
+
+hover ENDP
 
 main proc far
     ;Initializing the data segment register
@@ -602,14 +684,14 @@ main proc far
                           
 
     breathe:              cmp al, temp_color
-                          jne lighten 
+                          jz highlight 
                           jmp darken  
 
               
 
     draw:                 call draw_cell
                           
-                          mov delay_loops,20d
+                          mov delay_loops,10d
                           call delay                
 
                           mov ah,1 
@@ -619,25 +701,29 @@ main proc far
                           jmp breathe 
     
     
-    lighten:              add al,7d   
+    highlight:            mov al, highlighted_cell_color  
                           jmp draw                      
 
 
-    darken:               sub al,7d   
+    darken:               mov al, temp_color   
                           jmp draw  
 
 
-    check:                mov al, temp_color
+    check:                                          
+                          call clear_keyboard_buffer
 
-                          call draw_cell
+                          ; Before moving hover, check if a piece is selected
+                          ; If one is selected, show all possible moves
+                          cmp ah, 10h
+                          jz show_possible_moves
 
-                          mov ah, 0Ch
-                          mov al,0
-                          int 21h
-
-                          inc si
+                          call hover
 
                           jmp start
+
+    show_possible_moves:   
+                          mov al, highlighted_cell_color
+                          call draw_cell
 
                           hlt
 main endp

@@ -88,12 +88,12 @@
     ;Black Pieces
 
     ;Preparing file names
-    blackPawn_file   db 'bPawn.bmp'			,0
-    blackKnight_file db 'bKnight.bmp'			,0
-    blackBishop_file db 'bBishop.bmp'			,0
-    blackRook_file   db 'bRook.bmp'			,0
-    blackQueen_file  db 'bQueen.bmp'			,0
-    blackKing_file   db 'bKing.bmp'			,0
+    blackPawn_file   db 'bPawn.bmp', 0
+    blackKnight_file db 'bKnight.bmp', 0
+    blackBishop_file db 'bBishop.bmp', 0
+    blackRook_file   db 'bRook.bmp', 0
+    blackQueen_file  db 'bQueen.bmp', 0
+    blackKing_file   db 'bKing.bmp', 0
     
     ;An array of pointers to every file name. Will be used to draw the pieces in a clean manner.
     black_pieces     dw 0

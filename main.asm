@@ -42,10 +42,14 @@
     ;           v
     ;       Directions
 
-    ; Keeps track of the possible move that the player is selecting
+    ; Keeps track of the possible move that the player is currently selecting and are used to write the moves to memory in "recordMove"
     directionPtr           db 0d
     currMovePtr            db 0d
-    
+
+    ; the position (containing a piece) that the player is currently selecting
+    currSelectedPos_SI      dw      ?
+    currSelectedPos_DI      dw      ?
+
     ; Step unit (-1 for white & 1 for black)
     walker                 dw ?
 
@@ -138,6 +142,26 @@
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 .code
+
+delay PROC
+                          push  cx
+                          push  ax
+                          pushf
+                          mov   cx, delay_loops
+
+    loop1:                
+                          mov   ax, 65535d
+    loop2:                dec   ax
+                          jnz   loop2
+            
+                          loop  loop1
+                          popf
+                          pop   ax
+                          pop   cx
+                          ret
+delay ENDP
+
+
     ;Initializes the board pieces in memory.
 init_board proc
     ;Before placing any pieces on the board, initialize every location on the board to zero (i.e. empty the board)
@@ -425,6 +449,7 @@ drawBorder PROC
                           push bx
                           push cx
                           push dx
+                          push bp
 
                           add si, margin_x
                           add di, margin_y
@@ -443,51 +468,80 @@ drawBorder PROC
                           pop   ax
 
 
-                          
-                          mov cx, 0
-                          mov dx, di
+                          mov bp, 3d
+                          mov dx, 1
 
-                    line1:
+                          add dx, di
+                line1_1:
+                          mov cx, 1
+                    line1_2:
                           add cx, si
                           int 10h
                           sub cx, si
 
                           inc cx
                           cmp cx, cell_size
-                          jnz line1                    
+                          jnz line1_2
 
-                          mov dx, 0
+                        inc dx
+                        dec bp
+                        jnz line1_1
+
+                          
+                          mov bp, 3d
                           add cx, si
-                    line2:  
+                line2_1:
+                          mov dx, 1
+                    line2_2:  
                           add dx, di
                           int 10h
                           sub dx, di
 
                           inc dx
                           cmp dx, cell_size
-                          jnz line2
+                          jnz line2_2
+
+                        dec cx
+                        dec bp
+                        jnz line2_1
+                        
                           
-                          mov cx, cell_size
-                          add dx, di
-                    line3:
+                           mov bp, 3d
+                           add dx, di
+                line3_1:
+                           mov cx, cell_size
+                    line3_2:
                            add cx, si                        
                            int 10h
                            sub cx, si
 
                            dec cx
-                           jnz line3  
+                           cmp cx, 1d
+                           jnz line3_2 
 
+                        dec dx
+                        dec bp
+                        jnz line3_1
+
+                           mov bp,3
                            add cx, si
-                           mov dx, cell_size
-                    line4:
+                line4_1:  
+                          mov dx, cell_size
+                    line4_2:
                           add dx, di
                           int 10h
                           sub dx, di
                           dec dx
-                          jnz line4                        
+                          cmp dx, 1d
+                          jnz line4_2
+
+                        inc cx
+                        dec bp
+                        jnz line4_1
                           
 
 
+                          pop bp
                           pop dx
                           pop cx
                           pop bx
@@ -668,23 +722,7 @@ draw_board endp
 
 
     ;delays according to no. of 'delay_loops' in memory
-delay PROC
-                          push  cx
-                          push  ax
-                          pushf
-                          mov   cx, delay_loops
 
-    loop1:                
-                          mov   ax, 65535d
-    loop2:                dec   ax
-                          jnz   loop2
-            
-                          loop  loop1
-                          popf
-                          pop   ax
-                          pop   cx
-                          ret
-delay ENDP
 
 
 clear_keyboard_buffer PROC
@@ -765,7 +803,7 @@ hover PROC
 
 hover ENDP
 
-    ;Gets pos given si,di
+    ;Gets pos given SI,DI and puts it in BX
 getPos PROC
                           push  si
                           push  di
@@ -780,6 +818,7 @@ getPos PROC
 
                           ret
 getPos ENDP
+
 
     ;Writes possible moves to memory
 recordMove PROC
@@ -800,13 +839,32 @@ recordMove PROC
                           mov   possibleMoves_DI[bx], di
                           mov   possibleMoves_SI[bx], si
 
-                          inc   currMovePtr
+                          ;inc   currMovePtr
 
                           pop   ax
                           pop   bx
                           ret
 recordMove ENDP
 
+; puts the current position as the first possible move in all directions
+recordCurrPos PROC
+                         push cx
+
+                         mov cx, 8d
+recordCurrPos_loop:
+                         call recordMove
+                         inc directionPtr
+
+                         loop recordCurrPos_loop
+
+                         mov directionPtr, 0d
+                         mov currMovePtr, 1d
+
+                         pop cx
+
+                         ret
+    
+recordCurrPos ENDP
     ; Navigates in possible moves array
 getNextPossibleMove PROC
                           push  bx
@@ -840,10 +898,14 @@ goToNextSelection PROC
                           push  bx
                           push  cx
                           push  dx
+                          push  bp
 
     ; preserving current positions
-                          mov   bx, si
+                          mov   bp, si
                           mov   dx, di
+    ; preserving current move
+                          mov bh, directionPtr
+                          mov bl, currMovePtr
 
 
     ; Checking which key was pressed
@@ -861,8 +923,11 @@ goToNextSelection PROC
 
                           jmp   doNotChangeSelection
 
+
+    ; a rough implementation of (i+1)%n for both A & D
     A:                    
-                          mov   cx, 8d
+                          mov currMovePtr,1d
+                          mov   cx, 7d
     aLoop:                
                           dec   directionPtr
                           cmp   directionPtr, -1d
@@ -870,8 +935,9 @@ goToNextSelection PROC
     continueLoopA:        
                           call  getNextPossibleMove
                           cmp   si, -1d
-                          jnz   changeSelection
-                          loop  aLoop
+                          jz   next_loopA_line
+                          jmp far ptr changeSelection ; jump is far down
+    next_loopA_line:      loop  aLoop
                           jmp   doNotChangeSelection
     aLoopReset:           
                           mov   directionPtr, 7d
@@ -879,10 +945,11 @@ goToNextSelection PROC
 
 
     D:                    
-                          mov   cl, 8d
+                          mov   cl, 7d
                           mov   ch, 8d
                           mov   al, directionPtr
                           mov   ah, 0d
+                          mov currMovePtr, 1d
     dLoop:                
                           inc   al
                           div   ch
@@ -890,6 +957,7 @@ goToNextSelection PROC
                           mov   directionPtr, al
     
                           call  getNextPossibleMove
+
                           cmp   si, -1d
                           jnz   changeSelection
 
@@ -900,28 +968,55 @@ goToNextSelection PROC
     W:                    
                           cmp   currMovePtr, 6
                           jz    doNotChangeSelection
+
                           inc   currMovePtr
+
+                        ; if a move actually exists, change selection
                           call  getNextPossibleMove
                           cmp   si, -1d
                           jnz   changeSelection
+                          
                           dec   currMovePtr
                           jmp   doNotChangeSelection
 
     S:                    
                           cmp   currMovePtr, 0
                           jz    doNotChangeSelection
+
                           dec   currMovePtr
+
                           call  getNextPossibleMove
                           cmp   si, -1d
                           jnz   changeSelection
-                          inc   currMovePtr
+
                           jmp   doNotChangeSelection
 
 
     doNotChangeSelection: 
-                          mov   si, bx
+                        ; resets everything to its original state
+                          mov directionPtr, bh
+                          mov currMovePtr, bl
+                          mov   si, bp
                           mov   di, dx
+                          jmp   goToNextSelection_end
+                        
     changeSelection:      
+                        ; highlighting the previous possible move
+                          push si
+                          push di
+                          
+                          mov si, bp 
+                          mov di, dx 
+
+                          mov al, highlighted_cell_color
+                          call draw_cell
+
+                          pop di
+                          pop si
+                          
+
+goToNextSelection_end:    
+                          pop   bp
                           pop   dx
                           pop   cx
                           pop   bx
@@ -968,31 +1063,68 @@ getFirstSelection PROC
                           cmp directionPtr, -1d
                           jz getFirstSelection_end
                           
-                          push si
-                          push di
-
+                        ; to move the si, di corresponding to directionPtr & currMovPtr that we got from checkFirstAvailableMove
                           call getNextPossibleMove
 
                           mov al,00h
                           call drawBorder
 
-                          pop di
-                          pop si
 
 getFirstSelection_end:    ret                          
 getFirstSelection ENDP
 
+; Removes previously selected cells (if any)
+removeSelections PROC
+                          push si
+                          push di
 
+
+                          mov directionPtr, 0d
+                          
+removeSelections_loop1:          
+                          mov currMovePtr, 0d
+    removeSelections_loop2:  
+                          mov si, -1d
+                          mov di, -1d
+
+                          call recordMove
+                          inc currMovePtr
+
+                          cmp currMovePtr, 7d
+                          jz removeSelections_loop2_break
+
+                          call getNextPossibleMove
+                          cmp si,-1
+                          jz removeSelections_loop2_break
+
+                          call get_cell_colour
+                          call draw_cell
+
+                          jmp removeSelections_loop2
+
+removeSelections_loop2_break:
+                          inc directionPtr
+                          cmp directionPtr, 8d
+                          jnz removeSelections_loop1
+
+
+                          mov directionPtr, 0d
+                          mov currMovePtr, 0d
+
+                          pop di
+                          pop si
+                          ret
+removeSelections ENDP
 
     ; Gets all possible pawn moves
 getPawnMoves PROC
                           push  di
                           push  ax
-                          mov   currMovePtr, 0
 
                           add   di, walker
         
                           call  recordMove
+                          inc currMovePtr
 
                           mov   al, highlighted_cell_color
                           call  draw_cell
@@ -1007,6 +1139,7 @@ getPawnMoves PROC
                           add   di, walker
 
                           call  recordMove
+                          inc currMovePtr
     
                           call  draw_cell
                           jmp   gotPawnMoves
@@ -1016,6 +1149,7 @@ getPawnMoves PROC
                           add   di, walker
 
                           call  recordMove
+                          inc currMovePtr                          
 
                           call  draw_cell
 
@@ -1052,7 +1186,8 @@ main proc far
                           
 
 
-    start:                call  get_cell_colour
+    start:                call removeSelections
+                          call  get_cell_colour
                           mov   temp_color, al
                           cmp   ax,ax
                           
@@ -1099,6 +1234,8 @@ main proc far
                           jmp   start
 
     show_possible_moves:  
+                          call recordCurrPos
+                          
                           mov   al, highlighted_cell_color
                           call  draw_cell
                           
@@ -1119,7 +1256,10 @@ main proc far
 
     ; Selections
                         
+                          push si
+                          push di
 
+                          
                           call getFirstSelection
 
 
@@ -1141,10 +1281,16 @@ main proc far
     ; Before changing move, check if a move is selected / Deselection of piece
                           cmp   ah, 10h
                           jnz  go_to_next_selection
+                          ; deselects the cell it is curr on (will be modified)
                           jmp far ptr start
 
     ; The key is now in ah
-go_to_next_selection:     call  goToNextSelection
+go_to_next_selection:     
+                        ; save current positions
+                          mov currSelectedPos_DI, di
+                          mov currSelectedPos_SI, si
+
+                          call  goToNextSelection                          
 
                           mov al, 00h
                           call drawBorder

@@ -24,6 +24,31 @@
     ;An array that will store the current state of the board, each element of the array corresponds to a cell on the board.
     board            db 64d dup(0)
 
+    ;
+    selectedPiecePos dw  ?
+
+    ;
+    possibleMoves_DI   dw    8 Dup(7 Dup(-1d))
+    possibleMoves_SI   dw    8 Dup(7 Dup(-1d))
+    ;            --------------------------------------------------------------------------> Possible moves in that direction
+    ;           |  Up          (possibleMoves_DI[0],possibleMoves_SI[0]) .  .  .  .  .  .  .  .  .  .  .
+;               |  Up-Right                                 . 
+    ;           |  Right                                .
+    ;           |  Down-Right                           .
+    ;           |  Down                                 .
+    ;           |  Down-Left                            . 
+    ;           |  Left                                 .
+;               |  Up-Left    (possibleMoves_DI[49],possibleMoves_SI[49]) 
+    ;           v
+    ;       Directions
+
+    ; Keeps track of the possible move that the player is selecting
+    directionPtr    db   ?
+    currMovePtr    db   ?
+    
+    ; Step unit (-1 for white & 1 for black)
+    walker      dw ?
+
     ;The size of each cell on the chessboard.
     cell_size        dw 75d
 
@@ -651,6 +676,213 @@ dont_move:
 
 hover ENDP
 
+;Gets pos given si,di
+getPos PROC
+    push si
+    push di
+
+    shl di,3h
+    add di, si
+
+    mov bx, di
+
+    pop di
+    pop si
+
+    ret    
+getPos ENDP
+
+;Writes possible moves to memory
+recordMove PROC
+        push bx 
+        push ax
+
+        mov al, directionPtr
+        mov bl, 14d             ; directionPtr * 7 * 2
+        mov bh, 0
+
+        mul bl
+        mov bl, al
+
+        shl currMovePtr,1
+        add bl, currMovePtr
+        shr currMovePtr, 1
+
+        mov possibleMoves_DI[bx], di
+        mov possibleMoves_SI[bx], si
+
+        inc currMovePtr
+
+        pop ax
+        pop bx
+        ret
+recordMove ENDP
+
+; Navigates in possible moves array
+getNextPossibleMove PROC
+        push bx 
+        push ax
+
+        mov al, directionPtr
+        mov bl, 14d             ; directionPtr * 7 * 2
+        mov bh, 0
+
+        mul bl
+        mov bl, al
+
+        shl currMovePtr,1
+        add bl, currMovePtr
+        shr currMovePtr, 1
+
+        mov di, possibleMoves_DI[bx]
+        mov si, possibleMoves_SI[bx]
+
+        pop ax
+        pop bx
+        ret    
+getNextPossibleMove ENDP
+
+
+
+;Changes the positions of selected move and puts them in SI & DI for drawing border
+goToNextSelection PROC
+
+        push ax
+        push bx
+        push cx
+        push dx
+
+        ; preserving current positions
+        mov bx, si
+        mov dx, di
+
+
+        ; Checking which key was pressed
+        cmp ah, 1Eh 
+        jz A
+
+        cmp ah, 20h
+        jz D
+
+        cmp ah, 11h
+        jz W
+
+        cmp ah, 1Fh
+        jz S
+
+        jmp doNotChangeSelection
+
+A:
+        mov cx, 8d
+aLoop:  
+        dec directionPtr
+        cmp directionPtr, -1d
+        jz aLoopReset
+continueLoopA:
+        call getNextPossibleMove
+        cmp si, -1d
+        jnz changeSelection
+        loop aLoop
+        jmp doNotChangeSelection
+aLoopReset:  
+        mov directionPtr, 7d
+        jmp continueLoopA
+
+
+D:
+        mov cx, 8d
+        mov al, directionPtr
+        mov ah, 8d
+dLoop:  
+        inc al
+        div ah
+        mov al,ah
+        mov directionPtr, al
+        mov ah, 8d
+
+        call getNextPossibleMove
+        cmp si, -1d
+        jnz changeSelection
+
+        loop dLoop
+        jmp doNotChangeSelection
+
+W:
+        cmp     currMovePtr, 6
+        jz      doNotChangeSelection   
+        inc     currMovePtr
+        call    getNextPossibleMove
+        cmp     si, -1d 
+        jnz     changeSelection
+        dec     currMovePtr
+        jmp     doNotChangeSelection
+
+S:
+        cmp     currMovePtr, 0
+        jz      doNotChangeSelection   
+        dec     currMovePtr
+        call    getNextPossibleMove
+        cmp     si, -1d 
+        jnz     changeSelection
+        inc     currMovePtr
+        jmp     doNotChangeSelection
+
+
+doNotChangeSelection:
+        mov si, bx
+        mov di, dx
+changeSelection:
+        pop dx
+        pop cx
+        pop bx
+        pop ax
+        ret    
+goToNextSelection ENDP
+
+
+
+
+; Gets all possible pawn moves
+getPawnMoves PROC
+        push di
+        push ax
+        mov currMovePtr, 0
+
+        add di, walker
+        
+        call recordMove
+
+        mov al, highlighted_cell_color
+        call draw_cell
+
+        cmp walker, -1
+        jz  white
+        jmp black 
+
+
+
+white:  cmp di, 6d
+        add di, walker
+
+        call recordMove
+    
+        call draw_cell
+        jmp gotPawnMoves
+    
+
+black:  cmp di, 1d
+        add di, walker
+
+        call recordMove
+
+        call draw_cell
+
+gotPawnMoves:   pop ax
+                pop di
+                ret
+
+getPawnMoves ENDP
+
 main proc far
     ;Initializing the data segment register
                           mov  ax, @data
@@ -695,6 +927,7 @@ main proc far
                           mov delay_loops,10d
                           call delay                
 
+                        ; Checks for keyboard input
                           mov ah,1 
                           int 16h 
 
@@ -711,8 +944,9 @@ main proc far
 
 
     check:                                          
-                          call clear_keyboard_buffer
-
+                          ;Consumes keyboard buffer
+                            mov ah,0 
+                            int 16h
                           ; Before moving hover, check if a piece is selected
                           ; If one is selected, show all possible moves
                           cmp ah, 10h
@@ -725,6 +959,44 @@ main proc far
     show_possible_moves:   
                           mov al, highlighted_cell_color
                           call draw_cell
+                          
+                          call getPos
+
+                          cmp board[bx], -1
+                          jz  whitePawn
+                          
+    blackPawn:            mov walker, 1
+                          jmp getPawnPositions
+
+    whitePawn:            mov walker, -1
+    getPawnPositions:     call getPawnMoves
+    
+
+    ; Selections
+
+    sameSelection:                
+                          cmp ax,ax 
+                          
+                          mov ah,1 
+                          int 16h 
+
+                          jnz changeEvent
+                          jmp sameSelection  
+
+
+    changeEvent:                                          
+                          ;Consumes keyboard buffer
+                            mov ah,0 
+                            int 16h
+                          ; Before changing move, check if a move is selected / Deselection of piece
+                            cmp ah, 10h
+                            jz start
+
+                          ; The key is now in ah
+                            call goToNextSelection
+
+                            jmp sameSelection
+                          
 
                           hlt
 main endp

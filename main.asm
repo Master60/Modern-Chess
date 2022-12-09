@@ -706,10 +706,10 @@ recordMove PROC
                           push  ax
 
                           mov   al, directionPtr
-                          mov   bl, 14d                             ; directionPtr * 7 * 2
+                          mov   bl, 14d
                           mov   bh, 0
 
-                          mul   bl
+                          mul   bl                                  ; directionPtr * 7 * 2
                           mov   bl, al
 
                           shl   currMovePtr,1
@@ -854,6 +854,7 @@ goToNextSelection ENDP
 getPawnMoves PROC
                           push  di
                           push  ax
+
                           mov   currMovePtr, 0
 
                           add   di, walker
@@ -869,7 +870,9 @@ getPawnMoves PROC
 
 
 
-    white:                cmp   di, 6d
+    white:                cmp   di, 5d
+                          jnz   gotPawnMoves
+
                           add   di, walker
 
                           call  recordMove
@@ -878,9 +881,10 @@ getPawnMoves PROC
                           jmp   gotPawnMoves
     
 
-    black:                cmp   di, 1d
-                          add   di, walker
+    black:                cmp   di, 2d
+                          jnz   gotPawnMoves
 
+                          add   di, walker
                           call  recordMove
 
                           call  draw_cell
@@ -920,7 +924,7 @@ main proc far
 
     start:                call  get_cell_colour
                           mov   temp_color, al
-                          cmp   ax,ax
+                          
                           
                           
 

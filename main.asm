@@ -43,8 +43,8 @@
     ;       Directions
 
     ; Keeps track of the possible move that the player is selecting
-    directionPtr           db ?
-    currMovePtr            db ?
+    directionPtr           db 0d
+    currMovePtr            db 0d
     
     ; Step unit (-1 for white & 1 for black)
     walker                 dw ?
@@ -416,6 +416,87 @@ get_cell_colour PROC
                           ret
     
 get_cell_colour ENDP
+
+
+; I think its pretty clear
+drawBorder PROC
+                          push si
+                          push di
+                          push bx
+                          push cx
+                          push dx
+
+                          add si, margin_x
+                          add di, margin_y
+
+                          mov   ah, 0ch
+                          push  ax
+
+                          mov   ax, si
+                          mul   cell_size
+                          mov   si, ax
+
+                          mov   ax, di
+                          mul   cell_size
+                          mov   di, ax
+                         
+                          pop   ax
+
+
+                          
+                          mov cx, 0
+                          mov dx, di
+
+                    line1:
+                          add cx, si
+                          int 10h
+                          sub cx, si
+
+                          inc cx
+                          cmp cx, cell_size
+                          jnz line1                    
+
+                          mov dx, 0
+                          add cx, si
+                    line2:  
+                          add dx, di
+                          int 10h
+                          sub dx, di
+
+                          inc dx
+                          cmp dx, cell_size
+                          jnz line2
+                          
+                          mov cx, cell_size
+                          add dx, di
+                    line3:
+                           add cx, si                        
+                           int 10h
+                           sub cx, si
+
+                           dec cx
+                           jnz line3  
+
+                           add cx, si
+                           mov dx, cell_size
+                    line4:
+                          add dx, di
+                          int 10h
+                          sub dx, di
+                          dec dx
+                          jnz line4                        
+                          
+
+
+                          pop dx
+                          pop cx
+                          pop bx
+                          pop di
+                          pop si
+
+                          ret
+    
+drawBorder ENDP
 
     ;Draws a piece
 draw_piece proc
@@ -798,21 +879,22 @@ goToNextSelection PROC
 
 
     D:                    
-                          mov   cx, 8d
+                          mov   cl, 8d
+                          mov   ch, 8d
                           mov   al, directionPtr
-                          mov   ah, 8d
+                          mov   ah, 0d
     dLoop:                
                           inc   al
-                          div   ah
+                          div   ch
                           mov   al,ah
                           mov   directionPtr, al
-                          mov   ah, 8d
-
+    
                           call  getNextPossibleMove
                           cmp   si, -1d
                           jnz   changeSelection
 
-                          loop  dLoop
+                          dec   cl
+                          jnz   dLoop
                           jmp   doNotChangeSelection
 
     W:                    
@@ -847,6 +929,58 @@ goToNextSelection PROC
                           ret
 goToNextSelection ENDP
 
+
+;Moves to SI DI the first available position if possible
+checkFirstAvailableMove PROC
+                          push si
+                          push di
+                          push cx
+
+                          mov cx, 8
+                          mov currMovePtr, 0d
+                          mov directionPtr, 0d
+                          
+first_available_direction:
+                          call getNextPossibleMove
+                          cmp si, -1d
+                          jnz found_first_available_position
+                          inc directionPtr
+                          cmp directionPtr, 8d
+                          jnz first_available_direction
+
+
+
+                          ; to let us know if there aren't any available positions 
+                          mov directionPtr, -1d                          
+                          mov currMovePtr, -1d                          
+
+
+found_first_available_position:
+                          pop cx
+                          pop di
+                          pop si
+                          ret
+checkFirstAvailableMove ENDP
+
+; puts 
+getFirstSelection PROC
+                          call checkFirstAvailableMove
+                          cmp directionPtr, -1d
+                          jz getFirstSelection_end
+                          
+                          push si
+                          push di
+
+                          call getNextPossibleMove
+
+                          mov al,00h
+                          call drawBorder
+
+                          pop di
+                          pop si
+
+getFirstSelection_end:    ret                          
+getFirstSelection ENDP
 
 
 
@@ -971,42 +1105,54 @@ main proc far
                           call  getPos
 
                           cmp   board[bx], -1
-                          jz    whitePawn
+                          jz    white_pawn
+                          cmp   board[bx], 1
+                          jz    black_pawn
+                          jmp   same_selection
                           
-    blackPawn:            mov   walker, 1
-                          jmp   getPawnPositions
+    black_pawn:           mov   walker, 1
+                          jmp   get_pawn_positions
 
-    whitePawn:            mov   walker, -1
-    getPawnPositions:     call  getPawnMoves
+    white_pawn:           mov   walker, -1
+    get_pawn_positions:   call  getPawnMoves
     
 
     ; Selections
+                        
 
-    sameSelection:        
+                          call getFirstSelection
+
+
+                          
+    same_selection:        
                           cmp   ax,ax
                           
                           mov   ah,1
                           int   16h
 
-                          jnz   changeEvent
-                          jmp   sameSelection
+                          jnz   change_event
+                          jmp   same_selection
 
 
-    changeEvent:          
+    change_event:          
     ;Consumes keyboard buffer
                           mov   ah,0
                           int   16h
     ; Before changing move, check if a move is selected / Deselection of piece
                           cmp   ah, 10h
-                          jz    start
+                          jnz  go_to_next_selection
+                          jmp far ptr start
 
     ; The key is now in ah
-                          call  goToNextSelection
+go_to_next_selection:     call  goToNextSelection
 
-                          jmp   sameSelection
+                          mov al, 00h
+                          call drawBorder
+
+                          jmp   same_selection
                           
 
-                          hlt
+    halt:                 hlt
 main endp
 end main
 

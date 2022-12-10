@@ -1386,24 +1386,52 @@
 
         pusha
 
-        ;preparing to draw the board base with interrupt 10
-        mov cx, 226d    ;initial column
-        mov dx, 76d     ;initial row
-        mov al, 08d     ;color
-        mov ah, 0ch     ;display
+        mov bp, cell_size
 
-        ;looping in y and x
+        mov ax, 0
+        mov ax, margin_x
+        add ax, 9
+        mul bp
+        mov di, ax
+
+        mov ax, 0
+        mov ax, margin_y
+        add ax, 9
+        mul bp
+        mov si, ax
+
+        mov ax, 0
+        add ax, margin_x
+        dec ax
+        mul bp
+        mov bx, ax
+
+        mov ax, 0
+        add ax, margin_x
+        dec ax
+        mul bp
+        mov cx, ax
+
+        mov ax, 0
+        add ax, margin_y
+        dec ax
+        mul bp
+        mov dx, ax
+
+        mov al, 08d
+        mov ah, 0ch
+
         loop_y:
 
             loop_x:
                 int 10h
                 inc cx
-                cmp cx, 975d
+                cmp cx, di
                 jnz loop_x
 
-            mov cx, 226d
+            mov cx, bx
             inc dx
-            cmp dx, 825d
+            cmp dx, si
             jnz loop_y
 
         popa

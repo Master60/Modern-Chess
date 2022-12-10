@@ -593,6 +593,7 @@ draw_piece endp
 draw_cell proc
 
     ;Adjust SI and DI for the margins
+                          push  bx
                           push  si
                           push  di
                           add   si, margin_x
@@ -632,8 +633,10 @@ draw_cell proc
     ;After drawing the cell, we now wish to draw the piece in the cell (if any).
 
     ;Get back the original row and column positions (from 0 to 7).
+                
                           pop   di
                           pop   si
+                      
                         
     ;From SI and DI, get the position of the cell we are drawing in board array, which contains the current state of the board.
                           mov   bx, di
@@ -667,7 +670,7 @@ draw_cell proc
                           mov   dx, word ptr [white_pieces + bx]
                           call  draw_piece
     ;Exiting
-    finish_draw_cell:     
+    finish_draw_cell:     pop bx
                           ret
 draw_cell endp
 
@@ -1186,7 +1189,8 @@ main proc far
                           
 
 
-    start:                call removeSelections
+    start:              
+                          call removeSelections
                           call  get_cell_colour
                           mov   temp_color, al
                           cmp   ax,ax
@@ -1226,6 +1230,7 @@ main proc far
                           int   16h
     ; Before moving hover, check if a piece is selected
     ; If one is selected, show all possible moves
+
                           cmp   ah, 10h
                           jz    show_possible_moves
 
@@ -1233,34 +1238,41 @@ main proc far
 
                           jmp   start
 
-    show_possible_moves:  
-                          call recordCurrPos
+    show_possible_moves:       
+                          ; don't select an empty cell                                          
+                          call  getPos
+
+                          cmp   board[bx], 0d
+                          jz    breathe
+
+                          mov   currSelectedPos_DI, di
+                          mov   currSelectedPos_SI, si
+                          
+                          call  recordCurrPos
                           
                           mov   al, highlighted_cell_color
                           call  draw_cell
                           
-                          call  getPos
+
 
                           cmp   board[bx], -1
                           jz    white_pawn
                           cmp   board[bx], 1
                           jz    black_pawn
-                          jmp   same_selection
+
+                          jmp   start_selection
                           
     black_pawn:           mov   walker, 1
                           jmp   get_pawn_positions
 
     white_pawn:           mov   walker, -1
     get_pawn_positions:   call  getPawnMoves
+                          jmp start_selection
     
 
-    ; Selections
-                        
-                          push si
-                          push di
 
                           
-                          call getFirstSelection
+    start_selection:      call getFirstSelection
 
 
                           
@@ -1278,28 +1290,40 @@ main proc far
     ;Consumes keyboard buffer
                           mov   ah,0
                           int   16h
-    ; Before changing move, check if a move is selected / Deselection of piece
+
+    ; The key is now in ah
+    ; Before changing move, checks if:
+
+                          ; another key other than Q is pressed
                           cmp   ah, 10h
                           jnz  go_to_next_selection
+
+
+                          ; a piece wants to be moved
+                          cmp si, currSelectedPos_SI
+                          jnz move_piece
+
+                          cmp di, currSelectedPos_DI
+                          jnz move_piece
+
+
                           ; deselects the cell it is curr on (will be modified)
                           jmp far ptr start
 
-    ; The key is now in ah
 go_to_next_selection:     
                         ; save current positions
-                          mov currSelectedPos_DI, di
-                          mov currSelectedPos_SI, si
 
-                          call  goToNextSelection                          
+                          call  goToNextSelection    
+ 
 
                           mov al, 00h
                           call drawBorder
 
                           jmp   same_selection
                           
+move_piece:
 
-    halt:                 hlt
+
+halt:                     hlt
 main endp
 end main
-
-

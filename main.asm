@@ -47,8 +47,8 @@
     currMovePtr            db 0d
 
     ; the position (containing a piece) that the player is currently selecting
-    currSelectedPos_SI     dw ?
-    currSelectedPos_DI     dw ?
+    currSelectedPos_SI      dw      ?
+    currSelectedPos_DI      dw      ?
 
     ; Step unit (-1 for white & 1 for black)
     walker                 dw ?

@@ -44,7 +44,7 @@
     temp_name   db  'Miro', '$'
 
     ;Dummy text to be displayed
-    dummy       db  'This window is to be further developed in phase 2, thanks for checking in.', '$'
+    dummy1      db  'This window is to be further developed in phase 2, thanks for checking in.', '$'
 
     dummy2      db  'Press F3 to exit', '$'
 
@@ -169,30 +169,203 @@
 
 .code
 
-    ;delays according to no. of 'delay_loops' in memory
-    delay proc
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;PROCEDURES USED IN THE WELCOME SCREEN:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-        push    cx
-        push    ax
-        pushf
-        mov     cx, delay_loops
+    welcome proc
 
-        loop1:                
-            mov ax, 65535d
+        pusha
 
-            loop2:                
-                dec     ax
-                jnz     loop2
-            
-                loop    loop1
+        mov ax, 0600h
+        mov bh, 07
+        mov cx, 0
+        mov dx, 184Fh
+        int 10h
 
-        popf
-        pop     ax
-        pop     cx
+        mov ah, 2
+        mov bh, 0
+        mov dl, 00d
+        mov dh, 00d
+        int 10h
+
+        popa
 
         ret
 
-    delay endp
+    welcome endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;PROCEDURES USED IN THE MAIN SCREEN:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    main_window proc
+
+        main_start:
+            pusha
+
+            mov ax, 0600h
+            mov bh, 07
+            mov cx, 0
+            mov dx, 184Fh
+            int 10h
+
+            mov ah, 2
+            mov bh, 0
+            mov dl, 1Ah
+            mov dh, 07h
+            int 10h
+
+            mov ah, 9
+            mov dx, offset cmd1
+            int 21h
+
+            mov ah, 2
+            mov bh, 0
+            mov dl, 1Ah
+            mov dh, 0Bh
+            int 10h
+
+            mov ah, 9
+            mov dx, offset cmd2
+            int 21h
+
+            mov ah, 2
+            mov bh, 0
+            mov dl, 1Ah
+            mov dh, 0Fh
+            int 10h
+
+            mov ah, 9
+            mov dx, offset cmd3
+            int 21h
+
+            mov ah, 0
+            int 16h
+
+            cmp ah, 3Bh
+            jz start_chat
+
+            cmp ah, 3Ch
+            jz start_game
+
+            cmp ah, 01h
+            jz main_end
+
+            jmp main_end
+
+            start_chat:
+                call chat_window
+                jmp main_start
+
+            start_game:
+                call game_window
+                jmp main_start
+
+        main_end:
+
+        popa
+
+        ret
+
+    main_window endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;PROCEDURES USED IN THE CHAT SCREEN:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    chat_window proc
+
+        pusha
+
+        mov ax, 0600h
+        mov bh, 07
+        mov cx, 0
+        mov dx, 184Fh
+        int 10h
+
+        mov ah, 2
+        mov bh, 0
+        mov dl, 38d
+        mov dh, 00h
+        int 10h
+
+        mov ah, 9
+        mov dx, offset chat_title
+        int 21h
+
+        mov ah, 2
+        mov bh, 0
+        mov dl, 00h
+        mov dh, 01h
+        int 10h
+
+        mov ah, 9
+        mov bh, 0
+        mov al, 45d
+        mov cx, 80d
+        mov bl, 003h
+        int 10h
+
+        mov ah, 2
+        mov bh, 0
+        mov dl, 38d
+        mov dh, 02h
+        int 10h
+
+        mov ah, 9
+        mov dx, offset temp_name
+        int 21h
+
+        mov ah, 2
+        mov bh, 0
+        mov dl, 00h
+        mov dh, 03h
+        int 10h
+
+        mov ah, 9
+        mov bh, 0
+        mov al, 45d
+        mov cx, 80d
+        mov bl, 003h
+        int 10h
+
+        mov ah, 2
+        mov bh, 0
+        mov dl, 00h
+        mov dh, 04h
+        int 10h
+
+        mov ah, 9
+        mov dx, offset dummy1
+        int 21h
+
+        mov ah, 2
+        mov bh, 0
+        mov dl, 32d
+        mov dh, 08h
+        int 10h
+
+        mov ah, 9
+        mov dx, offset dummy2
+        int 21h
+
+        chat_end:
+            mov ah, 0
+            int 16h
+
+            cmp ah, 3Dh
+            jnz chat_end
+
+        popa
+
+        ret
+
+    chat_window endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;PROCEDURES USED IN DRAWING ON THE GAME SCREEN:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;Initializes the board pieces in memory.
     init_board proc
@@ -269,7 +442,7 @@
     ;Notice: magnitudes of the numeric values assigned to the pieces are ordered in the way that the white_pieces/black_pieces arrays are ordered.
     ;This is intentional, and will allow us to access the array positions easily when mapping the board to a drawing.
 
-    ;--------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;Prepares the video mode for displaying the board. INT 10H with AX = 4F02H was used, which sets a VESA compliant video mode that allows for
     ;higher resolution when compared to the traditional 10H interrupts.
@@ -299,11 +472,89 @@
                 int   10h
                 dec   dx
                 jnz   loop_y_direction
-                loop  loop_x_direction
+
+            loop  loop_x_direction
 
         ret
 
     clear_screen endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    set_board proc
+
+        pusha
+
+        mov bp, cell_size
+
+        mov ax, 0
+        mov ax, margin_x
+        add ax, 9
+        mul bp
+        mov di, ax
+
+        mov ax, 0
+        mov ax, margin_y
+        add ax, 9
+        mul bp
+        mov si, ax
+
+        mov ax, 0
+        add ax, margin_x
+        dec ax
+        mul bp
+        mov bx, ax
+
+        mov ax, 0
+        add ax, margin_x
+        dec ax
+        mul bp
+        mov cx, ax
+
+        mov ax, 0
+        add ax, margin_y
+        dec ax
+        mul bp
+        mov dx, ax
+
+        mov al, 08d
+        mov ah, 0ch
+
+        loop_y:
+
+            loop_x:
+                int 10h
+                inc cx
+                cmp cx, di
+                jnz loop_x
+
+            mov cx, bx
+            inc dx
+            cmp dx, si
+            jnz loop_y
+
+        popa
+
+        ret
+
+    set_board endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ;Returns color of the cell specified by SI(x-pos) & DI(y-pos) in AL
+    get_cell_colour proc
+
+        push    di
+    
+        add     di, si
+        and     di, 1
+        mov     al, board_colors[di]
+                          
+        pop     di
+
+        ret
+    
+    get_cell_colour endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -379,7 +630,7 @@
 
     pass_file_header endp
 
-    ;----------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;loads the image of a piece, with its picture stored as a bitmap file.
     ;The image will be placed at the cell with row number stored in DI and column number stored in SI.
@@ -445,7 +696,7 @@
 
     load_piece endp
 
-    ;-----------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;Closes the bitmap file.
     close_file proc
@@ -459,24 +710,485 @@
 
     close_file endp
 
-    ;-------------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    ;Returns color of the cell specified by SI(x-pos) & DI(y-pos) in AL
-    get_cell_colour proc
+    ;Draws a piece
+    draw_piece proc
 
+        pusha
+
+        add     si, margin_x        ;Adjust the column position using the x_margin.
+        add     di, margin_y        ;Adjust the row position using the y_margin.
+        push    si
         push    di
-    
-        add     di, si
-        and     di, 1
-        mov     al, board_colors[di]
-                          
+        call    get_file_handle     ;Prepare the file handle for other interrupts
+        call    pass_file_header    ;Move the file pointer to the starting point of the image
         pop     di
+        pop     si
+        call    load_piece          ;Draw the image at the rows and columns specified by SI and DI.
+        call    close_file          ;Close the file
+                         
+        popa
+                         
+        ret
+
+    draw_piece endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ;Draws a cell at the row and columns positions specified by SI and DI.
+    draw_cell proc
+
+    ;Adjust SI and DI for the margins
+        push    bx
+        push    si
+        push    di
+        add     si, margin_x
+        add     di, margin_y
+
+    ;Calculate and store the actual row and column positions of the upper left corner of each cell, and place them in SI and DI
+        mov     ah, 0ch
+        push    ax
+        mov     ax, si
+        mul     cell_size
+        mov     si, ax
+
+        mov     ax, di
+        mul     cell_size
+        mov     di, ax
+                         
+        pop     ax
+                         
+    ;Prepare for drawing the cell.
+        mov     cx, cell_size
+        add     cx, si
+
+        loop_x_cell:          
+            mov dx, cell_size
+
+            loop_y_cell:          
+    ;CX and DX store the row and columns positions for INT 10H.
+                add dx, di
+                int 10h
+
+                sub dx, di
+                dec dx
+                jnz loop_y_cell
+
+            dec cx
+            cmp cx, si
+            jnz loop_x_cell
+
+    ;After drawing the cell, we now wish to draw the piece in the cell (if any).
+
+    ;Get back the original row and column positions (from 0 to 7).      
+        pop di
+        pop si
+                                      
+    ;From SI and DI, get the position of the cell we are drawing in board array, which contains the current state of the board.
+        mov bx, di
+
+    ;Multiplies by 8, we don't need to move 3 to register first in this assembler. We multiply the row number by 8 since each row has 8 positions.
+        shl bx, 3
+        add bx, si
+        add bx, offset board
+        mov ah, [bx]
+        mov bh, 0
+        cmp ah, 0
+
+    ;If the current element in the board array contains 0, we draw no pieces.
+    ;If it contains a negative value, we draw a white piece.
+    ;If it contains a positive value, we draw a black piece.
+        je  finish_draw_cell
+        jl  draw_white_piece
+
+    ;Drawing a black piece
+    draw_black_piece:     
+        mov     bl, ah
+        shl     bl, 1
+
+    ;Move the offset of the file we wish to access and draw to dx
+        mov     dx, word ptr [black_pieces + bx]
+        call    draw_piece
+        jmp     finish_draw_cell
+
+    ;White Mate
+    draw_white_piece:     
+        neg     ah
+        mov     bl, ah
+        shl     bl, 1
+
+    ;Move the offset of the file we wish to access and draw to dx
+        mov     dx, word ptr [white_pieces + bx]
+        call    draw_piece
+
+    ;Exiting
+    finish_draw_cell:
+        pop bx
+
+    ret
+
+    draw_cell endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ;Calls draw_cell in a nested loop to display the whole board.
+    draw_board proc
+
+    ;Position of the first (upper left) cell
+        mov si, 0
+        mov di, 0
+
+    ;Color of the first cell
+    ;   mov  al, byte ptr cell_colors
+
+        loop_y_board:         
+            mov si, 0
+
+            loop_x_board:         
+    ;Draw the current cell
+                call    get_cell_colour
+    ;   push ax
+                call    draw_cell
+    ;   pop  ax
+    ;Update the color of the cell for the next iteration
+    ;                       cmp  al, byte ptr cell_colors
+    ;                       jz   change_to_dark_color
+    ; ; change_to_light_color:
+    ;                       mov  al, byte ptr cell_colors
+    ;                       jmp  continue_board_loop
+    ; change_to_dark_color:
+    ;                       mov  al, byte ptr cell_colors + 1
+    ; continue_board_loop:
+                inc     si
+                cmp     si, 8
+                jnz     loop_x_board
+                         
+    ;Before going to the next iteration of the outer loop, reverse the color of the cell
+    ;                       cmp  al, byte ptr cell_colors
+    ;                       jz   set_dark_color
+    ;                       mov  al, byte ptr cell_colors
+    ;                       jmp  new_iteration
+    ; set_dark_color:
+    ;                       mov  al, byte ptr cell_colors + 1
+    ;new_iteration:        
+            inc   di
+            cmp   di, 8
+            jnz   loop_y_board
+
+        ret
+
+    draw_board endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;PROCEDURES USED WITHIN THE GAME:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ;Writes possible moves to memory
+    recordMove proc
+
+        push    bx
+        push    ax
+
+        mov     al, directionPtr
+        mov     bl, 14d             ; directionPtr * 7 * 2
+        mov     bh, 0
+
+        mul     bl
+        mov     bl, al
+
+        shl     currMovePtr, 1
+        add     bl, currMovePtr
+        shr     currMovePtr, 1
+
+        mov     possibleMoves_DI[bx], di
+        mov     possibleMoves_SI[bx], si
+
+        ;inc   currMovePtr
+
+        pop     ax
+        pop     bx
+
+        ret
+
+    recordMove endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ; Navigates in possible moves array
+    getNextPossibleMove proc
+
+        push    bx
+        push    ax
+
+        mov     al, directionPtr
+        mov     bl, 14d             ; directionPtr * 7 * 2
+        mov     bh, 0
+
+        mul     bl
+        mov     bl, al
+
+        shl     currMovePtr, 1
+        add     bl, currMovePtr
+        shr     currMovePtr, 1
+
+        mov     di, possibleMoves_DI[bx]
+        mov     si, possibleMoves_SI[bx]
+
+        pop     ax
+        pop     bx
+
+        ret
+
+    getNextPossibleMove endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ; Removes previously selected cells (if any)
+    removeSelections proc
+
+        push    si
+        push    di
+
+
+        mov     directionPtr, 0d
+                          
+        removeSelections_loop1:          
+            mov currMovePtr, 0d
+
+            removeSelections_loop2:  
+                mov     si, -1d
+                mov     di, -1d
+
+                call    recordMove
+                inc     currMovePtr
+
+                cmp     currMovePtr, 7d
+                jz      removeSelections_loop2_break
+
+                call    getNextPossibleMove
+                cmp     si, -1
+                jz      removeSelections_loop2_break
+
+                call    get_cell_colour
+                call    draw_cell
+
+                jmp     removeSelections_loop2
+
+            removeSelections_loop2_break:
+
+            inc directionPtr
+            cmp directionPtr, 8d
+            jnz removeSelections_loop1
+
+
+            mov directionPtr, 0d
+            mov currMovePtr, 0d
+
+            pop di
+            pop si
+
+            ret
+
+    removeSelections endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ;Moves the piece (if possible) according to the scan codes of keys pressed (A->1E, D->20, W->11, S->1F)
+    hover proc
+
+        push    cx
+        push    dx
+
+    ; Storing current positons [DX,CX]
+        mov     cx, si
+        mov     dx, di
+    
+        cmp     ah, 1Eh
+        jz      move_left
+
+        cmp     ah, 20h
+        jz      move_right
+
+        cmp     ah, 11h
+        jz      move_up
+
+        cmp     ah, 1Fh
+        jz      move_down
+
+        jmp     dont_move
+
+        move_left:            
+            cmp si, 0
+            jz  dont_move
+            dec si
+            jmp redraw
+
+        move_right:           
+            cmp si, 7h
+            jz  dont_move
+            inc si
+            jmp redraw
+
+        move_up:              
+            cmp di, 0h
+            jz  dont_move
+            dec di
+            jmp redraw
+
+        move_down:            
+            cmp di, 7h
+            jz  dont_move
+            inc di
+            jmp redraw
+
+        redraw:               
+    ; Redraw the prev cell with its original color
+            push    si
+            push    di
+            mov     si, cx
+            mov     di, dx
+            mov     al, temp_color
+            call    draw_cell
+            pop     di
+            pop     si
+
+        dont_move:            
+            pop   dx
+            pop   cx
+
+        ret
+
+    hover endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ;Gets pos given SI,DI and puts it in BX
+    getPos proc
+
+        push    si
+        push    di
+
+        shl     di, 3h
+        add     di, si
+
+        mov     bx, di
+
+        pop     di
+        pop     si
+
+        ret
+
+    getPos endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ; puts the current position as the first possible move in all directions
+    recordCurrPos proc
+
+        push    cx
+
+        mov     cx, 8d
+
+        recordCurrPos_loop:
+            call    recordMove
+            inc     directionPtr
+            loop    recordCurrPos_loop
+
+        mov directionPtr, 0d
+        mov currMovePtr, 1d
+
+        pop cx
 
         ret
     
-    get_cell_colour endp
+    recordCurrPos endp
 
-; I think its pretty clear
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ; Gets all possible pawn moves
+    getPawnMoves proc
+
+        push    di
+        push    ax
+
+        add     di, walker
+        
+        call    recordMove
+        inc     currMovePtr
+
+        mov     al, highlighted_cell_color
+        call    draw_cell
+
+        cmp     walker, -1
+        jz      white
+        jmp     black
+
+        white:
+            cmp     di, 6d
+            add     di, walker
+
+            call    recordMove
+            inc     currMovePtr
+    
+            call    draw_cell
+            jmp     gotPawnMoves
+
+        black:
+            cmp     di, 1d
+            add     di, walker
+
+            call    recordMove
+            inc     currMovePtr                          
+
+            call    draw_cell
+
+        gotPawnMoves:
+
+        pop   ax
+        pop   di
+
+        ret
+
+    getPawnMoves endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ;Moves to SI DI the first available position if possible
+    checkFirstAvailableMove proc
+
+        push    si
+        push    di
+        push    cx
+
+        mov     cx, 8
+        mov     currMovePtr, 1d
+        mov     directionPtr, 0d
+                          
+        first_available_direction:
+            call    getNextPossibleMove
+            cmp     si, -1d
+            jnz     found_first_available_position
+            inc     directionPtr
+            cmp     directionPtr, 8d
+            jnz first_available_direction
+
+    ; to let us know if there aren't any available positions 
+        mov     directionPtr, -1d                          
+        mov     currMovePtr, -1d                          
+
+        found_first_available_position:
+            pop     cx
+            pop     di
+            pop     si
+
+        ret
+
+    checkFirstAvailableMove endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ; I think its pretty clear
     drawBorder proc
 
         push    si
@@ -594,350 +1306,28 @@
     
     drawBorder endp
 
-    ;Draws a piece
-    draw_piece proc
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-        pusha
+    ; puts 
+    getFirstSelection proc
 
-        add     si, margin_x        ;Adjust the column position using the x_margin.
-        add     di, margin_y        ;Adjust the row position using the y_margin.
-        push    si
-        push    di
-        call    get_file_handle     ;Prepare the file handle for other interrupts
-        call    pass_file_header    ;Move the file pointer to the starting point of the image
-        pop     di
-        pop     si
-        call    load_piece          ;Draw the image at the rows and columns specified by SI and DI.
-        call    close_file          ;Close the file
-                         
-        popa
-                         
-        ret
+        call    checkFirstAvailableMove
+        cmp     directionPtr, -1d
+        jz      getFirstSelection_end
+                          
+    ; to move the si, di corresponding to directionPtr & currMovPtr that we got from checkFirstAvailableMove
+        call    getNextPossibleMove
 
-    draw_piece endp
+        mov     al, 00h
+        call    drawBorder
 
-    ;-------------------------------------------------------------------------------------------------------------------------------------------------
-
-    ;Draws a cell at the row and columns positions specified by SI and DI.
-    draw_cell proc
-
-    ;Adjust SI and DI for the margins
-        push    bx
-        push    si
-        push    di
-        add     si, margin_x
-        add     di, margin_y
-
-    ;Calculate and store the actual row and column positions of the upper left corner of each cell, and place them in SI and DI
-        mov     ah, 0ch
-        push    ax
-        mov     ax, si
-        mul     cell_size
-        mov     si, ax
-
-        mov     ax, di
-        mul     cell_size
-        mov     di, ax
-                         
-        pop     ax
-                         
-    ;Prepare for drawing the cell.
-        mov     cx, cell_size
-        add     cx, si
-
-        loop_x_cell:          
-            mov dx, cell_size
-
-            loop_y_cell:          
-    ;CX and DX store the row and columns positions for INT 10H.
-                add dx, di
-                int 10h
-
-                sub dx, di
-                dec dx
-                jnz loop_y_cell
-
-            dec cx
-            cmp cx, si
-            jnz loop_x_cell
-
-    ;After drawing the cell, we now wish to draw the piece in the cell (if any).
-
-    ;Get back the original row and column positions (from 0 to 7).
-                
-        pop di
-        pop si
-                                      
-    ;From SI and DI, get the position of the cell we are drawing in board array, which contains the current state of the board.
-        mov bx, di
-
-    ;Multiplies by 8, we don't need to move 3 to register first in this assembler. We multiply the row number by 8 since each row has 8 positions.
-        shl bx, 3
-        add bx, si
-        add bx, offset board
-        mov ah, [bx]
-        mov bh, 0
-        cmp ah, 0
-
-    ;If the current element in the board array contains 0, we draw no pieces.
-    ;If it contains a negative value, we draw a white piece.
-    ;If it contains a positive value, we draw a black piece.
-        je  finish_draw_cell
-        jl  draw_white_piece
-
-    ;Drawing a black piece
-    draw_black_piece:     
-        mov     bl, ah
-        shl     bl, 1
-
-    ;Move the offset of the file we wish to access and draw to dx
-        mov     dx, word ptr [black_pieces + bx]
-        call    draw_piece
-        jmp     finish_draw_cell
-
-    ;White Mate
-    draw_white_piece:     
-        neg     ah
-        mov     bl, ah
-        shl     bl, 1
-
-    ;Move the offset of the file we wish to access and draw to dx
-        mov     dx, word ptr [white_pieces + bx]
-        call    draw_piece
-
-    ;Exiting
-    finish_draw_cell:
-        pop bx
-
-    ret
-
-    draw_cell endp
-
-    ;-------------------------------------------------------------------------------------------------------------------------------------------
-
-    ;Calls draw_cell in a nested loop to display the whole board.
-    draw_board proc
-
-    ;Position of the first (upper left) cell
-        mov si, 0
-        mov di, 0
-
-    ;Color of the first cell
-    ;   mov  al, byte ptr cell_colors
-
-        loop_y_board:         
-            mov si, 0
-
-            loop_x_board:         
-    ;Draw the current cell
-                call    get_cell_colour
-    ;   push ax
-                call    draw_cell
-    ;   pop  ax
-    ;Update the color of the cell for the next iteration
-    ;                       cmp  al, byte ptr cell_colors
-    ;                       jz   change_to_dark_color
-    ; ; change_to_light_color:
-    ;                       mov  al, byte ptr cell_colors
-    ;                       jmp  continue_board_loop
-    ; change_to_dark_color:
-    ;                       mov  al, byte ptr cell_colors + 1
-    ; continue_board_loop:
-                inc     si
-                cmp     si, 8
-                jnz     loop_x_board
-                         
-    ;Before going to the next iteration of the outer loop, reverse the color of the cell
-    ;                       cmp  al, byte ptr cell_colors
-    ;                       jz   set_dark_color
-    ;                       mov  al, byte ptr cell_colors
-    ;                       jmp  new_iteration
-    ; set_dark_color:
-    ;                       mov  al, byte ptr cell_colors + 1
-    ;new_iteration:        
-            inc   di
-            cmp   di, 8
-            jnz   loop_y_board
-
-        ret
-
-    draw_board endp
-
-    clear_keyboard_buffer proc
-
-        push    ax
+        getFirstSelection_end:
     
-        mov     ah, 0Ch
-        mov     al,0
-        int     21h
-
-        pop     ax
-
         ret
 
-    clear_keyboard_buffer endp
+    getFirstSelection endp
 
-    ;Moves the piece (if possible) according to the scan codes of keys pressed (A->1E, D->20, W->11, S->1F)
-    hover proc
-
-        push    cx
-        push    dx
-
-    ; Storing current positons [DX,CX]
-        mov     cx, si
-        mov     dx, di
-    
-        cmp     ah, 1Eh
-        jz      move_left
-
-        cmp     ah, 20h
-        jz      move_right
-
-        cmp     ah, 11h
-        jz      move_up
-
-        cmp     ah, 1Fh
-        jz      move_down
-
-        jmp     dont_move
-
-        move_left:            
-            cmp si, 0
-            jz  dont_move
-            dec si
-            jmp redraw
-
-        move_right:           
-            cmp si, 7h
-            jz  dont_move
-            inc si
-            jmp redraw
-
-        move_up:              
-            cmp di, 0h
-            jz  dont_move
-            dec di
-            jmp redraw
-
-        move_down:            
-            cmp di, 7h
-            jz  dont_move
-            inc di
-            jmp redraw
-
-        redraw:               
-    ; Redraw the prev cell with its original color
-            push    si
-            push    di
-            mov     si, cx
-            mov     di, dx
-            mov     al, temp_color
-            call    draw_cell
-            pop     di
-            pop     si
-
-        dont_move:            
-            pop   dx
-            pop   cx
-
-        ret
-
-    hover endp
-
-    ;Gets pos given SI,DI and puts it in BX
-    getPos proc
-
-        push    si
-        push    di
-
-        shl     di, 3h
-        add     di, si
-
-        mov     bx, di
-
-        pop     di
-        pop     si
-
-        ret
-
-    getPos endp
-
-    ;Writes possible moves to memory
-    recordMove proc
-
-        push    bx
-        push    ax
-
-        mov     al, directionPtr
-        mov     bl, 14d             ; directionPtr * 7 * 2
-        mov     bh, 0
-
-        mul     bl
-        mov     bl, al
-
-        shl     currMovePtr, 1
-        add     bl, currMovePtr
-        shr     currMovePtr, 1
-
-        mov     possibleMoves_DI[bx], di
-        mov     possibleMoves_SI[bx], si
-
-        ;inc   currMovePtr
-
-        pop     ax
-        pop     bx
-
-        ret
-
-    recordMove endp
-
-    ; puts the current position as the first possible move in all directions
-    recordCurrPos proc
-
-        push    cx
-
-        mov     cx, 8d
-
-        recordCurrPos_loop:
-            call    recordMove
-            inc     directionPtr
-            loop    recordCurrPos_loop
-
-        mov directionPtr, 0d
-        mov currMovePtr, 1d
-
-        pop cx
-
-        ret
-    
-    recordCurrPos endp
-
-    ; Navigates in possible moves array
-    getNextPossibleMove proc
-
-        push    bx
-        push    ax
-
-        mov     al, directionPtr
-        mov     bl, 14d             ; directionPtr * 7 * 2
-        mov     bh, 0
-
-        mul     bl
-        mov     bl, al
-
-        shl     currMovePtr, 1
-        add     bl, currMovePtr
-        shr     currMovePtr, 1
-
-        mov     di, possibleMoves_DI[bx]
-        mov     si, possibleMoves_SI[bx]
-
-        pop     ax
-        pop     bx
-
-        ret
-
-    getNextPossibleMove endp
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;Changes the positions of selected move and puts them in SI & DI for drawing border
     goToNextSelection proc
@@ -1080,150 +1470,9 @@
 
     goToNextSelection endp
 
-    ;Moves to SI DI the first available position if possible
-    checkFirstAvailableMove proc
-
-        push    si
-        push    di
-        push    cx
-
-        mov     cx, 8
-        mov     currMovePtr, 1d
-        mov     directionPtr, 0d
-                          
-        first_available_direction:
-            call    getNextPossibleMove
-            cmp     si, -1d
-            jnz     found_first_available_position
-            inc     directionPtr
-            cmp     directionPtr, 8d
-            jnz first_available_direction
-
-    ; to let us know if there aren't any available positions 
-        mov     directionPtr, -1d                          
-        mov     currMovePtr, -1d                          
-
-        found_first_available_position:
-            pop     cx
-            pop     di
-            pop     si
-
-        ret
-
-    checkFirstAvailableMove endp
-
-    ; puts 
-    getFirstSelection proc
-
-        call    checkFirstAvailableMove
-        cmp     directionPtr, -1d
-        jz      getFirstSelection_end
-                          
-    ; to move the si, di corresponding to directionPtr & currMovPtr that we got from checkFirstAvailableMove
-        call    getNextPossibleMove
-
-        mov     al, 00h
-        call    drawBorder
-
-        getFirstSelection_end:
-    
-        ret
-
-    getFirstSelection endp
-
-    ; Removes previously selected cells (if any)
-    removeSelections proc
-
-        push    si
-        push    di
-
-
-        mov     directionPtr, 0d
-                          
-        removeSelections_loop1:          
-            mov currMovePtr, 0d
-
-            removeSelections_loop2:  
-                mov     si, -1d
-                mov     di, -1d
-
-                call    recordMove
-                inc     currMovePtr
-
-                cmp     currMovePtr, 7d
-                jz      removeSelections_loop2_break
-
-                call    getNextPossibleMove
-                cmp     si, -1
-                jz      removeSelections_loop2_break
-
-                call    get_cell_colour
-                call    draw_cell
-
-                jmp     removeSelections_loop2
-
-            removeSelections_loop2_break:
-
-            inc directionPtr
-            cmp directionPtr, 8d
-            jnz removeSelections_loop1
-
-
-            mov directionPtr, 0d
-            mov currMovePtr, 0d
-
-            pop di
-            pop si
-
-            ret
-
-    removeSelections endp
-
-    ; Gets all possible pawn moves
-    getPawnMoves proc
-
-        push    di
-        push    ax
-
-        add     di, walker
-        
-        call    recordMove
-        inc     currMovePtr
-
-        mov     al, highlighted_cell_color
-        call    draw_cell
-
-        cmp     walker, -1
-        jz      white
-        jmp     black
-
-        white:
-            cmp     di, 6d
-            add     di, walker
-
-            call    recordMove
-            inc     currMovePtr
-    
-            call    draw_cell
-            jmp     gotPawnMoves
-
-        black:
-            cmp     di, 1d
-            add     di, walker
-
-            call    recordMove
-            inc     currMovePtr                          
-
-            call    draw_cell
-
-        gotPawnMoves:
-
-        pop   ax
-        pop   di
-
-        ret
-
-    getPawnMoves endp
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;PROCEDURES USED IN THE GAME SCREEN:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     game_window proc
 
@@ -1236,7 +1485,7 @@
 
         call    set_board
 
-        call    draw_board            ;Draw the board
+        call    draw_board          ;Draw the board
                          
     ;Listen for keyboard press and change its colour
         mov     si, 0
@@ -1382,251 +1631,54 @@
 
     game_window endp
 
-    set_board proc
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;MISCELLANEOUS PROCEDURES:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-        pusha
+    ;delays according to no. of 'delay_loops' in memory
+    delay proc
 
-        mov bp, cell_size
+        push    cx
+        push    ax
+        pushf
+        mov     cx, delay_loops
 
-        mov ax, 0
-        mov ax, margin_x
-        add ax, 9
-        mul bp
-        mov di, ax
+        loop1:                
+            mov ax, 65535d
 
-        mov ax, 0
-        mov ax, margin_y
-        add ax, 9
-        mul bp
-        mov si, ax
+            loop2:                
+                dec     ax
+                jnz     loop2
+            
+                loop    loop1
 
-        mov ax, 0
-        add ax, margin_x
-        dec ax
-        mul bp
-        mov bx, ax
-
-        mov ax, 0
-        add ax, margin_x
-        dec ax
-        mul bp
-        mov cx, ax
-
-        mov ax, 0
-        add ax, margin_y
-        dec ax
-        mul bp
-        mov dx, ax
-
-        mov al, 08d
-        mov ah, 0ch
-
-        loop_y:
-
-            loop_x:
-                int 10h
-                inc cx
-                cmp cx, di
-                jnz loop_x
-
-            mov cx, bx
-            inc dx
-            cmp dx, si
-            jnz loop_y
-
-        popa
+        popf
+        pop     ax
+        pop     cx
 
         ret
 
-    set_board endp
+    delay endp
 
-    ;-------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    main_window proc
+    clear_keyboard_buffer proc
 
-        main_start:
-            pusha
+        push    ax
+    
+        mov     ah, 0Ch
+        mov     al,0
+        int     21h
 
-            mov ax, 0600h
-            mov bh, 07
-            mov cx, 0
-            mov dx, 184Fh
-            int 10h
-
-            mov ah, 2
-            mov bh, 0
-            mov dl, 1Ah
-            mov dh, 07h
-            int 10h
-
-            mov ah, 9
-            mov dx, offset cmd1
-            int 21h
-
-            mov ah, 2
-            mov bh, 0
-            mov dl, 1Ah
-            mov dh, 0Bh
-            int 10h
-
-            mov ah, 9
-            mov dx, offset cmd2
-            int 21h
-
-            mov ah, 2
-            mov bh, 0
-            mov dl, 1Ah
-            mov dh, 0Fh
-            int 10h
-
-            mov ah, 9
-            mov dx, offset cmd3
-            int 21h
-
-            mov ah, 0
-            int 16h
-
-            cmp ah, 3Bh
-            jz start_chat
-
-            cmp ah, 3Ch
-            jz start_game
-
-            cmp ah, 01h
-            jz main_end
-
-            jmp main_end
-
-            start_chat:
-                call chat_window
-                jmp main_start
-
-            start_game:
-                call game_window
-                jmp main_start
-
-        main_end:
-
-        popa
+        pop     ax
 
         ret
 
-    main_window endp
+    clear_keyboard_buffer endp
 
-    ;-------------------------------------------------------------------------------------------------------------------------------------------
-
-    chat_window proc
-
-        pusha
-
-        mov ax, 0600h
-        mov bh, 07
-        mov cx, 0
-        mov dx, 184Fh
-        int 10h
-
-        mov ah, 2
-        mov bh, 0
-        mov dl, 38d
-        mov dh, 00h
-        int 10h
-
-        mov ah, 9
-        mov dx, offset chat_title
-        int 21h
-
-        mov ah, 2
-        mov bh, 0
-        mov dl, 00h
-        mov dh, 01h
-        int 10h
-
-        mov ah, 9
-        mov bh, 0
-        mov al, 45d
-        mov cx, 80d
-        mov bl, 003h
-        int 10h
-
-        mov ah, 2
-        mov bh, 0
-        mov dl, 38d
-        mov dh, 02h
-        int 10h
-
-        mov ah, 9
-        mov dx, offset temp_name
-        int 21h
-
-        mov ah, 2
-        mov bh, 0
-        mov dl, 00h
-        mov dh, 03h
-        int 10h
-
-        mov ah, 9
-        mov bh, 0
-        mov al, 45d
-        mov cx, 80d
-        mov bl, 003h
-        int 10h
-
-        mov ah, 2
-        mov bh, 0
-        mov dl, 00h
-        mov dh, 04h
-        int 10h
-
-        mov ah, 9
-        mov dx, offset dummy
-        int 21h
-
-        mov ah, 2
-        mov bh, 0
-        mov dl, 32d
-        mov dh, 08h
-        int 10h
-
-        mov ah, 9
-        mov dx, offset dummy2
-        int 21h
-
-        chat_end:
-            mov ah, 0
-            int 16h
-
-            cmp ah, 3Dh
-            jnz chat_end
-
-        popa
-
-        ret
-
-    chat_window endp
-
-    ;-------------------------------------------------------------------------------------------------------------------------------------------
-
-    welcome proc
-
-        pusha
-
-        mov ax, 0600h
-        mov bh, 07
-        mov cx, 0
-        mov dx, 184Fh
-        int 10h
-
-        mov ah, 2
-        mov bh, 0
-        mov dl, 00d
-        mov dh, 00d
-        int 10h
-
-        popa
-
-        ret
-
-    welcome endp
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 main proc far
 
@@ -1639,9 +1691,22 @@ main proc far
     mov     dx, offset pieces_wd
     int     21h
 
-    call    game_window
-                          
-    int 20h
+    call    main_window
+
+    mov ax, 0600h
+    mov bh, 07
+    mov cx, 0
+    mov dx, 184Fh
+    int 10h
+
+    mov ah, 2
+    mov bh, 0
+    mov dl, 0
+    mov dh, 0
+    int 10h
+
+    mov ah, 4ch
+    int 21h
 
 main endp
 end main

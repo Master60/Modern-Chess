@@ -13,6 +13,34 @@
 .data
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;DEFINING LETTERS:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    ;recommended:   length:15-20,   width:10-15
+    ;used       :   length:20   ,   width:13
+
+    letter_A    db  1,1,1,1,1,1,1,1,1,1,1,1,1
+                db  1,1,1,1,1,1,1,1,1,1,1,1,1
+                db  1,1,1,1,1,1,1,1,1,1,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,1,1,1,1,1,1,1,1,1,1
+                db  1,1,1,1,1,1,1,1,1,1,1,1,1
+                db  1,1,1,1,1,1,1,1,1,1,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+                db  1,1,1,0,0,0,0,0,0,0,1,1,1
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PATH CONTROL AND ERROR MESSAGE:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     
@@ -201,9 +229,9 @@
 
     main_window proc
 
-        main_start:
-            pusha
+        pusha
 
+        main_start:
             mov ax, 0600h
             mov bh, 07
             mov cx, 0
@@ -520,24 +548,54 @@
         mov al, 08d
         mov ah, 0ch
 
-        loop_y:
+        board_y:
 
-            loop_x:
+            board_x:
                 int 10h
                 inc cx
                 cmp cx, di
-                jnz loop_x
+                jnz board_x
 
             mov cx, bx
             inc dx
             cmp dx, si
-            jnz loop_y
+            jnz board_y
 
         popa
 
         ret
 
     set_board endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    set_border proc
+
+    pusha
+
+    mov cx, 276d
+    mov dx, 125d
+    mov al, 4
+    mov ah, 0ch
+
+    border_y:
+
+        border_x:
+            int 10h
+            inc cx
+            cmp cx, 925d
+            jnz border_x
+
+        mov cx, 276d
+        inc dx
+        cmp dx, 775d
+        jnz border_y
+
+    popa
+
+    ret
+
+    set_border endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1483,8 +1541,6 @@
         mov     al, 14h             ;The color by which we will clear the screen (light gray).
         call    clear_screen
 
-        call    set_board
-
         call    draw_board          ;Draw the board
                          
     ;Listen for keyboard press and change its colour
@@ -1677,6 +1733,68 @@
     clear_keyboard_buffer endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    test_window proc
+
+        call    init_board
+        call    init_video_mode
+        mov     al, 14h
+        call    clear_screen
+        call    set_board
+        call    set_border
+        call    draw_board
+        call    draw_letter
+
+        mov     ah, 0
+        int     16h
+
+        ret
+
+    test_window endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    draw_letter proc
+
+    pusha
+
+    mov si, 0
+
+    mov cx, 331d    ;(cell size*margin x)+((cell size-width)/2)
+    mov dx, 127d    ;(cell size*margin y)-23
+    mov al, 3
+    mov ah, 0ch
+
+    loop_y_letter:
+
+        loop_x_letter:
+            cmp letter_A+[si], 1
+            je draw_the_letter
+            back:
+                inc si
+                inc cx
+                cmp cx, 344d
+                jnz loop_x_letter
+
+        inc dx
+        mov cx, 331d
+        cmp dx, 147d
+        jnz loop_y_letter
+        jmp end_draw
+
+    draw_the_letter:
+        int 10h
+        jmp back
+
+    end_draw:
+
+    popa
+
+    ret
+
+    draw_letter endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1691,7 +1809,7 @@ main proc far
     mov     dx, offset pieces_wd
     int     21h
 
-    call    main_window
+    call    game_window
 
     mov ax, 0600h
     mov bh, 07

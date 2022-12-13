@@ -1743,6 +1743,35 @@
     game_window endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;TERMINATE PROCEDURE:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    terminate proc
+
+        pusha
+
+        mov ax, 0600h
+        mov bh, 07
+        mov cx, 0
+        mov dx, 184Fh
+        int 10h
+
+        mov ah, 2
+        mov bh, 0
+        mov dl, 0
+        mov dh, 0
+        int 10h
+
+        mov ah, 4ch
+        int 21h
+
+        popa
+
+        ret
+
+    terminate endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PROCEDURES USED IN THE MAIN SCREEN:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1809,7 +1838,8 @@
                 call game_window
                 jmp main_start
 
-        main_end:
+            main_end:
+                call terminate
 
         popa
 
@@ -1879,21 +1909,6 @@ main proc far
     int     21h
 
     call    game_window
-
-    mov ax, 0600h
-    mov bh, 07
-    mov cx, 0
-    mov dx, 184Fh
-    int 10h
-
-    mov ah, 2
-    mov bh, 0
-    mov dl, 0
-    mov dh, 0
-    int 10h
-
-    mov ah, 4ch
-    int 21h
 
 main endp
 end main

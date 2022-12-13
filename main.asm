@@ -198,105 +198,91 @@
 .code
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
-    ;PROCEDURES USED IN THE WELCOME SCREEN:
+    ;MISCELLANEOUS PROCEDURES:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    welcome proc
+    ;delays according to no. of 'delay_loops' in memory
+    delay proc
 
-        pusha
+        push    cx
+        push    ax
+        pushf
+        mov     cx, delay_loops
 
-        mov ax, 0600h
-        mov bh, 07
-        mov cx, 0
-        mov dx, 184Fh
-        int 10h
+        loop1:                
+            mov ax, 65535d
 
-        mov ah, 2
-        mov bh, 0
-        mov dl, 00d
-        mov dh, 00d
-        int 10h
+            loop2:                
+                dec     ax
+                jnz     loop2
+            
+                loop    loop1
 
-        popa
+        popf
+        pop     ax
+        pop     cx
 
         ret
 
-    welcome endp
+    delay endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
-    ;PROCEDURES USED IN THE MAIN SCREEN:
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    main_window proc
+    clear_keyboard_buffer proc
 
-        pusha
+        push    ax
+    
+        mov     ah, 0Ch
+        mov     al,0
+        int     21h
 
-        main_start:
-            mov ax, 0600h
-            mov bh, 07
-            mov cx, 0
-            mov dx, 184Fh
-            int 10h
-
-            mov ah, 2
-            mov bh, 0
-            mov dl, 1Ah
-            mov dh, 07h
-            int 10h
-
-            mov ah, 9
-            mov dx, offset cmd1
-            int 21h
-
-            mov ah, 2
-            mov bh, 0
-            mov dl, 1Ah
-            mov dh, 0Bh
-            int 10h
-
-            mov ah, 9
-            mov dx, offset cmd2
-            int 21h
-
-            mov ah, 2
-            mov bh, 0
-            mov dl, 1Ah
-            mov dh, 0Fh
-            int 10h
-
-            mov ah, 9
-            mov dx, offset cmd3
-            int 21h
-
-            mov ah, 0
-            int 16h
-
-            cmp ah, 3Bh
-            jz start_chat
-
-            cmp ah, 3Ch
-            jz start_game
-
-            cmp ah, 01h
-            jz main_end
-
-            jmp main_end
-
-            start_chat:
-                call chat_window
-                jmp main_start
-
-            start_game:
-                call game_window
-                jmp main_start
-
-        main_end:
-
-        popa
+        pop     ax
 
         ret
 
-    main_window endp
+    clear_keyboard_buffer endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+    draw_letter proc
+
+    pusha
+
+    mov si, 0
+
+    mov cx, 331d    ;(cell size*margin x)+((cell size-width)/2)
+    mov dx, 127d    ;(cell size*margin y)-23
+    mov al, 3
+    mov ah, 0ch
+
+    loop_y_letter:
+
+        loop_x_letter:
+            cmp letter_A+[si], 1
+            je draw_the_letter
+            back:
+                inc si
+                inc cx
+                cmp cx, 344d
+                jnz loop_x_letter
+
+        inc dx
+        mov cx, 331d
+        cmp dx, 147d
+        jnz loop_y_letter
+        jmp end_draw
+
+    draw_the_letter:
+        int 10h
+        jmp back
+
+    end_draw:
+
+    popa
+
+    ret
+
+    draw_letter endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PROCEDURES USED IN THE CHAT SCREEN:
@@ -1688,49 +1674,105 @@
     game_window endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
-    ;MISCELLANEOUS PROCEDURES:
+    ;PROCEDURES USED IN THE MAIN SCREEN:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    ;delays according to no. of 'delay_loops' in memory
-    delay proc
+    main_window proc
 
-        push    cx
-        push    ax
-        pushf
-        mov     cx, delay_loops
+        pusha
 
-        loop1:                
-            mov ax, 65535d
+        main_start:
+            mov ax, 0600h
+            mov bh, 07
+            mov cx, 0
+            mov dx, 184Fh
+            int 10h
 
-            loop2:                
-                dec     ax
-                jnz     loop2
-            
-                loop    loop1
+            mov ah, 2
+            mov bh, 0
+            mov dl, 1Ah
+            mov dh, 07h
+            int 10h
 
-        popf
-        pop     ax
-        pop     cx
+            mov ah, 9
+            mov dx, offset cmd1
+            int 21h
+
+            mov ah, 2
+            mov bh, 0
+            mov dl, 1Ah
+            mov dh, 0Bh
+            int 10h
+
+            mov ah, 9
+            mov dx, offset cmd2
+            int 21h
+
+            mov ah, 2
+            mov bh, 0
+            mov dl, 1Ah
+            mov dh, 0Fh
+            int 10h
+
+            mov ah, 9
+            mov dx, offset cmd3
+            int 21h
+
+            mov ah, 0
+            int 16h
+
+            cmp ah, 3Bh
+            jz start_chat
+
+            cmp ah, 3Ch
+            jz start_game
+
+            cmp ah, 01h
+            jz main_end
+
+            jmp main_end
+
+            start_chat:
+                call chat_window
+                jmp main_start
+
+            start_game:
+                call game_window
+                jmp main_start
+
+        main_end:
+
+        popa
 
         ret
 
-    delay endp
+    main_window endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;PROCEDURES USED IN THE WELCOME SCREEN:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    clear_keyboard_buffer proc
+    welcome proc
 
-        push    ax
-    
-        mov     ah, 0Ch
-        mov     al,0
-        int     21h
+        pusha
 
-        pop     ax
+        mov ax, 0600h
+        mov bh, 07
+        mov cx, 0
+        mov dx, 184Fh
+        int 10h
+
+        mov ah, 2
+        mov bh, 0
+        mov dl, 00d
+        mov dh, 00d
+        int 10h
+
+        popa
 
         ret
 
-    clear_keyboard_buffer endp
+    welcome endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1751,48 +1793,6 @@
         ret
 
     test_window endp
-
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
-
-    draw_letter proc
-
-    pusha
-
-    mov si, 0
-
-    mov cx, 331d    ;(cell size*margin x)+((cell size-width)/2)
-    mov dx, 127d    ;(cell size*margin y)-23
-    mov al, 3
-    mov ah, 0ch
-
-    loop_y_letter:
-
-        loop_x_letter:
-            cmp letter_A+[si], 1
-            je draw_the_letter
-            back:
-                inc si
-                inc cx
-                cmp cx, 344d
-                jnz loop_x_letter
-
-        inc dx
-        mov cx, 331d
-        cmp dx, 147d
-        jnz loop_y_letter
-        jmp end_draw
-
-    draw_the_letter:
-        int 10h
-        jmp back
-
-    end_draw:
-
-    popa
-
-    ret
-
-    draw_letter endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;---------------------------------------------------------------------------------------------------------------------------------------------

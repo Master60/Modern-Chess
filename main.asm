@@ -77,8 +77,8 @@
     currMovePtr              db      0d
 
     ; the position (containing a piece) that the player is currently selecting
-    currSelectedPos_SI       dw      ?
-    currSelectedPos_DI       dw      ?
+    currSelectedPos_SI       dw      -1d
+    currSelectedPos_DI       dw      -1d
 
     ; Step unit (-1 for white & 1 for black)
     walker                   dw      ?
@@ -97,6 +97,7 @@
 
     ; Used for highlighting (hover effect)
     highlighted_cell_color   db      14d
+    hover_cell_color         db      102d
     possible_take_cell_color db      12d
     ;Stores the color of the cell being drawn at a specific iteration.
     temp_color               db      ?
@@ -1110,6 +1111,9 @@ removeSelections proc
                                    mov   directionPtr, 0d
                                    mov   currMovePtr, 0d
 
+                                   mov   currSelectedPos_DI, -1d
+                                   mov   currSelectedPos_SI, -1d
+
                                    pop   di
                                    pop   si
 
@@ -1261,55 +1265,79 @@ checkForEnemyPiece ENDP
 
     ; Gets all possible pawn moves
 getPawnMoves proc
-
-                                   push  di
+ 
+                                   push  si
                                    push  ax
+                                   push  di
 
                                   
                                    cmp   walker, -1
                                    jnz   getPawnMoves_black
 
     getPawnMoves_white:            
+                                   cmp   di, 0d
+                                   jnz   continue_getPawnMoves_white
+                                   jmp   far ptr get_pawn_moves_end
+
+        continue_getPawnMoves_white:   
                                    cmp   di, 6d
                                    jnz   get_other_pawn_moves
                                    jmp   get_extra_pawn_move
                                    
 
     getPawnMoves_black:            
+                                   cmp   di, 7d
+                                   jnz   continue_getPawnMoves_black
+                                   jmp   far ptr get_pawn_moves_end
+        continue_getPawnMoves_black:   
                                    cmp   di, 1d
                                    jnz   get_other_pawn_moves
 
 
     get_extra_pawn_move:           
                                    add   di, walker
+
+                                   call  checkForEnemyPiece
+                                   jnz    getPawnMoves_possible_takes
+
                                    call  getPos
                                    cmp   board[bx], 0
                                    jnz   get_other_pawn_moves
 
+                                  
                                    call  recordMove
                                    inc   currMovePtr
-    
+                                   
                                    call  draw_cell
 
     get_other_pawn_moves:          
                                    add   di, walker
+
+                                   call  checkForEnemyPiece
+                                   jnz    getPawnMoves_possible_takes
+
                                    call  getPos
                                    cmp   board[bx], 0
-                                   jnz   get_possible_takes
+                                   jnz   getPawnMoves_possible_takes
         
                                    call  recordMove
                                    inc   currMovePtr
 
-                                   mov   al, highlighted_cell_color
                                    call  draw_cell
 
-    get_possible_takes:            
-
+    getPawnMoves_possible_takes:            
+                                   pop   di
+                                   push  di
+                                   add   di, walker
                                    add   si, 1d
-                                   
+                                   cmp   si, 8d
+                                   jnz continue_getPawnMoves_possible_takes
+                                   jmp get_other_possible_take
+
+        continue_getPawnMoves_possible_takes:
                                    call  checkForEnemyPiece
 
-                                   jnc    get_other_possible_take
+                                   jnc   get_other_possible_take
 
                                    mov   currMovePtr, 1d
                                    mov   directionPtr, 1d
@@ -1321,15 +1349,20 @@ getPawnMoves proc
                                    call  draw_cell
                                    
                                    
-    get_other_possible_take:       
-                                   sub   si, 2d
                                    
+    get_other_possible_take:       
+                                   sub si, 2d
+                                   cmp   si, -1d
+                                   jnz continue_getPawnMoves_other_possible_take
+                                   jmp far ptr get_pawn_moves_end
+
+        continue_getPawnMoves_other_possible_take:
                                    call  checkForEnemyPiece
 
-                                   jnc    get_pawn_moves_end
+                                   jnc   get_pawn_moves_end
 
                                    mov   currMovePtr, 1d
-                                   mov   directionPtr, 6d
+                                   mov   directionPtr, 7d
 
                                    call  recordMove
                                    inc   currMovePtr
@@ -1337,8 +1370,9 @@ getPawnMoves proc
                                    mov   al, possible_take_cell_color
                                    call  draw_cell
     get_pawn_moves_end:            
-                                   pop   ax
                                    pop   di
+                                   pop   ax
+                                   pop   si
 
                                    ret
 
@@ -1642,23 +1676,34 @@ goToNextSelection proc
                                    push  si
                                    push  di
                           
+    ;; getting original position back for coloring
                                    mov   si, bp
                                    mov   di, dx
 
 
-    ;    push bx
-    ;    lea bx, possible_take_cell_color
-    ;    adc bx, 0
-                                
-                                   push  bx
-                                   lea   bx, highlighted_cell_color
+    ;; if that position is the "home cell" use the highlighting color
+                                   cmp   si, currSelectedPos_SI
+                                   jnz   continue_change_selection
+                                   cmp   di, currSelectedPos_DI
+                                   jnz   continue_change_selection
+
+                                   mov   al, highlighted_cell_color
+                                   jmp   goToNextSelection_redraw
+
+
+    continue_change_selection:     push  bx
+                                   lea   bx, hover_cell_color
                                    call  checkForEnemyPiece
+                                   
+    ;; color it Red if enemy piece exists
+    ;; if carry exists, it will go to the next place in memory which stores the Red color
                                    adc   bx, 0d
                                    mov   al, [bx]
-                                   call  draw_cell
                                    pop   bx
+                                   
+    goToNextSelection_redraw:      call  draw_cell
 
-    ;    pop bx
+   
                                    pop   di
                                    pop   si
 
@@ -1675,6 +1720,9 @@ goToNextSelection endp
 
     ;moves the piece according to DI,SI (nextPos) & currSelectedPos_DI,currSelectedPos_SI (current pos)
 movePiece PROC
+                                   cmp   currSelectedPos_DI, -1d
+                                   jz    movePiece_end
+    ;; preserving the positions we want to write to
                                    push  si
                                    push  di
                                    push  bx
@@ -1696,19 +1744,21 @@ movePiece PROC
     ; checking if a piece is in nextPos
     ; Cl contains the piece we want to move
                                    mov   cl, board[bx]
-                                   mov   board[bx], 0d                       ; removing the piece from its currentPos on the
+                                   mov   board[bx], 0d                       ; removing the piece from its currentPos on the board
                                    cmp   cl, 0d                              ; checking if the player has taken a piece
                                    jnz   conitnue_movePiece
 
-    ;;; logic for if piece exists
+    ;;; logic for if piece exists (displaying it next to board)
 
     conitnue_movePiece:            
+    ;; preparing to write in nextPos
                                    pop   bx
                                    mov   board[bx], cl
 
                                    call  get_cell_colour
                                    call  draw_cell
 
+    ;; returning original values to the used registers
                                    pop   bx
                                    pop   di
                                    pop   si
@@ -1717,30 +1767,17 @@ movePiece PROC
                                    call  draw_cell
 
 
-    move_piece_end:                
+    movePiece_end:                 
                                    mov   currSelectedPos_DI, -1d
                                    mov   currSelectedPos_SI, -1d
                                    ret
 movePiece ENDP
 
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
-    ;PROCEDURES USED IN THE GAME SCREEN:
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-game_window proc
-
-                                   call  init_board                          ;Initialize board
-                                   call  init_video_mode                     ;Prepare video mode
-
-    ;Clear the screen, in preparation for drawing the board
-                                   mov   al, 14h                             ;The color by which we will clear the screen (light gray).
-                                   call  clear_screen
-
-                                   call  draw_board                          ;Draw the board
-                         
+getPlayerSelection PROC
     ;Listen for keyboard press and change its colour
-                                   mov   si, 0
-                                   mov   di, 7d
+                                   cmp   currSelectedPos_DI, -1d
+                                   jnz   getUserSelection_end
 
     start:                         
                                    
@@ -1767,7 +1804,7 @@ game_window proc
                                    jmp   breathe
     
     highlight:                     
-                                   mov   al, highlighted_cell_color
+                                   mov   al, hover_cell_color
                                    jmp   draw
 
     darken:                        
@@ -1782,12 +1819,23 @@ game_window proc
     ; Before moving hover, check if a piece is selected
     ; If one is selected, show all possible moves
                                    cmp   ah, 10h
-                                   jz    show_possible_moves
+                                   jz    getUserSelection_end
 
                                    call  hover
 
                                    jmp   start
 
+    getUserSelection_end:          
+                                   mov   currSelectedPos_SI, si
+                                   mov   currSelectedPos_DI, di
+                                   ret
+getPlayerSelection ENDP
+
+
+
+moveInSelections PROC
+                                   cmp   currSelectedPos_DI, -1d
+                                   jz    moveInSelections_end
     show_possible_moves:           
     ; don't select an empty cell
                                    call  getPos
@@ -1803,7 +1851,8 @@ game_window proc
                                    mov   al, highlighted_cell_color
                                    call  draw_cell
                           
-
+    ; moving the color that will be used for selection
+                                   mov   al, hover_cell_color
 
                                    cmp   board[bx], -1
                                    jz    white_pawn
@@ -1822,13 +1871,11 @@ game_window proc
     get_pawn_positions:            
                                    call  getPawnMoves
                                    jmp   start_selection
-    
 
 
                           
     start_selection:               
                                    call  getFirstSelection
-
 
                           
     same_selection:                
@@ -1856,15 +1903,15 @@ game_window proc
 
     ; a piece wants to be moved
                                    cmp   si, currSelectedPos_SI
-                                   jnz   move_piece
+                                   jnz   moveInSelections_end
 
                                    cmp   di, currSelectedPos_DI
-                                   jnz   move_piece
+                                   jnz   moveInSelections_end
 
 
     ; deselects the cell it is curr on (will be modified)
                                    call  removeSelections
-                                   jmp   far ptr start
+                                   jmp   moveInSelections_end
 
     go_to_next_selection:          
     ; save current positions
@@ -1876,11 +1923,36 @@ game_window proc
                                    call  drawBorder
 
                                    jmp   same_selection
-                          
-    move_piece:                    
+    moveInSelections_end:          
+                                   ret
+moveInSelections ENDP
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;PROCEDURES USED IN THE GAME SCREEN:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+game_window proc
+
+                                   call  init_board                          ;Initialize board
+                                   call  init_video_mode                     ;Prepare video mode
+
+    ;Clear the screen, in preparation for drawing the board
+                                   mov   al, 14h                             ;The color by which we will clear the screen (light gray).
+                                   call  clear_screen
+
+                                   call  draw_board                          ;Draw the board
+                         
+                                   mov   si, 3d
+                                   mov   di, 6d
+
+    play_chess:                    
+                                   call  getPlayerSelection
+    
+                                   call  moveInSelections
+                        
                                    call  movePiece
                                    
-                                   jmp   far ptr start
+                                   jmp   play_chess
 
                                    ret
 

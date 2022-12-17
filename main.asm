@@ -57,8 +57,8 @@
 
     selectedPiecePos         dw      ?
 
-    possibleMoves_DI         dw      8 Dup(7 Dup(-1))
-    possibleMoves_SI         dw      8 Dup(7 Dup(-1))
+    possibleMoves_DI         dw      8 Dup(8 Dup(-1))
+    possibleMoves_SI         dw      8 Dup(8 Dup(-1))
 
     ;           ---------------------------------------------------------------------------> Possible moves in that direction
     ;           |   Up          (possibleMoves_DI[0],possibleMoves_SI[0]) .  .  .  .  .  .  .  .  .  .  .
@@ -866,7 +866,10 @@ draw_piece endp
 draw_cell proc
 
     ;Adjust SI and DI for the margins
+                                   push  ax
                                    push  bx
+                                   push  cx
+                                   push  dx
                                    push  si
                                    push  di
                                    add   si, margin_x
@@ -950,7 +953,10 @@ draw_cell proc
 
     ;Exiting
     finish_draw_cell:              
+                                   pop   dx
+                                   pop   cx
                                    pop   bx
+                                   pop   ax
 
                                    ret
 
@@ -1016,12 +1022,10 @@ recordMove proc
                                    push  bx
                                    push  ax
 
-                                   mov   al, directionPtr
-                                   mov   bl, 14d                             ; directionPtr * 7 * 2
-                                   mov   bh, 0
 
-                                   mul   bl
-                                   mov   bl, al
+                                   mov bh, 0
+                                   mov bl, directionPtr
+                                   shl bx, 4d
 
                                    shl   currMovePtr, 1
                                    add   bl, currMovePtr
@@ -1047,12 +1051,10 @@ getNextPossibleMove proc
                                    push  bx
                                    push  ax
 
-                                   mov   al, directionPtr
-                                   mov   bl, 14d                             ; directionPtr * 7 * 2
-                                   mov   bh, 0
 
-                                   mul   bl
-                                   mov   bl, al
+                                   mov bh, 0
+                                   mov bl, directionPtr
+                                   shl bx, 4d
 
                                    shl   currMovePtr, 1
                                    add   bl, currMovePtr
@@ -1073,10 +1075,6 @@ getNextPossibleMove endp
     ; Removes previously selected cells (if any)
 removeSelections proc
 
-                                   push  si
-                                   push  di
-
-
                                    mov   directionPtr, 0d
                           
     removeSelections_loop1:        
@@ -1089,7 +1087,7 @@ removeSelections proc
                                    call  recordMove
                                    inc   currMovePtr
 
-                                   cmp   currMovePtr, 7d
+                                   cmp   currMovePtr, 8d
                                    jz    removeSelections_loop2_break
 
                                    call  getNextPossibleMove
@@ -1111,11 +1109,14 @@ removeSelections proc
                                    mov   directionPtr, 0d
                                    mov   currMovePtr, 0d
 
+                                   mov   si, currSelectedPos_SI
+                                   mov   di, currSelectedPos_DI
+                                   mov   al, hover_cell_color
+                                   call  draw_cell
+
+
                                    mov   currSelectedPos_DI, -1d
                                    mov   currSelectedPos_SI, -1d
-
-                                   pop   di
-                                   pop   si
 
                                    ret
 
@@ -1177,10 +1178,13 @@ hover proc
                                    push  di
                                    mov   si, cx
                                    mov   di, dx
-                                   mov   al, temp_color
+                                   call get_cell_colour
                                    call  draw_cell
+    ; Draw hover cell
                                    pop   di
                                    pop   si
+                                   mov al, hover_cell_color
+                                   call draw_cell
 
     dont_move:                     
                                    pop   dx
@@ -1377,6 +1381,189 @@ getPawnMoves proc
                                    ret
 
 getPawnMoves endp
+
+
+getPossibleDiagonalMoves  PROC
+                                  push  dx
+                                  push  bp
+                                  push  cx
+                                  push  ax
+                                  push  si
+                                  push  di
+
+                                  mov  ch, 2     ;; no of times we will neg si
+
+                                  mov  dx, 1d    ;; step for si
+                                  mov  bp, -1d    ;; step for di
+
+                                  mov directionPtr, 1d
+                                  mov currMovePtr, 1d
+
+
+            
+        getPossibleDiagonalMoves_l1:
+                                  mov  cl, 2d
+                                  
+            getPossibleDiagonalMoves_l2:
+                                        add     si, dx
+                                        add     di, bp
+
+                                        cmp     si, 8d
+                                        jz      getPossibleDiagonalMoves_l2_break2
+                                        
+                                        cmp     di, 8d
+                                        jz      getPossibleDiagonalMoves_l2_break2
+                                        
+                                        cmp     si, -1d
+                                        jz      getPossibleDiagonalMoves_l2_break2
+                                        
+                                        cmp     di, -1d
+                                        jz      getPossibleDiagonalMoves_l2_break2
+
+                                        call    checkForEnemyPiece
+                                        jnz     getPossibleDiagonalMoves_l2_break
+
+                                        call    recordMove
+                                        inc     currMovePtr
+
+                                        mov     al, hover_cell_color
+                                        call    draw_cell
+                                        jmp     getPossibleDiagonalMoves_l2
+
+        getPossibleDiagonalMoves_l2_break:
+                                        jnc     getPossibleDiagonalMoves_l2_break2
+                                        
+                                        call    recordMove
+                                         
+
+                                        mov     al, possible_take_cell_color
+                                        call    draw_cell
+        getPossibleDiagonalMoves_l2_break2:  
+                            add     directionPtr, 2d 
+                            mov     currMovePtr, 1d 
+
+                            mov si, currSelectedPos_SI
+                            mov di, currSelectedPos_DI
+
+                            neg     bp  
+                            dec     cl
+                            jnz     getPossibleDiagonalMoves_l2        
+
+                neg     dx
+                neg     bp
+                dec     ch
+                jnz     getPossibleDiagonalMoves_l1
+
+
+
+getPossibleDiagonalMoves_end:
+                                  pop   di
+                                  pop   si
+                                  pop   ax
+                                  pop   cx
+                                  pop   bp
+                                  pop   dx
+
+                                  ret
+    
+getPossibleDiagonalMoves ENDP
+
+
+
+
+getPossibleVerticalHorizontalMoves PROC
+
+                                  push  dx
+                                  push  bp
+                                  push  cx
+                                  push  ax
+                                  push  si
+                                  push  di
+
+                                  mov  ch, 2     ;; no of times we will neg si
+
+                                  mov  dx, 0d    ;; step for si
+                                  mov  bp, -1d    ;; step for di
+
+                                  mov directionPtr, 0d
+                                  mov currMovePtr, 1d
+
+
+            
+        getPossibleVerticalHorizontalMoves_l1:
+                                  mov  cl, 2d
+                                  
+            getPossibleVerticalHorizontalMoves_l2:
+                                        add     si, dx
+                                        add     di, bp
+
+                                        cmp     si, 8d
+                                        jz      getPossibleVerticalHorizontalMoves_l2_break2
+                                        
+                                        cmp     di, 8d
+                                        jz      getPossibleVerticalHorizontalMoves_l2_break2
+                                        
+                                        cmp     si, -1d
+                                        jz      getPossibleVerticalHorizontalMoves_l2_break2
+                                        
+                                        cmp     di, -1d
+                                        jz      getPossibleVerticalHorizontalMoves_l2_break2
+
+                                        call    checkForEnemyPiece
+                                        jnz     getPossibleVerticalHorizontalMoves_l2_break
+
+                                        call    recordMove
+                                        inc     currMovePtr
+
+                                        mov     al, hover_cell_color
+                                        call    draw_cell
+                                        jmp     getPossibleVerticalHorizontalMoves_l2
+
+        getPossibleVerticalHorizontalMoves_l2_break:
+                                        jnc     getPossibleVerticalHorizontalMoves_l2_break2
+                                        
+                                        call    recordMove
+                                         
+
+                                        mov     al, possible_take_cell_color
+                                        call    draw_cell
+        getPossibleVerticalHorizontalMoves_l2_break2:  
+                            add     directionPtr, 2d 
+                            mov     currMovePtr, 1d 
+
+                            mov si, currSelectedPos_SI
+                            mov di, currSelectedPos_DI
+
+                            neg     bp 
+                            xchg    bp, dx 
+                            dec     cl
+                            jnz     getPossibleVerticalHorizontalMoves_l2        
+
+                
+                dec     ch
+                jnz     getPossibleVerticalHorizontalMoves_l1
+
+
+
+getPossibleVerticalHorizontalMoves_end:
+                                  pop   di
+                                  pop   si
+                                  pop   ax
+                                  pop   cx
+                                  pop   bp
+                                  pop   dx
+
+                                  ret
+    
+getPossibleVerticalHorizontalMoves ENDP
+        
+
+getQueenMoves PROC
+
+            call getPossibleVerticalHorizontalMoves
+            call getPossibleDiagonalMoves
+    
+getQueenMoves ENDP
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1636,7 +1823,7 @@ goToNextSelection proc
 
 
     W:                             
-                                   cmp   currMovePtr, 6
+                                   cmp   currMovePtr, 7
                                    jz    doNotChangeSelection
 
                                    inc   currMovePtr
@@ -1721,7 +1908,10 @@ goToNextSelection endp
     ;moves the piece according to DI,SI (nextPos) & currSelectedPos_DI,currSelectedPos_SI (current pos)
 movePiece PROC
                                    cmp   currSelectedPos_DI, -1d
-                                   jz    movePiece_end
+                                   jnz    start_movePiece
+                                   ret
+        
+    start_movePiece:
     ;; preserving the positions we want to write to
                                    push  si
                                    push  di
@@ -1734,9 +1924,7 @@ movePiece PROC
                                    push  bx
 
     ; getting the pos that we will read from
-                                   mov   si, currSelectedPos_SI
-                                   mov   di, currSelectedPos_DI
-
+                                   
                                    call  removeSelections
 
                                    call  getPos
@@ -1763,7 +1951,7 @@ movePiece PROC
                                    pop   di
                                    pop   si
 
-                                   call  get_cell_colour
+                                   mov al, hover_cell_color
                                    call  draw_cell
 
 
@@ -1777,39 +1965,34 @@ movePiece ENDP
 getPlayerSelection PROC
     ;Listen for keyboard press and change its colour
                                    cmp   currSelectedPos_DI, -1d
-                                   jnz   getUserSelection_end
+                                   jz   start
+                                   ret
 
     start:                         
                                    
                                    call  get_cell_colour
                                    mov   temp_color, al
-                                   cmp   ax,ax
 
-    breathe:                       
-                                   cmp   al, temp_color
-                                   jz    highlight
-                                   jmp   darken
 
     draw:                          
-                                   call  draw_cell
+                                ;    mov al, hover_cell_color
+                                ;    call  draw_cell
                           
-                                   mov   delay_loops, 10d
-                                   call  delay
 
     ; Checks for keyboard input
                                    mov   ah, 1
                                    int   16h
 
                                    jnz   check
-                                   jmp   breathe
+                                   jmp   getUserSelection_no_selection_end
     
-    highlight:                     
-                                   mov   al, hover_cell_color
-                                   jmp   draw
+    ; highlight:                     
+    ;                                mov   al, hover_cell_color
+    ;                                jmp   draw
 
-    darken:                        
-                                   mov   al, temp_color
-                                   jmp   draw
+    ; darken:                        
+    ;                                mov   al, temp_color
+    ;                                jmp   draw
 
     check:                         
     ;Consumes keyboard buffer
@@ -1819,15 +2002,16 @@ getPlayerSelection PROC
     ; Before moving hover, check if a piece is selected
     ; If one is selected, show all possible moves
                                    cmp   ah, 10h
-                                   jz    getUserSelection_end
+                                   jz    getUserSelection_selection_end
 
                                    call  hover
 
-                                   jmp   start
+                                   jmp   getUserSelection_no_selection_end
 
-    getUserSelection_end:          
+    getUserSelection_selection_end:          
                                    mov   currSelectedPos_SI, si
                                    mov   currSelectedPos_DI, di
+    getUserSelection_no_selection_end:                                
                                    ret
 getPlayerSelection ENDP
 
@@ -1835,14 +2019,19 @@ getPlayerSelection ENDP
 
 moveInSelections PROC
                                    cmp   currSelectedPos_DI, -1d
-                                   jz    moveInSelections_end
+                                   jnz    show_possible_moves
+                                   ret
     show_possible_moves:           
     ; don't select an empty cell
                                    call  getPos
 
                                    cmp   board[bx], 0d
-                                   jz    breathe
+                                   jnz   moveInSelections_continue
+                                   mov   currSelectedPos_DI, -1d
+                                   mov   currSelectedPos_DI, -1d
+                                   ret
 
+    moveInSelections_continue:
                                    mov   currSelectedPos_DI, di
                                    mov   currSelectedPos_SI, si
                           
@@ -1854,23 +2043,46 @@ moveInSelections PROC
     ; moving the color that will be used for selection
                                    mov   al, hover_cell_color
 
-                                   cmp   board[bx], -1
-                                   jz    white_pawn
-                                   cmp   board[bx], 1
-                                   jz    black_pawn
+                                   mov ah, board[bx]
+                                    
+                                   cmp ah, 0
+                                   jl  white_piece
+                                   mov walker, 1d
+                                   neg ah
+                                   jmp determine_piece_type
+
+        white_piece:               mov walker, -1d
+                                   
+        determine_piece_type:
+                                   cmp   ah, -1
+                                   jz    pawn
+                                   
+                                   cmp   ah, -3d
+                                   jz    bishop
+
+                                   cmp   ah, -4d
+                                   jz    rook
+
+                                   cmp   ah, -5d
+                                   jz    queen
 
                                    jmp   start_selection
                           
-    black_pawn:                    
-                                   mov   walker, 1
-                                   jmp   get_pawn_positions
 
-    white_pawn:                    
-                                   mov   walker, -1
-
-    get_pawn_positions:            
+    pawn:            
                                    call  getPawnMoves
                                    jmp   start_selection
+
+    bishop:                        
+                                   call getPossibleDiagonalMoves
+                                   jmp  start_selection
+
+    rook:                          call getPossibleVerticalHorizontalMoves
+                                   jmp  start_selection
+
+    queen:                        
+                                   call getQueenMoves
+                                   jmp  start_selection
 
 
                           
@@ -1944,6 +2156,8 @@ game_window proc
                          
                                    mov   si, 3d
                                    mov   di, 6d
+                                   mov al, hover_cell_color
+                                   call draw_cell
 
     play_chess:                    
                                    call  getPlayerSelection

@@ -73,8 +73,8 @@
     ;       Directions
 
     ; Keeps track of the possible move that the player is currently selecting and are used to write the moves to memory in "recordMove"
-    directionPtr             db      0d
-    currMovePtr              db      0d
+    directionPtr             db      -1d
+    currMovePtr              db      -1d
 
     ; the position (containing a piece) that the player is currently selecting
     currSelectedPos_SI       dw      -1d
@@ -1106,8 +1106,8 @@ removeSelections proc
                                    jnz   removeSelections_loop1
 
 
-                                   mov   directionPtr, 0d
-                                   mov   currMovePtr, 0d
+                                   mov   directionPtr, -1d
+                                   mov   currMovePtr, -1d
 
                                    mov   si, currSelectedPos_SI
                                    mov   di, currSelectedPos_DI
@@ -1972,29 +1972,19 @@ getPlayerSelection PROC
                                    
                                    call  get_cell_colour
                                    mov   temp_color, al
-
-
-    draw:                          
-                                ;    mov al, hover_cell_color
-                                ;    call  draw_cell
                           
 
     ; Checks for keyboard input
+                                   cmp ax, ax
+
                                    mov   ah, 1
                                    int   16h
 
-                                   jnz   check
-                                   jmp   getUserSelection_no_selection_end
+                                   jnz   getPlayerSelection_checkKeyboardInput
+                                   jmp   getPlayerSelection_no_selection_end
     
-    ; highlight:                     
-    ;                                mov   al, hover_cell_color
-    ;                                jmp   draw
 
-    ; darken:                        
-    ;                                mov   al, temp_color
-    ;                                jmp   draw
-
-    check:                         
+    getPlayerSelection_checkKeyboardInput:                         
     ;Consumes keyboard buffer
                                    mov   ah, 0
                                    int   16h
@@ -2002,16 +1992,17 @@ getPlayerSelection PROC
     ; Before moving hover, check if a piece is selected
     ; If one is selected, show all possible moves
                                    cmp   ah, 10h
-                                   jz    getUserSelection_selection_end
+                                   jz    getPlayerSelection_selection_end
 
                                    call  hover
 
-                                   jmp   getUserSelection_no_selection_end
+                                   jmp   getPlayerSelection_no_selection_end
 
-    getUserSelection_selection_end:          
+    getPlayerSelection_selection_end:          
                                    mov   currSelectedPos_SI, si
                                    mov   currSelectedPos_DI, di
-    getUserSelection_no_selection_end:                                
+
+    getPlayerSelection_no_selection_end:                                
                                    ret
 getPlayerSelection ENDP
 
@@ -2019,8 +2010,27 @@ getPlayerSelection ENDP
 
 moveInSelections PROC
                                    cmp   currSelectedPos_DI, -1d
-                                   jnz    show_possible_moves
+                                   jnz    showMovesIfNotShown
                                    ret
+
+showMovesIfNotShown:                
+                                   cmp directionPtr, -1d
+                                   jnz moveInSelections_checkKeyboardInput
+                                   jmp show_possible_moves
+
+moveInSelections_checkKeyboardInput:                                   
+
+                                   cmp   ax, ax
+                          
+                                   mov   ah, 1
+                                   int   16h
+
+                                   jz   moveInSelections_go_to_end
+                                   jmp  change_event
+moveInSelections_go_to_end:
+                                   jmp   moveInSelections_end
+                                   
+
     show_possible_moves:           
     ; don't select an empty cell
                                    call  getPos
@@ -2032,8 +2042,8 @@ moveInSelections PROC
                                    ret
 
     moveInSelections_continue:
-                                   mov   currSelectedPos_DI, di
-                                   mov   currSelectedPos_SI, si
+                                   mov   directionPtr, 0d
+                                   mov   currMovePtr, 0d
                           
                                    call  recordCurrPos
                           
@@ -2088,16 +2098,7 @@ moveInSelections PROC
                           
     start_selection:               
                                    call  getFirstSelection
-
-                          
-    same_selection:                
-                                   cmp   ax, ax
-                          
-                                   mov   ah, 1
-                                   int   16h
-
-                                   jnz   change_event
-                                   jmp   same_selection
+                                  
 
 
     change_event:                  
@@ -2115,10 +2116,10 @@ moveInSelections PROC
 
     ; a piece wants to be moved
                                    cmp   si, currSelectedPos_SI
-                                   jnz   moveInSelections_end
+                                   jnz   moveSelections_moveSelectedPiece
 
                                    cmp   di, currSelectedPos_DI
-                                   jnz   moveInSelections_end
+                                   jnz   moveSelections_moveSelectedPiece
 
 
     ; deselects the cell it is curr on (will be modified)
@@ -2134,8 +2135,11 @@ moveInSelections PROC
                                    mov   al, 00h
                                    call  drawBorder
 
-                                   jmp   same_selection
     moveInSelections_end:          
+                                   ret
+
+    moveSelections_moveSelectedPiece:
+                                   call movePiece
                                    ret
 moveInSelections ENDP
 
@@ -2163,9 +2167,7 @@ game_window proc
                                    call  getPlayerSelection
     
                                    call  moveInSelections
-                        
-                                   call  movePiece
-                                   
+                                                           
                                    jmp   play_chess
 
                                    ret

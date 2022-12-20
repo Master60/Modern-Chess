@@ -497,6 +497,8 @@
                              db      1,1,1,1,1,1,1,1,1,1,1,1,1
                              db      1,1,1,1,1,1,1,1,1,1,1,1,1
 
+    temp_sp                  dw      ?
+
 .code
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -561,6 +563,8 @@ clear_keyboard_buffer endp
 draw_letters proc
 
                                                  pusha
+
+                                                 mov   temp_sp, sp
 
                                                  mov   di, cell_size
                                                  mov   si, 0
@@ -710,8 +714,11 @@ draw_letters proc
 
     end_draw_letters_2:                          
 
+                                                 mov   sp, temp_sp
 
                                                  popa
+
+                                                 mov   temp_sp, di
 
                                                  ret
 
@@ -722,6 +729,8 @@ draw_letters endp
 draw_numbers proc
 
                                                  pusha
+
+                                                 mov   temp_sp, sp
 
                                                  mov   di, cell_size
                                                  mov   si, 0
@@ -800,35 +809,37 @@ draw_numbers proc
 
                                                  mov   ax, 0
                                                  mov   ax, margin_x
+                                                 add   ax, 8
                                                  mul   di
-                                                 add   ax, 31d
+                                                 add   ax, 6
+                                                 add   ax, 13d
                                                  mov   bp, ax
 
                                                  mov   ax, 0
                                                  mov   ax, margin_y
                                                  mul   di
-                                                 sub   ax, 4
-                                                 sub   ax, 19d
+                                                 add   ax, 31d
+                                                 add   ax, 19d
                                                  mov   sp, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_x
+                                                 add   ax, 8
                                                  mul   di
-                                                 add   ax, 31d
-                                                 add   ax, 13d
+                                                 add   ax, 6
                                                  mov   bx, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_x
+                                                 add   ax, 8
                                                  mul   di
-                                                 add   ax, 31d
-                                                 add   ax, 13d
+                                                 add   ax, 6
                                                  mov   cx, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_y
                                                  mul   di
-                                                 sub   ax, 4
+                                                 add   ax, 31d
                                                  mov   dx, ax
 
                                                  mov   al, 3
@@ -868,6 +879,7 @@ draw_numbers proc
 
     end_draw_numbers_2:                          
 
+                                                 mov   sp, temp_sp
 
                                                  popa
 
@@ -2830,8 +2842,7 @@ test_window proc
                                                  call  draw_letters
                                                  call  draw_numbers
 
-                                                 mov   ah, 0
-                                                 int   16h
+                                                 hlt
 
                                                  ret
 
@@ -2852,7 +2863,7 @@ main proc far
                                                  mov   dx, offset pieces_wd
                                                  int   21h
 
-                                                 call  game_window
+                                                 call  test_window
 
 main endp
 end main

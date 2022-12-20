@@ -57,8 +57,8 @@
 
     selectedPiecePos         dw      ?
 
-    possibleMoves_DI         dw      8 Dup(8 Dup(-1))
-    possibleMoves_SI         dw      8 Dup(8 Dup(-1))
+    possibleMoves_DI         dw      8 Dup(8 Dup(-1d))
+    possibleMoves_SI         dw      8 Dup(8 Dup(-1d))
 
     ;           ---------------------------------------------------------------------------> Possible moves in that direction
     ;           |   Up          (possibleMoves_DI[0],possibleMoves_SI[0]) .  .  .  .  .  .  .  .  .  .  .
@@ -82,6 +82,14 @@
 
     ; Step unit (-1 for white & 1 for black)
     walker                   dw      ?
+
+    ; Navigation Buttons
+    Left_Arrow      db  4Bh
+    Right_Arrow     db  4Dh
+    Up_Arrow        db  48h
+    Down_Arrow      db  50h
+
+    Enter_Key       db  28d           
 
     ;The size of each cell on the chessboard.
     cell_size                dw      75d
@@ -483,7 +491,7 @@ init_board proc
     init_pawns:                    
                                    mov   [bx], byte ptr 1
                                    add   bx, 40d
-                                   mov   [bx], byte ptr -1
+                                   mov   [bx], byte ptr -1d
                                    sub   bx, 39d
                                    loop  init_pawns
 
@@ -1091,7 +1099,7 @@ removeSelections proc
                                    jz    removeSelections_loop2_break
 
                                    call  getNextPossibleMove
-                                   cmp   si, -1
+                                   cmp   si, -1d
                                    jz    removeSelections_loop2_break
 
                                    call  get_cell_colour
@@ -1134,16 +1142,16 @@ hover proc
                                    mov   cx, si
                                    mov   dx, di
     
-                                   cmp   ah, 1Eh
+                                   cmp   ah, Left_Arrow
                                    jz    move_left
 
-                                   cmp   ah, 20h
+                                   cmp   ah, Right_Arrow
                                    jz    move_right
 
-                                   cmp   ah, 11h
+                                   cmp   ah, Up_Arrow
                                    jz    move_up
 
-                                   cmp   ah, 1Fh
+                                   cmp   ah, Down_Arrow
                                    jz    move_down
 
                                    jmp   dont_move
@@ -1275,7 +1283,7 @@ getPawnMoves proc
                                    push  di
 
                                   
-                                   cmp   walker, -1
+                                   cmp   walker, -1d
                                    jnz   getPawnMoves_black
 
     getPawnMoves_white:            
@@ -1583,12 +1591,11 @@ checkFirstAvailableMove proc
                                    cmp   si, -1d
                                    jnz   found_first_available_position
                                    inc   directionPtr
-                                   cmp   directionPtr, 8d
-                                   jnz   first_available_direction
+                                   loop first_available_direction
 
-    ; to let us know if there aren't any available positions
-                                   mov   directionPtr, -1d
-                                   mov   currMovePtr, -1d
+    ; if no moves are available, return currSelectedPos
+                                   mov   directionPtr, 0d
+                                   mov   currMovePtr, 0d
 
     found_first_available_position:
                                    pop   cx
@@ -1725,8 +1732,7 @@ drawBorder endp
 getFirstSelection proc
 
                                    call  checkFirstAvailableMove
-                                   cmp   directionPtr, -1d
-                                   jz    getFirstSelection_end
+   
                           
     ; to move the si, di corresponding to directionPtr & currMovPtr that we got from checkFirstAvailableMove
                                    call  getNextPossibleMove
@@ -1760,16 +1766,16 @@ goToNextSelection proc
                                    mov   bl, currMovePtr
 
     ; Checking which key was pressed
-                                   cmp   ah, 1Eh
+                                   cmp   ah, Left_Arrow
                                    jz    A
 
-                                   cmp   ah, 20h
+                                   cmp   ah, Right_Arrow
                                    jz    D
 
-                                   cmp   ah, 11h
+                                   cmp   ah, Up_Arrow
                                    jz    W
 
-                                   cmp   ah, 1Fh
+                                   cmp   ah, Down_Arrow
                                    jz    S
 
                                    jmp   doNotChangeSelection
@@ -1777,8 +1783,8 @@ goToNextSelection proc
     ; a rough implementation of (i+1)%n for both A & D
     A:                             
                                    mov   currMovePtr, 1d
-                                   mov   cx, 7d
-
+                                   mov   cx, 8d
+                                  
     aLoop:                         
                                    dec   directionPtr
                                    cmp   directionPtr, -1d
@@ -1795,6 +1801,13 @@ goToNextSelection proc
                                    jmp   doNotChangeSelection
 
     aLoopReset:                    
+                                   push dx
+                                   push ax
+                                   mov dl, 'h'
+                                   mov ah, 02h
+                                   int 21h
+                                   pop ax
+                                   pop dx
                                    mov   directionPtr, 7d
                                    jmp   continueLoopA
 
@@ -1831,6 +1844,10 @@ goToNextSelection proc
     ; if a move actually exists, change selection
                                    call  getNextPossibleMove
                                    cmp   si, -1d
+                                ;    mov dx, si
+                                ;    add dl, '1'
+                                ;    mov ah,2
+                                ;    int 21h
                                    jnz   changeSelection
                           
                                    dec   currMovePtr
@@ -1991,7 +2008,7 @@ getPlayerSelection PROC
 
     ; Before moving hover, check if a piece is selected
     ; If one is selected, show all possible moves
-                                   cmp   ah, 10h
+                                   cmp   ah, Enter_Key
                                    jz    getPlayerSelection_selection_end
 
                                    call  hover
@@ -2097,7 +2114,9 @@ moveInSelections_go_to_end:
 
                           
     start_selection:               
+                                ;; returns first possible move / currSelectedPos if no moves are available
                                    call  getFirstSelection
+                                   ret
                                   
 
 
@@ -2110,7 +2129,7 @@ moveInSelections_go_to_end:
     ; Before changing move, checks if:
 
     ; another key other than Q is pressed
-                                   cmp   ah, 10h
+                                   cmp   ah, Enter_Key
                                    jnz   go_to_next_selection
 
 

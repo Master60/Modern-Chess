@@ -111,12 +111,16 @@
 
     ;Unique reference number that will be assigned to files when accessing them. This variable is used when calling interrupts to read from the bitmap files.
     file_handle              dw      0
+
+    image_size               dw      1280d
     
     ;The number of bytes in each image.
     file_size                dw      5776d
 
     ;The dimensions of each image.
     file_width               dw      76d
+
+    bitmap_background_buffer db      1280d
 
     ;Reading a bitmap image will be done row by row (each row contains 76 bytes).
     ;Hence, a buffer of size 76 is used to store the temporary data being read.
@@ -1305,6 +1309,24 @@ pass_file_header endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+load_background proc
+
+                                                 pusha
+
+                                                 mov   bx, file_handle
+                                                 mov   ah, 3fh
+                                                 mov   cx, image_size
+                                                 mov   dx, offset bitmap_background_buffer
+                                                 int   21h
+
+                                                 popa
+
+                                                 ret
+
+load_background endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
     ;loads the image of a piece, with its picture stored as a bitmap file.
     ;The image will be placed at the cell with row number stored in DI and column number stored in SI.
     ;Note: rows/columns range from 0 to 7, since the chess board has 8 rows and 8 columns.
@@ -1385,6 +1407,73 @@ close_file endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+draw_cell_border proc
+
+                                                 pusha
+
+                                                 mov   ax, 0
+                                                 mov   bx, 0
+                                                 mov   cx, 0
+                                                 mov   dx, 0
+
+                                                 inc   di
+                                                 inc   si
+
+                                                 mov   bx, cell_size
+                                                 mov   cx, si
+                                                 mov   dx, di
+
+                                                 mov   ah, 0ch
+                                                 mov   al, 00h
+
+                                                 add   bx, cx
+    line1:                                       
+                                                 
+                                                 int   10h
+                                                 inc   cx
+                                                 cmp   cx, bx
+                                                 jnz   line1
+
+
+                                                 sub   cx, cell_size
+                                                 add   dx, cell_size
+                                                 dec   dx
+    line2:                                       
+                                                 int   10h
+                                                 inc   cx
+                                                 cmp   cx, bx
+                                                 jnz   line2
+
+                                                 inc   dx
+                                                 sub   cx, cell_size
+                                                 sub   dx, cell_size
+                                                 mov   bx, dx
+                                                 add   bx, cell_size
+    line3:                                       
+                                                 int   10h
+                                                 inc   dx
+                                                 cmp   dx, bx
+                                                 jnz   line3
+
+
+                                                 add   cx, cell_size
+                                                 dec   cx
+                                                 sub   dx, cell_size
+    line4:                                       
+                                                 int   10h
+                                                 inc   dx
+                                                 cmp   dx, bx
+                                                 jnz   line4
+
+
+                                                 popa
+
+                                                 ret
+
+draw_cell_border endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
     ;Draws a piece
 draw_piece proc
 
@@ -1454,6 +1543,10 @@ draw_cell proc
                                                  dec   cx
                                                  cmp   cx, si
                                                  jnz   loop_x_cell
+
+
+                                                 call  draw_cell_border
+
 
     ;After drawing the cell, we now wish to draw the piece in the cell (if any).
 
@@ -2887,7 +2980,7 @@ main proc far
                                                  mov   dx, offset pieces_wd
                                                  int   21h
 
-                                                 call  game_window
+                                                 call  test_window
 
 main endp
 end main

@@ -2852,7 +2852,7 @@ main proc far
                                                  mov   dx, offset pieces_wd
                                                  int   21h
 
-                                                 call  test_window
+                                                 call  game_window
 
 main endp
 end main

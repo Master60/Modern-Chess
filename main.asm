@@ -1309,61 +1309,61 @@ pass_file_header endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-load_background proc
-
-                                                 pusha
-
-                                                 mov   bx, file_handle
-                                                 mov   ah, 3fh
-                                                 mov   cx, image_size
-                                                 mov   dx, offset bitmap_background_buffer
-                                                 int   21h
-                                                 mov   bx, offset bitmap_buffer
-                                                 add   bx, 1280d
-
-
-
-
-
-    ;Nested loops which print the bitmap image pixel by pixel
-                                                 mov   si, 1280d
-                                                 dec   si
-
-    loop_y_background:                           
-                                                 mov   di, 1280d
-                                                 dec   di
-
-    loop_x_background:                           
-
-    ;Load the color of the current pixel to AL, since AL stored the color when drawing a pixel using INT 10H
-                                                 mov   al, byte ptr [bx]
-                         
-    ;Draws a pixel at the position specified by CX and DX, with color stored in AL.
-                                                 push  bx
-                                                 mov   ah, 0ch
-                                                 mov   bl, 0
-                                                 mov   cx, di
-                                                 add   cx, 0
-                                                 mov   dx, si
-                                                 add   dx, 0
-                                                 int   10h
-                                                 pop   bx
-
-    continue_background_loop:                    
-    ;Go to the next pixel.
-                                                 dec   bx
-                                                 dec   di
-                                                 jnz   loop_x_background
-
-                                                 add   bx, 2561d
-                                                 dec   si
-                                                 jnz   loop_y_background
-
-                                                 popa
-
-                                                 ret
-
-load_background endp
+    ;load_background proc
+    ;
+    ;                                                pusha
+    ;
+    ;                                                mov   bx, file_handle
+    ;                                               mov   ah, 3fh
+    ;                                              mov   cx, image_size
+    ;                                             mov   dx, offset bitmap_background_buffer
+    ;                                            int   21h
+    ;                                           mov   bx, offset bitmap_buffer
+    ;                                          add   bx, 1280d
+    ;
+    ;
+    ;
+    ;
+    ;
+    ;   ;Nested loops which print the bitmap image pixel by pixel
+    ;                                               mov   si, 1280d
+    ;                                              dec   si
+    ;
+    ;   loop_y_background:
+    ;                                               mov   di, 1280d
+    ;                                              dec   di
+    ;
+    ;   loop_x_background:
+    ;
+    ;   ;Load the color of the current pixel to AL, since AL stored the color when drawing a pixel using INT 10H
+    ;                                               mov   al, byte ptr [bx]
+    ;
+    ;;Draws a pixel at the position specified by CX and DX, with color stored in AL.
+    ;                                            push  bx
+    ;                                           mov   ah, 0ch
+    ;                                          mov   bl, 0
+    ;                                         mov   cx, di
+    ;                                        add   cx, 0
+    ;                                       mov   dx, si
+    ;                                      add   dx, 0
+    ;                                     int   10h
+    ;                                    pop   bx
+    ;
+    ;   continue_background_loop:
+    ;  ;Go to the next pixel.
+    ;                                              dec   bx
+    ;                                             dec   di
+    ;                                            jnz   loop_x_background
+    ;
+    ;                                                add   bx, 2561d
+    ;                                               dec   si
+    ;                                              jnz   loop_y_background
+    ;
+    ;                                                popa
+    ;
+    ;                                                ret
+    ;
+    ;load_background endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1514,26 +1514,26 @@ draw_cell_border endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-draw_background proc
+    ;draw_background proc
+    ;
+    ;                                                pusha
+    ;
+    ;                                                add   si, 0                                           ;Adjust the column position using the x_margin.
+    ;                                               add   di, 0                                           ;Adjust the row position using the y_margin.
+    ;                                              push  si
+    ;                                             push  di
+    ;                                            call  get_file_handle                                 ;Prepare the file handle for other interrupts
+    ;                                           call  pass_file_header                                ;Move the file pointer to the starting point of the image
+    ;                                        pop   di
+    ;                                          pop   si
+    ;                                         call  load_background                                 ;Draw the image at the rows and columns specified by SI and DI.
+    ;                                       call  close_file                                      ;Close the file
+    ;
+    ;                                                popa
+    ;
+    ;                                                ret
 
-                                                 pusha
-
-                                                 add   si, 0                                           ;Adjust the column position using the x_margin.
-                                                 add   di, 0                                           ;Adjust the row position using the y_margin.
-                                                 push  si
-                                                 push  di
-                                                 call  get_file_handle                                 ;Prepare the file handle for other interrupts
-                                                 call  pass_file_header                                ;Move the file pointer to the starting point of the image
-                                                 pop   di
-                                                 pop   si
-                                                 call  load_background                                 ;Draw the image at the rows and columns specified by SI and DI.
-                                                 call  close_file                                      ;Close the file
-
-                                                 popa
-
-                                                 ret
-
-draw_background endp
+    ;draw_background endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -3014,7 +3014,7 @@ test_window proc
 
                                                  call  init_board
                                                  call  init_video_mode
-                                                 call  draw_background
+    ;call  draw_background
     ;mov   al, 14h
     ;call  clear_screen
     ;call  set_board_base

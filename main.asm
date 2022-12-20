@@ -1103,7 +1103,7 @@ clear_screen endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-set_board proc
+set_board_base proc
 
                                                  pusha
 
@@ -1111,35 +1111,40 @@ set_board proc
 
                                                  mov   ax, 0
                                                  mov   ax, margin_x
-                                                 add   ax, 9
+                                                 add   ax, 10
                                                  mul   bp
+                                                 add   ax, 25d
                                                  mov   di, ax
 
                                                  mov   ax, 0
                                                  mov   ax, margin_y
                                                  add   ax, 9
                                                  mul   bp
+                                                 add   ax, 25d
                                                  mov   si, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_x
-                                                 dec   ax
+                                                 sub   ax, 2
                                                  mul   bp
+                                                 sub   ax, 25d
                                                  mov   bx, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_x
-                                                 dec   ax
+                                                 sub   ax, 2
                                                  mul   bp
+                                                 sub   ax, 25d
                                                  mov   cx, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_y
                                                  dec   ax
                                                  mul   bp
+                                                 sub   ax, 25d
                                                  mov   dx, ax
 
-                                                 mov   al, 08d
+                                                 mov   al, 06d                                         ;08d light grey, 06d light brown, 0eh light yellow
                                                  mov   ah, 0ch
 
     board_y:                                     
@@ -1159,7 +1164,7 @@ set_board proc
 
                                                  ret
 
-set_board endp
+set_board_base endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1167,23 +1172,39 @@ set_border proc
 
                                                  pusha
 
-                                                 mov   cx, 276d
+                                                 mov   cx, 275d
                                                  mov   dx, 125d
-                                                 mov   al, 4
+                                                 mov   al, 0eh                                         ;4 dark brown
                                                  mov   ah, 0ch
 
     border_y:                                    
 
     border_x:                                    
-                                                 int   10h
                                                  inc   cx
+                                                 cmp   dx,151d
+                                                 jb    draw_border
+                                                 cmp   dx,750d
+                                                 ja    draw_border
+                                                 cmp   cx,301d
+                                                 jb    draw_border
+                                                 cmp   cx,900d
+                                                 ja    draw_border
+    continue_border:                             
                                                  cmp   cx, 925d
                                                  jnz   border_x
 
-                                                 mov   cx, 276d
+                                                 mov   cx, 275d
                                                  inc   dx
                                                  cmp   dx, 775d
                                                  jnz   border_y
+
+                                                 jmp   end_border
+
+    draw_border:                                 
+                                                 int   10h
+                                                 jmp   continue_border
+
+    end_border:                                  
 
                                                  popa
 
@@ -2839,9 +2860,9 @@ test_window proc
                                                  call  init_video_mode
                                                  mov   al, 14h
                                                  call  clear_screen
-                                                 call  set_board
-                                                 call  set_border
+                                                 call  set_board_base
                                                  call  draw_board
+                                                 call  set_border
                                                  call  draw_letters
                                                  call  draw_numbers
 

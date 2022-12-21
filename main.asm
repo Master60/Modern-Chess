@@ -95,7 +95,7 @@
     cell_size                dw      75d
 
     ;Horizontal margin is set to 4 cells
-    margin_x                 dw      4
+    margin_x                 dw      2
 
     ;Vertical margin is set to 2 cells (This might be altered later, to clear some space for chatting).
     margin_y                 dw      2
@@ -177,6 +177,11 @@
                              dw      blackRook_file
                              dw      blackQueen_file
                              dw      blackKing_file
+
+    piece_to_draw            db      0
+    current_captured_piece   db      0
+    captured_pieces_white    db      16 dup(0)
+    captured_pieces_black    db      16 dup(0)
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;DEFINING LETTERS AND NUMBERS:
@@ -1550,6 +1555,32 @@ draw_piece proc
 
                                                  pusha
 
+                                                 cmp   piece_to_draw, 0
+    ;If the current element in the board array contains 0, we draw no pieces.
+    ;If it contains a negative value, we draw a white piece.
+    ;If it contains a positive value, we draw a black piece.
+                                                 je    finish_draw_piece
+                                                 jl    draw_white_piece
+
+    ;Drawing a black piece
+    draw_black_piece:                            
+                                                 mov   bl, piece_to_draw
+                                                 shl   bl, 1
+
+    ;Move the offset of the file we wish to access and draw to dx
+                                                 mov   dx, word ptr [black_pieces + bx]
+                                                 jmp   load_and_draw_piece
+
+    ;Drawing a white piece
+    draw_white_piece:                            
+                                                 mov   bl, piece_to_draw
+                                                 neg   bl
+                                                 shl   bl, 1
+
+    ;Move the offset of the file we wish to access and draw to dx
+                                                 mov   dx, word ptr [white_pieces + bx]
+
+    load_and_draw_piece:                         
                                                  add   si, margin_x                                    ;Adjust the column position using the x_margin.
                                                  add   di, margin_y                                    ;Adjust the row position using the y_margin.
                                                  push  si
@@ -1561,8 +1592,8 @@ draw_piece proc
                                                  call  load_piece                                      ;Draw the image at the rows and columns specified by SI and DI.
                                                  call  close_file                                      ;Close the file
                          
+    finish_draw_piece:                           
                                                  popa
-                         
                                                  ret
 
 draw_piece endp
@@ -1631,39 +1662,10 @@ draw_cell proc
     ;Multiplies by 8, we don't need to move 3 to register first in this assembler. We multiply the row number by 8 since each row has 8 positions.
                                                  shl   bx, 3
                                                  add   bx, si
-                                                 add   bx, offset board
-                                                 mov   ah, [bx]
-                                                 mov   bh, 0
-                                                 cmp   ah, 0
-
-    ;If the current element in the board array contains 0, we draw no pieces.
-    ;If it contains a negative value, we draw a white piece.
-    ;If it contains a positive value, we draw a black piece.
-                                                 je    finish_draw_cell
-                                                 jl    draw_white_piece
-
-    ;Drawing a black piece
-    draw_black_piece:                            
-                                                 mov   bl, ah
-                                                 shl   bl, 1
-
-    ;Move the offset of the file we wish to access and draw to dx
-                                                 mov   dx, word ptr [black_pieces + bx]
+                                                 mov   bl, [bx + offset board]
+                                                 mov   piece_to_draw, bl
                                                  call  draw_piece
-                                                 jmp   finish_draw_cell
-
-    ;White Mate
-    draw_white_piece:                            
-                                                 neg   ah
-                                                 mov   bl, ah
-                                                 shl   bl, 1
-
-    ;Move the offset of the file we wish to access and draw to dx
-                                                 mov   dx, word ptr [white_pieces + bx]
-                                                 call  draw_piece
-
     ;Exiting
-    finish_draw_cell:                            
                                                  pop   dx
                                                  pop   cx
                                                  pop   bx
@@ -2614,6 +2616,70 @@ goToNextSelection proc
 
 goToNextSelection endp
 
+
+draw_captured_piece proc
+                                                 pusha
+                                                 mov   bl, current_captured_piece
+
+                                                 cmp   bl, 0
+                                                 jg    black_piece_captured
+    white_piece_captured:                        
+                                                 neg   bl
+                                                 mov   si, offset captured_pieces_white
+                                                 jmp   perpare_captured_piece
+    black_piece_captured:                        
+                                                 mov   si, offset captured_pieces_black
+
+    perpare_captured_piece:                      
+                                                 mov   bh, 0
+                                                 cmp   bl, 1
+                                                 jnz   not_pawn
+    pawn_captured:                               
+                                                 mov   bx, 8
+    find_pawn_position:                          
+                                                 cmp   byte ptr [si + bx], 0
+                                                 jz    continue_draw_captured
+                                                 inc   bx
+                                                 jmp   find_pawn_position
+    not_pawn:                                    
+                                                 cmp   current_captured_piece, 6
+                                                 jz    captured_king
+                                                 cmp   current_captured_piece, -6
+                                                 jz    captured_king
+                                                 sub   bx, 2
+    multiply_by_two:                             
+                                                 shl   bx, 1
+                                                 cmp   byte ptr [bx + si], 0
+                                                 jz    continue_draw_captured
+                                                 inc   bx
+                                                 jmp   continue_draw_captured
+    continue_draw_captured:                      
+                                                 mov   al, current_captured_piece
+                                                 mov   byte ptr [bx + si], al
+                                                 mov   ax, bx
+                                                 shr   ax, 1
+                                                 and   bx, 1
+                                                 mov   di, ax
+                                                 mov   si, bx
+                                                 sub   si, 2
+
+                                                 mov   bl, current_captured_piece
+                                                 cmp   bl, 0
+                                                 jl    load_and_draw_captured_piece
+                                                 add   si, 10
+    load_and_draw_captured_piece:                
+                                                 mov   piece_to_draw, bl
+                                                 call  draw_piece
+    ;Exiting
+                                                 popa
+                                                 ret
+
+    captured_king:                               
+                                                 sub   bx, 3
+                                                 jmp   multiply_by_two
+draw_captured_piece endp
+
+
     ;moves the piece according to DI,SI (nextPos) & currSelectedPos_DI,currSelectedPos_SI (current pos)
 movePiece PROC
                                                  cmp   currSelectedPos_DI, -1d
@@ -2625,27 +2691,34 @@ movePiece PROC
                                                  push  si
                                                  push  di
                                                  push  bx
+                                                 push  dx
 
     ;; moving piece from currPos to nextPos
 
     ; saving the pos that we will write to
                                                  call  getPos
+                                                 mov   dx, bx
                                                  push  bx
 
     ; getting the pos that we will read from
                                    
                                                  call  removeSelections
-
                                                  call  getPos
 
     ; checking if a piece is in nextPos
     ; Cl contains the piece we want to move
                                                  mov   cl, board[bx]
-                                                 mov   board[bx], 0d                                   ; removing the piece from its currentPos on the board
-                                                 cmp   cl, 0d                                          ; checking if the player has taken a piece
-                                                 jnz   conitnue_movePiece
+                                                 mov   byte ptr board[bx], 0d                          ; removing the piece from its currentPos on the board
+                                                 mov   bx, dx
+                                                 mov   dl, board[bx]
+                                                 cmp   dl, 0d                                          ; checking if the player has taken a piece
+                                                 jz    conitnue_movePiece
 
     ;;; logic for if piece exists (displaying it next to board)
+                                                 mov   current_captured_piece, dl
+                                                 call  draw_captured_piece
+
+
 
     conitnue_movePiece:                          
     ;; preparing to write in nextPos
@@ -2656,6 +2729,7 @@ movePiece PROC
                                                  call  draw_cell
 
     ;; returning original values to the used registers
+                                                 pop   dx
                                                  pop   bx
                                                  pop   di
                                                  pop   si

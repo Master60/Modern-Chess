@@ -54,7 +54,22 @@
 
     ;An array that will store the current state of the board, each element of the array corresponds to a cell on the board.
     board                    db      64d dup(0)
+    
+    ;An array that will store the last time at which every piece on the board moved.
+    movementTimes_hours      db      64d dup(0)
+    movementTimes_seconds    dw      64d dup(0)
+    
+    conversionNum            db      0
+    
+    currentTime_hours        db      0
+    currentTime_seconds      dw      0
 
+    prevTime_hours           db      0
+    prevTime_seconds         dw      0
+
+    moreThan_ThreeSeconds    db      0
+    
+    
     selectedPiecePos         dw      ?
 
     possibleMoves_DI         dw      8 Dup(8 Dup(-1d))
@@ -521,6 +536,138 @@
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;MISCELLANEOUS PROCEDURES:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+convert_BCD_To_Decimal proc
+                                                 push  ax
+                                                 push  bx
+                                                 push  cx
+
+                                                 mov   al, conversionNum
+                                                 mov   bl, al
+                                                 and   al, 0f0h
+                                                 and   bl, 0fh
+                                                 shr   al, 4
+                                                 mov   cl, 10
+                                                 mul   cl
+                                                 add   al, bl
+                                                 mov   conversionNum, al
+
+                                                 pop   cx
+                                                 pop   bx
+                                                 pop   ax
+
+                                                 ret
+convert_BCD_To_Decimal endp
+
+
+getCurrentTime proc
+                                                 push  ax
+                                                 push  cx
+                                                 push  dx
+                           
+                                                 mov   ah, 2
+                                                 int   1ah
+
+                                                 mov   currentTime_hours, ch
+
+                                                 mov   conversionNum, cl
+                                                 call  convert_BCD_To_Decimal
+                                                 mov   cl, conversionNum
+
+                                                 mov   conversionNum, dh
+                                                 call  convert_BCD_To_Decimal
+                                                 mov   dh, conversionNum
+
+                                                 xor   ah, ah
+                                                 mov   al, cl
+                                                 mov   ch, 60
+                                                 mul   ch
+                                                 mov   dl, dh
+                                                 xor   dh, dh
+                                                 add   ax, dx
+                                                 mov   currentTime_seconds, ax
+
+                                                 pop   dx
+                                                 pop   cx
+                                                 pop   ax
+
+                                                 ret
+getCurrentTime endp
+
+
+compareTimes proc
+                                                 push  ax
+                                                 push  cx
+
+                                                 mov   cx, currentTime_seconds
+                                                 sub   cx, prevTime_seconds
+                                                 jbe   differentHour_OrLessThan3
+    check_above_3:                               
+                                                 cmp   cx, 3
+                                                 jb    lessThan3
+    moreThan3:                                   
+                                                 mov   moreThan_ThreeSeconds, 1
+                                                 pop   cx
+                                                 pop   ax
+                                                 ret
+    lessThan3:                                   
+                                                 mov   moreThan_ThreeSeconds, 0
+                                                 pop   cx
+                                                 pop   ax
+                                                 ret
+    differentHour_OrLessThan3:                   
+                                                 mov   al, currentTime_hours
+                                                 sub   al, prevTime_hours
+                                                 jbe   lessThan3
+                                                 cmp   al, 1
+                                                 ja    moreThan3
+                                                 mov   cx, 3600
+                                                 sub   cx, prevTime_seconds
+                                                 add   cx, currentTime_seconds
+                                                 jmp   check_above_3
+compareTimes endp
+
+
+getPrevTime proc
+                                                 push  ax
+                                                 push  bx
+
+                                                 mov   al, [movementTimes_hours + bx]
+                                                 mov   prevTime_hours, al
+                                                 shl   bx, 1
+                                                 mov   ax, [movementTimes_seconds + bx]
+                                                 mov   prevTime_seconds, ax
+
+                                                 pop   bx
+                                                 pop   ax
+
+                                                 ret
+getPrevTime endp
+
+
+updateMovementTimes proc
+                                                 push  bx
+                                                 push  cx
+                              
+                                                 mov   byte ptr [bx + movementTimes_hours], 0
+                                                 shl   bx, 1
+                                                 mov   word ptr [bx + movementTimes_seconds], 0
+
+                                                 mov   bx, dx
+
+                                                 mov   cl, currentTime_hours
+                                                 mov   [bx + movementTimes_hours], cl
+                                                 
+                                                 shl   bx, 1
+                                                 
+                                                 mov   cx, currentTime_seconds
+                                                 mov   [bx + movementTimes_seconds], cx
+
+                                                 pop   cx
+                                                 pop   bx
+                              
+                                                 ret
+updateMovementTimes endp
 
 
     ;sets carry flag
@@ -1009,15 +1156,30 @@ chat_window endp
     ;Initializes the board pieces in memory.
 init_board proc
 
-    ;Before placing any pieces on the board, initialize every location on the board to zero (i.e. empty the board)
+    ;Initialize every location on the board array, captured pieces arrays, and timers array to zero (i.e. empty everything related to the board.)
                                                  mov   cx, 64d
-                                                 mov   bx, offset board
+                                                 mov   si, offset board
+                                                 mov   di, offset movementTimes_hours
+                                                 mov   bx, movementTimes_seconds
+    clear_board_and_timers:                      
+                                                 mov   [si], byte ptr 0
+                                                 mov   [di], byte ptr 0
+                                                 mov   [bx], word ptr 0
+                                                 inc   si
+                                                 inc   di
+                                                 add   bx, 2
+                                                 loop  clear_board_and_timers
 
-    clear_board:                                 
-                                                 mov   [bx], byte ptr 0
-                                                 inc   bx
-                                                 loop  clear_board
-
+                                                 mov   cx, 16
+                                                 mov   si, offset captured_pieces_black
+                                                 mov   di, offset captured_pieces_white
+    clear_captured_pieces:                       
+                                                 mov   [si], byte ptr 0
+                                                 mov   [di], byte ptr 0
+                                                 inc   si
+                                                 inc   di
+                                                 loop  clear_captured_pieces
+    
     ;Places the pawns on their initial positions on board, 1 indicates a black pawn and -1 indicates a white pawn.
     ;Pawns fill the second and eighth rows.
                                                  mov   bx, offset board + 8
@@ -2688,57 +2850,65 @@ movePiece PROC
         
     start_movePiece:                             
     ;; preserving the positions we want to write to
-                                                 push  si
-                                                 push  di
-                                                 push  bx
                                                  push  dx
+                                                 push  bx
+                                                 push  di
+                                                 push  si
 
     ;; moving piece from currPos to nextPos
 
     ; saving the pos that we will write to
                                                  call  getPos
                                                  mov   dx, bx
-                                                 push  bx
 
     ; getting the pos that we will read from
                                    
                                                  call  removeSelections
                                                  call  getPos
 
+                                                 call  getCurrentTime
+                                                 call  getPrevTime
+                                                 call  compareTimes
+                                                 cmp   moreThan_ThreeSeconds, 1
+                                                 jnz   movePiece_end
+
+                                                 call  updateMovementTimes
     ; checking if a piece is in nextPos
     ; Cl contains the piece we want to move
                                                  mov   cl, board[bx]
                                                  mov   byte ptr board[bx], 0d                          ; removing the piece from its currentPos on the board
+                                                 
                                                  mov   bx, dx
-                                                 mov   dl, board[bx]
-                                                 cmp   dl, 0d                                          ; checking if the player has taken a piece
+                                                 mov   al, board[bx]
+                                                 cmp   al, 0d                                          ; checking if the player has taken a piece
                                                  jz    conitnue_movePiece
 
     ;;; logic for if piece exists (displaying it next to board)
-                                                 mov   current_captured_piece, dl
+                                                 mov   current_captured_piece, al
                                                  call  draw_captured_piece
-
-
 
     conitnue_movePiece:                          
     ;; preparing to write in nextPos
-                                                 pop   bx
+                                                 mov   bx, dx
                                                  mov   board[bx], cl
 
                                                  call  get_cell_colour
                                                  call  draw_cell
 
+    movePiece_end:                               
     ;; returning original values to the used registers
-                                                 pop   dx
-                                                 pop   bx
-                                                 pop   di
                                                  pop   si
+                                                 pop   di
+                                                 pop   bx
+                                                 pop   dx
+                                                
+                                                 cmp   moreThan_ThreeSeconds, 1
+                                                 jnz   skip_draw
 
                                                  mov   al, hover_cell_color
                                                  call  draw_cell
-
-
-    movePiece_end:                               
+                               
+    skip_draw:                                   
                                                  mov   currSelectedPos_DI, -1d
                                                  mov   currSelectedPos_SI, -1d
                                                  ret

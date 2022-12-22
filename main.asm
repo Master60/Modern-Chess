@@ -2993,7 +2993,8 @@ movePiece PROC
 
     ; getting the pos that we will read from
                                    
-                                                 call  removeSelections
+                                                 mov si, currSelectedPos_SI
+                                                 mov di, currSelectedPos_DI
                                                  call  getPos
 
                                                  call  getCurrentTime
@@ -3019,6 +3020,7 @@ movePiece PROC
 
     conitnue_movePiece:                          
     ;; preparing to write in nextPos
+                                                 call  removeSelections
                                                  mov   bx, dx
                                                  mov   board[bx], cl
 
@@ -3033,14 +3035,15 @@ movePiece PROC
                                                  pop   dx
                                                 
                                                  cmp   moreThan_ThreeSeconds, 1
-                                                 jnz   skip_draw
+                                                 jnz   not_yet
 
                                                  mov   al, hover_cell_color
                                                  call  draw_cell
                                
-    skip_draw:                                   
+    skip_draw:
                                                  mov   currSelectedPos_DI, -1d
                                                  mov   currSelectedPos_SI, -1d
+    not_yet:                                   
                                                  ret
 movePiece ENDP
 

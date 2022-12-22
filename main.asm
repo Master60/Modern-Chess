@@ -97,7 +97,7 @@
 
     ; Step unit (-1 for white & 1 for black)
     walker                   dw      ?
-
+    outOfBound               db      0d
     ; Navigation Buttons
     Left_Arrow               db      4Bh
     Right_Arrow              db      4Dh
@@ -1408,6 +1408,33 @@ get_cell_colour proc
     
 get_cell_colour endp
 
+
+
+checkOutOfBounds PROC
+                                                 cmp    si, 8d
+                                                 jge    checkOutOfBounds_out_of_bounds
+                                        
+                                                 cmp   di, 8d
+                                                 jge    checkOutOfBounds_out_of_bounds
+                                        
+                                                 cmp   si, -1d
+                                                 jle    checkOutOfBounds_out_of_bounds
+                                        
+                                                 cmp   di, -1d
+                                                 jle    checkOutOfBounds_out_of_bounds
+
+                                                 jmp   checkOutOfBounds_in_bounds
+
+
+                checkOutOfBounds_out_of_bounds:
+                                                mov outOfBound, 1d
+                                                ret
+                checkOutOfBounds_in_bounds:
+                                                mov outOfBound, 0d
+                                                 ret
+                                                 
+checkOutOfBounds ENDP
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;Checks whether or not there was an error when opening a bitmap file containing the image of any piece.
@@ -1891,12 +1918,52 @@ draw_board endp
     ;PROCEDURES USED WITHIN THE GAME:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    ;Writes possible moves to memory
-recordMove proc
+ ;Gets pos given SI,DI and puts it in BX
+getPos proc
 
+                                                 push  si
+                                                 push  di
+
+                                                 shl   di, 3h
+                                                 add   di, si
+
+                                                 mov   bx, di
+
+                                                 pop   di
+                                                 pop   si
+
+                                                 ret
+
+getPos endp
+
+
+; ZF=1 -> EMPTY CELL | CF=0 -> PLAYER PIECE\EMPTY CELL  |  CF=1 -> ENEMY PIECE
+checkForEnemyPiece PROC
                                                  push  bx
-                                                 push  ax
+                                                 call  getPos
+                                                 cmp   board[bx], 0
+                                                 jz    empty_cell
 
+    ; check if the piece is the same color as the player's color
+                                                 mov   bh, 0d
+                                                 mov   bl, board[bx]
+                                                 shl   bx, 8d
+                                                 xor   bx, walker                                      ;; if they have the same sign-bit -> 1000H
+                                                 shl   bx, 1d                                          ;; moving sign bit to the CF
+                                                 jmp   checkForEnemyPiece_end
+
+    empty_cell:                                  
+                                                 clc
+                                   
+    checkForEnemyPiece_end:                      
+                                                 pop   bx
+                                                 ret
+
+checkForEnemyPiece ENDP
+
+; writes move without any checks (mainly for removeSelections)
+writeMove PROC
+                                                 push  bx
 
                                                  mov   bh, 0
                                                  mov   bl, directionPtr
@@ -1909,11 +1976,42 @@ recordMove proc
                                                  mov   possibleMoves_DI[bx], di
                                                  mov   possibleMoves_SI[bx], si
 
-    ;inc   currMovePtr
+                                                 pop bx
+                                                 ret
+writeMove ENDP
+    ;Writes possible moves to memory
 
+recordMove proc
+                                                 push  bx
+                                                 push  ax
+                                                 
+                                                 call checkOutOfBounds
+
+                                                 cmp outOfBound, 1d
+                                                 jz  recordMove_dont_record_move
+
+                                                 call checkForEnemyPiece
+                                                 jz record_empty_cell
+                                                 jc record_enemy_cell
+                                                 jmp recordMove_dont_record_move
+
+                                    record_empty_cell:
+                                                mov al, hover_cell_color
+                                                jmp recordMove_recorded_move
+                                                
+
+
+                                    record_enemy_cell:
+                                                mov al, possible_take_cell_color
+
+
+    recordMove_recorded_move:
+                                                 call draw_cell
+                                                 call writeMove
+                                                 inc currMovePtr
+    recordMove_dont_record_move:
                                                  pop   ax
                                                  pop   bx
-
                                                  ret
 
 recordMove endp
@@ -1959,7 +2057,7 @@ removeSelections proc
                                                  mov   si, -1d
                                                  mov   di, -1d
 
-                                                 call  recordMove
+                                                 call  writeMove
                                                  inc   currMovePtr
 
                                                  cmp   currMovePtr, 8d
@@ -2071,23 +2169,7 @@ hover endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    ;Gets pos given SI,DI and puts it in BX
-getPos proc
-
-                                                 push  si
-                                                 push  di
-
-                                                 shl   di, 3h
-                                                 add   di, si
-
-                                                 mov   bx, di
-
-                                                 pop   di
-                                                 pop   si
-
-                                                 ret
-
-getPos endp
+   
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -2099,7 +2181,7 @@ recordCurrPos proc
                                                  mov   cx, 8d
 
     recordCurrPos_loop:                          
-                                                 call  recordMove
+                                                 call  writeMove
                                                  inc   directionPtr
                                                  loop  recordCurrPos_loop
 
@@ -2115,147 +2197,162 @@ recordCurrPos endp
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 
-
-    ; ZF=1 -> EMPTY CELL | CF=0 -> PLAYER PIECE\EMPTY CELL  |  CF=1 -> ENEMY PIECE
-checkForEnemyPiece PROC
-                                                 push  bx
-                                                 call  getPos
-                                                 cmp   board[bx], 0
-                                                 jz    empty_cell
-
-    ; check if the piece is the same color as the player's color
-                                                 mov   bh, 0d
-                                                 mov   bl, board[bx]
-                                                 shl   bx, 8d
-                                                 xor   bx, walker                                      ;; if they have the same sign-bit -> 1000H
-                                                 shl   bx, 1d                                          ;; moving sign bit to the CF
-                                                 jmp   checkForEnemyPiece_end
-
-    empty_cell:                                  
-                                                 clc
-                                   
-    checkForEnemyPiece_end:                      
-                                                 pop   bx
-                                                 ret
-
-checkForEnemyPiece ENDP
-
-
-
-    ; Gets all possible pawn moves
 getPawnMoves proc
  
+                                                 push  cx
                                                  push  si
-                                                 push  ax
                                                  push  di
 
-                                  
-                                                 cmp   walker, -1d
-                                                 jnz   getPawnMoves_black
+                                                 mov directionPtr, 0d
+                                                 mov currMovePtr, 1d
 
-    getPawnMoves_white:                          
-                                                 cmp   di, 0d
-                                                 jnz   continue_getPawnMoves_white
-                                                 jmp   far ptr get_pawn_moves_end
+                                                ; checking if piece is white or black
+                                                cmp   walker, -1d
+                                                jz    getPawnMoves_start_white
+                                                jmp   getPawnMoves_start_black
 
-    continue_getPawnMoves_white:                 
-                                                 cmp   di, 6d
-                                                 jnz   get_other_pawn_moves
-                                                 jmp   get_extra_pawn_move
-                                   
+                
+                ;; if this is the first move, check for 2 possible moves
+                getPawnMoves_start_white:       
+                                                cmp   di, 6d                        ; di=6 means that the white pawn did not move yet  
+                                                jnz   getPawnMoves_not_first_move
+                                                jmp   getPawnMoves_first_move   
 
-    getPawnMoves_black:                          
-                                                 cmp   di, 7d
-                                                 jnz   continue_getPawnMoves_black
-                                                 jmp   far ptr get_pawn_moves_end
-    continue_getPawnMoves_black:                 
-                                                 cmp   di, 1d
-                                                 jnz   get_other_pawn_moves
+                getPawnMoves_start_black:
+                                                cmp   di, 1d                        ; di=6 means that the black pawn did not move yet
+                                                jnz   getPawnMoves_not_first_move
+                                                
+    getPawnMoves_first_move:
+                                                 mov cx, 2d
+                                                 jmp  getPawnMoves_l1           
 
+    getPawnMoves_not_first_move:
+                                                 mov cx, 1d
 
-    get_extra_pawn_move:                         
-                                                 add   di, walker
+    getPawnMoves_l1:
+                                                 add di, walker
+                                                 
+                                                 ;; we stop moving forward when we encounter a non-empty cell
+                                                 ;; for the pawn, no moves can be done in the forward direction if any piece is there
+                                                 call checkForEnemyPiece
+                                                 jnz  getPawnMoves_check_for_takes
+                                                 
+                                                 ; otherwise record the move 
+                                                 call recordMove
 
-                                                 call  checkForEnemyPiece
-                                                 jnz   getPawnMoves_possible_takes
+                                                 ;; recordMove sets the flag outOfBound if move is beyond the board's frame
+                                                 cmp outOfBound, 1d
+                                                 jz getPawnMoves_check_for_takes
 
-                                                 call  getPos
-                                                 cmp   board[bx], 0
-                                                 jnz   get_other_pawn_moves
+                                                 loop getPawnMoves_l1
+                                                 
+    getPawnMoves_check_for_takes:
+                                                ; resetting si and di
+                                                pop di
+                                                pop si
+                                                push si                                             
+                                                push di
 
-                                  
-                                                 call  recordMove
-                                                 inc   currMovePtr
-                                   
-                                                 call  draw_cell
+                                                mov directionPtr, 1d
+                                                mov currMovePtr, 1d
 
-    get_other_pawn_moves:                        
-                                                 add   di, walker
+                                                add di, walker
+                                                add si, 1d
 
-                                                 call  checkForEnemyPiece
-                                                 jnz   getPawnMoves_possible_takes
+                                                ;; only record the move if there is an enemy piece
+                                                call checkForEnemyPiece             ;;sets the carry flag if there is an enemy piece
+                                                jnc  getPawnMoves_check_for_take2
 
-                                                 call  getPos
-                                                 cmp   board[bx], 0
-                                                 jnz   getPawnMoves_possible_takes
-        
-                                                 call  recordMove
-                                                 inc   currMovePtr
+                                                call recordMove
 
-                                                 call  draw_cell
+    getPawnMoves_check_for_take2:
+                                                sub si, 2d
 
-    getPawnMoves_possible_takes:                 
-                                                 pop   di
-                                                 push  di
-                                                 add   di, walker
-                                                 add   si, 1d
-                                                 cmp   si, 8d
-                                                 jnz   continue_getPawnMoves_possible_takes
-                                                 jmp   get_other_possible_take
+                                                ;; same as above, recording only happens if there is an enemy piece
+                                                call checkForEnemyPiece
+                                                jnc  get_pawn_moves_end
 
-    continue_getPawnMoves_possible_takes:        
-                                                 call  checkForEnemyPiece
+                                                call recordMove
 
-                                                 jnc   get_other_possible_take
-
-                                                 mov   currMovePtr, 1d
-                                                 mov   directionPtr, 1d
-
-                                                 call  recordMove
-                                                 inc   currMovePtr
-
-                                                 mov   al, possible_take_cell_color
-                                                 call  draw_cell
-                                   
-                                   
-                                   
-    get_other_possible_take:                     
-                                                 sub   si, 2d
-                                                 cmp   si, -1d
-                                                 jnz   continue_getPawnMoves_other_possible_take
-                                                 jmp   far ptr get_pawn_moves_end
-
-    continue_getPawnMoves_other_possible_take:   
-                                                 call  checkForEnemyPiece
-
-                                                 jnc   get_pawn_moves_end
-
-                                                 mov   currMovePtr, 1d
-                                                 mov   directionPtr, 7d
-
-                                                 call  recordMove
-                                                 inc   currMovePtr
-
-                                                 mov   al, possible_take_cell_color
-                                                 call  draw_cell
     get_pawn_moves_end:                          
                                                  pop   di
-                                                 pop   ax
                                                  pop   si
+                                                 pop   cx
 
                                                  ret
 
 getPawnMoves endp
+
+
+getKnightMoves PROC
+                push si                                 
+                push di
+
+                mov directionPtr, 0d
+
+
+                add si, 1d
+                add di, -2d
+                mov currMovePtr, 1d
+
+                call recordMove
+
+                add si, 1d
+                add di, 1d
+                mov currMovePtr, 1d
+                inc directionPtr
+
+                call recordMove
+
+                
+                add di, 2d
+                mov currMovePtr, 1d
+                inc directionPtr
+
+                call recordMove
+                
+                add si, -1d
+                add di, 1d
+                mov currMovePtr, 1d
+                inc directionPtr
+
+                call recordMove
+                
+                add si, -2d
+                mov currMovePtr, 1d
+                inc directionPtr
+
+                call recordMove
+
+                
+                add si, -1d
+                add di, -1d
+                mov currMovePtr, 1d
+                inc directionPtr
+
+                call recordMove
+
+                
+                add di, -2d
+                mov currMovePtr, 1d
+                inc directionPtr
+
+                call recordMove
+                
+                add si, 1d
+                add di, -1d
+                mov currMovePtr, 1d
+                inc directionPtr
+
+                call recordMove                
+
+                
+getKnightMoves_end:
+                pop di                                 
+                pop si
+
+                ret                                 
+getKnightMoves ENDP
 
 
 getPossibleDiagonalMoves PROC
@@ -2271,7 +2368,11 @@ getPossibleDiagonalMoves PROC
                                                  mov   dx, 1d                                          ;; step for si
                                                  mov   bp, -1d                                         ;; step for di
 
-                                                 mov   directionPtr, 1d
+                                                 
+                                                 ;; recording diagonally deals records the moves in the directions 
+                                                 ;;(   1,          3,         5,       7)
+                                                 ;; Up-Right  Down-Right  Down-Left  Up-Left 
+                                                 mov   directionPtr, 1d                                
                                                  mov   currMovePtr, 1d
 
 
@@ -2283,47 +2384,30 @@ getPossibleDiagonalMoves PROC
                                                  add   si, dx
                                                  add   di, bp
 
-                                                 cmp   si, 8d
-                                                 jz    getPossibleDiagonalMoves_l2_break2
-                                        
-                                                 cmp   di, 8d
-                                                 jz    getPossibleDiagonalMoves_l2_break2
-                                        
-                                                 cmp   si, -1d
-                                                 jz    getPossibleDiagonalMoves_l2_break2
-                                        
-                                                 cmp   di, -1d
-                                                 jz    getPossibleDiagonalMoves_l2_break2
-
-                                                 call  checkForEnemyPiece
-                                                 jnz   getPossibleDiagonalMoves_l2_break
-
+                                                 ;;   keep recording until:
+                                                 ;; 1) we go out of bounds
+                                                 ;; 2) encounter a non-empty cell
                                                  call  recordMove
-                                                 inc   currMovePtr
+                                                 cmp outOfBound, 1d
+                                                 jz  getPossibleDiagonalMoves_l2_break
+                                                 
+                                                 call checkForEnemyPiece
+                                                 jz getPossibleDiagonalMoves_l2       
 
-                                                 mov   al, hover_cell_color
-                                                 call  draw_cell
-                                                 jmp   getPossibleDiagonalMoves_l2
-
-    getPossibleDiagonalMoves_l2_break:           
-                                                 jnc   getPossibleDiagonalMoves_l2_break2
-                                        
-                                                 call  recordMove
-                                         
-
-                                                 mov   al, possible_take_cell_color
-                                                 call  draw_cell
-    getPossibleDiagonalMoves_l2_break2:          
+    getPossibleDiagonalMoves_l2_break:          
                                                  add   directionPtr, 2d
                                                  mov   currMovePtr, 1d
 
                                                  mov   si, currSelectedPos_SI
                                                  mov   di, currSelectedPos_DI
-
+                                                
+                                                 ;; changing up/down diagonal direction
                                                  neg   bp
                                                  dec   cl
                                                  jnz   getPossibleDiagonalMoves_l2
+                                                 
 
+                                                 ;; changing left/right diagonal direction
                                                  neg   dx
                                                  neg   bp
                                                  dec   ch
@@ -2372,51 +2456,33 @@ getPossibleVerticalHorizontalMoves PROC
                                                  add   si, dx
                                                  add   di, bp
 
-                                                 cmp   si, 8d
-                                                 jz    getPossibleVerticalHorizontalMoves_l2_break2
-                                        
-                                                 cmp   di, 8d
-                                                 jz    getPossibleVerticalHorizontalMoves_l2_break2
-                                        
-                                                 cmp   si, -1d
-                                                 jz    getPossibleVerticalHorizontalMoves_l2_break2
-                                        
-                                                 cmp   di, -1d
-                                                 jz    getPossibleVerticalHorizontalMoves_l2_break2
-
-                                                 call  checkForEnemyPiece
-                                                 jnz   getPossibleVerticalHorizontalMoves_l2_break
-
+                                                 ;;   keep recording until:
+                                                 ;; 1) we go out of bounds
+                                                 ;; 2) encounter a non-empty cell
                                                  call  recordMove
-                                                 inc   currMovePtr
+                                                 cmp outOfBound, 1d
+                                                 jz  getPossibleVerticalHorizontalMoves_l2_break
+                                                 
+                                                 call checkForEnemyPiece
+                                                 jz getPossibleVerticalHorizontalMoves_l2 
 
-                                                 mov   al, hover_cell_color
-                                                 call  draw_cell
-                                                 jmp   getPossibleVerticalHorizontalMoves_l2
+    ;                                       
+    getPossibleVerticalHorizontalMoves_l2_break:
+                                                 add    directionPtr, 2d
+                                                 mov    currMovePtr, 1d
 
-    getPossibleVerticalHorizontalMoves_l2_break: 
-                                                 jnc   getPossibleVerticalHorizontalMoves_l2_break2
-                                        
-                                                 call  recordMove
-                                         
-
-                                                 mov   al, possible_take_cell_color
-                                                 call  draw_cell
-    getPossibleVerticalHorizontalMoves_l2_break2:
-                                                 add   directionPtr, 2d
-                                                 mov   currMovePtr, 1d
-
-                                                 mov   si, currSelectedPos_SI
-                                                 mov   di, currSelectedPos_DI
-
-                                                 neg   bp
-                                                 xchg  bp, dx
-                                                 dec   cl
-                                                 jnz   getPossibleVerticalHorizontalMoves_l2
+                                                 mov    si, currSelectedPos_SI
+                                                 mov    di, currSelectedPos_DI
+                                                 
+                                                 ;; rotating 90 degrees clockwise
+                                                 neg    bp
+                                                 xchg   bp, dx
+                                                 dec    cl
+                                                 jnz    getPossibleVerticalHorizontalMoves_l2
 
                 
-                                                 dec   ch
-                                                 jnz   getPossibleVerticalHorizontalMoves_l1
+                                                 dec    ch
+                                                 jnz    getPossibleVerticalHorizontalMoves_l1
 
 
 
@@ -2437,8 +2503,69 @@ getQueenMoves PROC
 
                                                  call  getPossibleVerticalHorizontalMoves
                                                  call  getPossibleDiagonalMoves
+
+                                                 ret
     
 getQueenMoves ENDP
+
+
+
+getKingMoves PROC
+            
+            push si
+            push di
+
+            mov directionPtr, 0d
+            
+
+            dec di 
+            mov currMovePtr, 1d
+            call recordMove
+
+            inc si
+            inc directionPtr
+            mov currMovePtr, 1d
+            call recordMove
+
+            inc di
+            inc directionPtr
+            mov currMovePtr, 1d
+            call recordMove
+
+            inc di 
+            inc directionPtr
+            mov currMovePtr, 1d
+            call recordMove 
+
+            dec si 
+            inc directionPtr
+            mov currMovePtr, 1d
+            call recordMove
+                
+            dec si 
+            inc directionPtr
+            mov currMovePtr, 1d
+            call recordMove
+
+            dec di
+            inc directionPtr
+            mov currMovePtr, 1d
+            call recordMove
+            
+            dec di
+            inc directionPtr
+            mov currMovePtr, 1d
+            call recordMove
+
+            
+            
+getKingMoves_end:
+            pop di
+            pop si
+            
+
+            ret
+getKingMoves ENDP
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -2598,6 +2725,7 @@ drawBorder endp
     ; puts
 getFirstSelection proc
 
+                                                 ; returns directionPtr and currMovPtr that point to the first availble move
                                                  call  checkFirstAvailableMove
    
                           
@@ -2648,7 +2776,9 @@ goToNextSelection proc
                                                  jmp   doNotChangeSelection
 
     ; a rough implementation of (i+1)%n for both A & D
+    ;; looping through all directions to find one with a possible move
     A:                                           
+                                                 ;; setting currMovePtr=1 to find moves that aren't (currSelectedPos_SI, currSelectedPos_DI)
                                                  mov   currMovePtr, 1d
                                                  mov   cx, 8d
                                   
@@ -3017,8 +3147,11 @@ moveInSelections PROC
     white_piece:                                 mov   walker, -1d
                                    
     determine_piece_type:                        
-                                                 cmp   ah, -1
+                                                 cmp   ah, -1d
                                                  jz    pawn
+
+                                                 cmp   ah, -2d
+                                                 jz    knight
                                    
                                                  cmp   ah, -3d
                                                  jz    bishop
@@ -3029,25 +3162,33 @@ moveInSelections PROC
                                                  cmp   ah, -5d
                                                  jz    queen
 
+                                                 cmp   ah, -6d
+                                                 jz    king
+
                                                  jmp   start_selection
                           
 
     pawn:                                        
-                                                 call  getPawnMoves
-                                                 jmp   start_selection
+                                                 call   getPawnMoves
+                                                 jmp    start_selection
 
+    knight: 
+                                                 call   getKnightMoves
+                                                 jmp    start_selection
     bishop:                                      
-                                                 call  getPossibleDiagonalMoves
-                                                 jmp   start_selection
+                                                 call   getPossibleDiagonalMoves
+                                                 jmp    start_selection
 
-    rook:                                        call  getPossibleVerticalHorizontalMoves
-                                                 jmp   start_selection
+    rook:                                        call   getPossibleVerticalHorizontalMoves
+                                                 jmp    start_selection
 
     queen:                                       
                                                  call  getQueenMoves
                                                  jmp   start_selection
 
-
+    king:                                        
+                                                 call getKingMoves
+                                                 jmp start_selection
                           
     start_selection:                             
     ;; returns first possible move / currSelectedPos if no moves are available

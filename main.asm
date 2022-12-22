@@ -97,7 +97,29 @@
 
     ; Step unit (-1 for white & 1 for black)
     walker                   dw      ?
+
+
+    ; Helpful Flags
     outOfBound               db      0d
+    startSending             db      0d
+    startPosSent             db      0d
+    gotOponentStartPos       db      0d
+    
+
+    ;; plays that will be sent to the oponent
+    startPos_SI              dw      -1d    
+    startPos_DI              dw      -1d    
+
+    endPos_SI                dw      -1d
+    endPos_DI                dw      -1d
+    
+    ;; plays that will be received from the oponent
+    oponent_startPos_SI      dw      -1d    
+    oponent_startPos_DI      dw      -1d    
+
+    oponent_endPos_SI        dw      -1d
+    oponent_endPos_DI        dw      -1d
+
     ; Navigation Buttons
     Left_Arrow               db      4Bh
     Right_Arrow              db      4Dh
@@ -2722,7 +2744,42 @@ drawBorder endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    ; puts
+;initializes the port for serial communication
+;; Addreses
+; - 3FBh  =>   Line Control Register
+; - 3F8h  =>   Transmiting/Receiving || LSB of divisor value
+; - 3F9h  =>   MSB of divisor value
+initPort PROC
+
+    ;;; set divisor latch Access Bit 
+    mov dx, 3FBh
+    mov al, 10000000b
+    out dx, al
+
+
+    ;; baud rate
+    ;LSB
+    mov dx, 3F8h
+    mov al, 0Ch
+    out dx, al
+    
+    ;MSB
+    mov dx, 3F9h
+    mov al, 00h
+    out dx, al
+
+    ;;; rest of configuration 
+    mov dx, 3FBh
+    mov al, 00011011b
+    out dx, al
+
+    ret
+
+initPort ENDP
+
+
+
+
 getFirstSelection proc
 
                                                  ; returns directionPtr and currMovPtr that point to the first availble move
@@ -3029,21 +3086,33 @@ movePiece PROC
 
     movePiece_end:                               
     ;; returning original values to the used registers
+                                                 mov startPos_DI, di
+                                                 mov startPos_SI, si
                                                  pop   si
                                                  pop   di
                                                  pop   bx
                                                  pop   dx
-                                                
+
                                                  cmp   moreThan_ThreeSeconds, 1
                                                  jnz   not_yet
 
+                                                 mov   endPos_SI, si 
+                                                 mov   endPos_DI, di
+                                                
+
                                                  mov   al, hover_cell_color
                                                  call  draw_cell
-                               
-    skip_draw:
+
+                                                                               
+    
                                                  mov   currSelectedPos_DI, -1d
                                                  mov   currSelectedPos_SI, -1d
+
+                                                 mov startSending, 1d 
+                                                 
+                                                 ret
     not_yet:                                   
+                                                ;; TODO: add status bar message (cannot move this piece yet)
                                                  ret
 movePiece ENDP
 
@@ -3242,6 +3311,251 @@ moveInSelections PROC
                                                  ret
 moveInSelections ENDP
 
+
+;; Data Format AL = DI_0_SI  where di and si are 3 bits
+; compresses the data in DI,SI to AL
+compressData PROC
+
+                            mov bx, di   ;; di is in bl
+                            mov ax, si  ;;  si is in al 
+
+                            push cx
+
+                            mov cx, 7d
+                            sub cx, bx
+                            xchg bx,cx
+
+                            pop cx
+                            
+
+                            shl al, 3   
+                            mov ah, bl
+
+                            shr ax, 3
+
+                            ; push dx
+                            ; mov dl, al
+                            ; mov ah, 2
+                            ; int 21h
+                            ; pop dx
+                            
+                            ret
+compressData ENDP
+
+
+
+
+deCompressData PROC
+                            push ax
+                            push bx
+                            mov bh, 0d
+                            
+                            ;; getting di
+                            mov ah, 0d
+                            shl ax, 3d
+                            mov bl, ah
+                            mov di, bx
+                            
+                            ;; getting si
+                            shr al, 3
+                            mov bl, al
+                            mov si, bx
+
+                            pop bx
+                            pop ax
+deCompressData ENDP
+
+
+sendMoveToOponent PROC
+                            push ax
+                            push bx
+                            push dx 
+
+                            cmp  startSending, 0d
+                            jz   sendMoveToOponent_end
+
+                            ;; check if THR is empty
+                            mov dx, 3FDh
+                            In  al, dx
+                            and al, 00100000b
+                            jz  sendMoveToOponent_end
+
+
+                            ;; check if start pos has already been sent
+                            cmp  startPosSent, 1d
+                            jz   sendMoveToOponent_send_endpos
+
+                            ; push dx
+                            ; push ax
+                            ; mov dl, 'h'
+                            ; mov ah, 2
+                            ; int 21h
+                            ; pop ax
+                            ; pop dx
+                            
+                            mov dx, 3F8h
+                            mov si, startPos_SI
+                            mov di, startPos_DI
+                            call compressData
+                            out dx, al
+                            
+                            ;; setting startPosSent flag so that we don't send it again
+                            mov startPosSent, 1d
+                            jmp sendMoveToOponent_end                          
+    
+
+    sendMoveToOponent_send_endpos:
+                           
+                            mov dx, 3F8h
+                            mov si, endPos_SI
+                            mov di, endPos_DI
+                            call compressData
+                            out dx, al
+
+                            ;; resetting flags after both positions have been sent
+                            mov startSending, 0d
+                            mov startPosSent, 0d
+
+
+    sendMoveToOponent_end:                           
+                            pop dx
+                            pop bx
+                            pop ax
+
+                            ret
+    
+sendMoveToOponent ENDP
+
+
+
+
+removePrevOponentMove PROC
+                        push ax
+                        push si
+                        push di
+                        push dx
+
+                        cmp oponent_endPos_DI, -1d
+                        jz  removePrevOponentMove_end
+
+                        mov dl, 'H'
+                        mov ah,2
+                        int 21h
+
+
+                        mov si, oponent_startPos_SI
+                        mov di, oponent_startPos_DI
+                        call get_cell_colour
+                        call draw_cell
+
+                        mov si, oponent_endPos_SI
+                        mov di, oponent_endPos_DI
+                        call get_cell_colour
+                        call draw_cell
+                        
+
+
+    removePrevOponentMove_end:
+
+                        pop dx
+                        pop di
+                        pop si
+                        pop ax
+                        ret
+    
+removePrevOponentMove ENDP
+
+
+showOponentMove PROC
+                push ax
+                push si
+                push di
+
+                mov al, 210d
+
+                mov si, oponent_startPos_SI
+                mov di, oponent_startPos_DI
+
+                call getPos
+
+                mov cl, board[bx]
+                mov board[bx], 0d
+
+                call draw_cell
+
+                mov si, oponent_endPos_SI
+                mov di, oponent_endPos_DI
+
+                call getPos
+
+                mov board[bx], cl
+
+                call draw_cell
+
+                pop di
+                pop si
+                pop ax
+
+                ret
+
+showOponentMove ENDP
+
+
+listenForOponentMove PROC
+                            push dx
+                            push bx
+                            push ax
+                            push si
+                            push di
+                            
+
+                            mov dx, 3FDh
+                            In  al, dx
+                            and al, 1d
+                            jz listenForOponentMove_end
+
+                            mov dx, 3F8h
+                            In  al, dx
+
+                            cmp gotOponentStartPos, 1d
+                            jz  listenForOponentMove_get_oponent_endpos
+
+                            call removePrevOponentMove
+
+                            call deCompressData
+
+                            mov oponent_startPos_DI, di
+                            mov oponent_startPos_SI, si
+
+                            mov gotOponentStartPos, 1d
+                            jmp listenForOponentMove_end
+
+
+
+    listenForOponentMove_get_oponent_endpos:
+
+                            call deCompressData
+
+                            mov oponent_endPos_DI, di
+                            mov oponent_endPos_SI, si
+
+                            mov gotOponentStartPos, 0d
+
+                            call showOponentMove
+                            
+
+    listenForOponentMove_end:
+                            pop di
+                            pop si
+                            pop ax
+                            pop bx
+                            pop dx
+
+                            ret
+listenForOponentMove ENDP
+
+
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PROCEDURES USED IN THE GAME SCREEN:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -3266,6 +3580,10 @@ game_window proc
                                                  call  getPlayerSelection
     
                                                  call  moveInSelections
+
+                                                 call  sendMoveToOponent
+
+                                                 call  listenForOponentMove
                                                            
                                                  jmp   play_chess
 
@@ -3434,6 +3752,8 @@ main proc far
     ;Initializing the data segment register
                                                  mov   ax, @data
                                                  mov   ds, ax
+
+                                                 call initPort
 
     ;Setting working directory to the folder containing bitmaps of the pieces
                                                  mov   ah, 3bh

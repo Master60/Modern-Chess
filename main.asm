@@ -43,6 +43,8 @@
     ;Name of the other player (to be modified in phase 2)
     temp_name                db      'Miro', '$'
 
+    temp_name2               db      'Bas', '$'
+
     ;Dummy text to be displayed
     dummy1                   db      'This window is to be further developed in phase 2, thanks for checking in.', '$'
 
@@ -132,10 +134,10 @@
     cell_size                dw      75d
 
     ;Horizontal margin is set to 4 cells
-    margin_x                 dw      2
+    margin_x                 dw      175d
 
     ;Vertical margin is set to 2 cells (This might be altered later, to clear some space for chatting).
-    margin_y                 dw      2
+    margin_y                 dw      150d
 
     ;Cells can have 2 colors: white and gray. The codes of those colors are stored here, and will be used when drawing the board.
     board_colors             db      31d, 28d
@@ -176,6 +178,8 @@
 
     ;Temporary y-coordinate that will be used when loading a bitmap image to the board.
     y_temp                   dw      ?
+
+    background_image         db      'bck.bmp', 0
     
     ;White Pieces
 
@@ -730,6 +734,20 @@ delay endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+display_string proc
+
+pusha
+
+
+
+popa
+
+ret
+
+display_string endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
 clear_keyboard_buffer proc
 
                                                  push  ax
@@ -756,36 +774,33 @@ draw_letters proc
                                                  mov   si, 0
 
                                                  mov   ax, 0
-                                                 mov   ax, margin_x
-                                                 mul   di
+                                                 add   ax, margin_x
                                                  add   ax, 31d
                                                  add   ax, 13d
                                                  mov   bp, ax
 
                                                  mov   ax, 0
-                                                 mov   ax, margin_y
                                                  add   ax, 8
                                                  mul   di
+                                                 add   ax, margin_y
                                                  add   ax, 4
                                                  add   ax, 19d
                                                  mov   sp, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_x
-                                                 mul   di
                                                  add   ax, 31d
                                                  mov   bx, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_x
-                                                 mul   di
                                                  add   ax, 31d
                                                  mov   cx, ax
 
                                                  mov   ax, 0
-                                                 add   ax, margin_y
                                                  add   ax, 8
                                                  mul   di
+                                                 add   ax, margin_y
                                                  add   ax, 4
                                                  mov   dx, ax
 
@@ -831,35 +846,30 @@ draw_letters proc
                                                  mov   si, 0
 
                                                  mov   ax, 0
-                                                 mov   ax, margin_x
-                                                 mul   di
+                                                 add   ax, margin_x
                                                  add   ax, 31d
                                                  mov   bp, ax
 
                                                  mov   ax, 0
-                                                 mov   ax, margin_y
-                                                 mul   di
+                                                 add   ax, margin_y
                                                  sub   ax, 4
                                                  sub   ax, 19d
                                                  mov   sp, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_x
-                                                 mul   di
                                                  add   ax, 31d
                                                  add   ax, 13d
                                                  mov   bx, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_x
-                                                 mul   di
                                                  add   ax, 31d
                                                  add   ax, 13d
                                                  mov   cx, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_y
-                                                 mul   di
                                                  sub   ax, 4
                                                  mov   dx, ax
 
@@ -922,35 +932,30 @@ draw_numbers proc
                                                  mov   si, 0
 
                                                  mov   ax, 0
-                                                 mov   ax, margin_x
-                                                 mul   di
+                                                 add   ax, margin_x
                                                  sub   ax, 6
                                                  mov   bp, ax
 
                                                  mov   ax, 0
-                                                 mov   ax, margin_y
-                                                 mul   di
+                                                 add   ax, margin_y
                                                  add   ax, 31d
                                                  add   ax, 19d
                                                  mov   sp, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_x
-                                                 mul   di
                                                  sub   ax, 6
                                                  sub   ax, 13d
                                                  mov   bx, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_x
-                                                 mul   di
                                                  sub   ax, 6
                                                  sub   ax, 13d
                                                  mov   cx, ax
 
                                                  mov   ax, 0
                                                  add   ax, margin_y
-                                                 mul   di
                                                  add   ax, 31d
                                                  mov   dx, ax
 
@@ -995,40 +1000,40 @@ draw_numbers proc
                                                  mov   si, 0
 
                                                  mov   ax, 0
-                                                 mov   ax, margin_x
                                                  add   ax, 8
                                                  mul   di
+                                                 add   ax, margin_x
                                                  add   ax, 6
                                                  mov   bp, ax
 
                                                  mov   ax, 0
-                                                 mov   ax, margin_y
                                                  add   ax, 8
                                                  mul   di
+                                                 add   ax, margin_y
                                                  sub   ax, 31d
                                                  sub   ax, 19d
                                                  mov   sp, ax
 
                                                  mov   ax, 0
-                                                 add   ax, margin_x
                                                  add   ax, 8
                                                  mul   di
+                                                 add   ax, margin_x
                                                  add   ax, 6
                                                  add   ax, 13d
                                                  mov   bx, ax
 
                                                  mov   ax, 0
-                                                 add   ax, margin_x
                                                  add   ax, 8
                                                  mul   di
+                                                 add   ax, margin_x
                                                  add   ax, 6
                                                  add   ax, 13d
                                                  mov   cx, ax
 
                                                  mov   ax, 0
-                                                 add   ax, margin_y
                                                  add   ax, 8
                                                  mul   di
+                                                 add   ax, margin_y
                                                  sub   ax, 31d
                                                  mov   dx, ax
 
@@ -1304,6 +1309,69 @@ clear_screen endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+draw_labels proc
+
+pusha
+
+mov cx, 0
+mov dx, 0
+mov al, 3h
+mov ah, 0ch
+
+draw_label1_y:
+
+draw_label1_x:
+
+int 10h
+inc cx
+cmp cx, 475d
+jnz draw_label1_x
+
+inc dx
+mov cx, 0
+cmp dx, 50d
+jnz draw_label1_y
+
+
+mov cx, 476d
+mov dx, 0
+mov al, 4h
+mov ah, 0ch
+
+draw_label2_y:
+
+draw_label2_x:
+
+int 10h
+inc cx
+cmp cx, 950d
+jnz draw_label2_x
+
+inc dx
+mov cx, 476d
+cmp dx, 50d
+jnz draw_label2_y
+
+
+mov   ah, 2
+mov   bh, 0
+mov   dl, 28d
+mov   dh, 1d
+int   10h
+
+mov   ah, 9
+mov   dx, offset temp_name
+int   21h
+
+
+popa
+
+ret
+
+draw_labels endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
 set_board_base proc
 
                                                  pusha
@@ -1311,39 +1379,42 @@ set_board_base proc
                                                  mov   bp, cell_size
 
                                                  mov   ax, 0
-                                                 mov   ax, margin_x
-                                                 add   ax, 10
+                                                 mov   ax, 10
                                                  mul   bp
+                                                 add   ax, margin_x
                                                  add   ax, 25d
                                                  mov   di, ax
 
                                                  mov   ax, 0
-                                                 mov   ax, margin_y
-                                                 add   ax, 9
+                                                 mov   ax, 9
                                                  mul   bp
+                                                 add   ax, margin_y
                                                  add   ax, 25d
                                                  mov   si, ax
 
                                                  mov   ax, 0
-                                                 add   ax, margin_x
-                                                 sub   ax, 2
+                                                 mov   bx, 0
+                                                 add   ax, 2
                                                  mul   bp
-                                                 sub   ax, 25d
-                                                 mov   bx, ax
+                                                 add   bx, margin_x
+                                                 sub   bx, ax
+                                                 sub   bx, 25d
+                                                 
+                                                 mov   ax, 0
+                                                 mov   cx, 0
+                                                 add   ax, 2
+                                                 mul   bp
+                                                 add   cx, margin_x
+                                                 sub   cx, ax
+                                                 sub   cx, 25d
 
                                                  mov   ax, 0
-                                                 add   ax, margin_x
-                                                 sub   ax, 2
+                                                 mov   dx, 0
+                                                 add   ax, 1
                                                  mul   bp
-                                                 sub   ax, 25d
-                                                 mov   cx, ax
-
-                                                 mov   ax, 0
-                                                 add   ax, margin_y
-                                                 dec   ax
-                                                 mul   bp
-                                                 sub   ax, 25d
-                                                 mov   dx, ax
+                                                 add   dx, margin_y
+                                                 sub   dx, ax
+                                                 sub   dx, 25d
 
                                                  mov   al, 06d                                         ;08d light grey, 06d light brown, 0eh light yellow
                                                  mov   ah, 0ch
@@ -1373,8 +1444,8 @@ set_border proc
 
                                                  pusha
 
-                                                 mov   cx, 275d
-                                                 mov   dx, 125d
+                                                 mov   cx, 150d ;margin x - 25
+                                                 mov   dx, 125d ;margin y - 25
                                                  mov   al, 0eh                                         ;4 dark brown
                                                  mov   ah, 0ch
 
@@ -1382,21 +1453,21 @@ set_border proc
 
     border_x:                                    
                                                  inc   cx
-                                                 cmp   dx,151d
+                                                 cmp   dx,151d  ;margin y + 1
                                                  jb    draw_border
-                                                 cmp   dx,750d
+                                                 cmp   dx,750d  ;margin y + 600
                                                  ja    draw_border
-                                                 cmp   cx,301d
+                                                 cmp   cx,176d  ;margin x + 1
                                                  jb    draw_border
-                                                 cmp   cx,900d
+                                                 cmp   cx,775d  ;margin x + 600
                                                  ja    draw_border
     continue_border:                             
-                                                 cmp   cx, 925d
+                                                 cmp   cx, 800d ;margin x + 600 + border width
                                                  jnz   border_x
 
-                                                 mov   cx, 275d
+                                                 mov   cx, 150d ;margin x -25
                                                  inc   dx
-                                                 cmp   dx, 775d
+                                                 cmp   dx, 775d ;margin y + 600 + border width
                                                  jnz   border_y
 
                                                  jmp   end_border
@@ -1412,6 +1483,68 @@ set_border proc
                                                  ret
 
 set_border endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+status_bar proc
+
+pusha
+
+mov cx, 0
+mov dx, 850d
+mov al, 0h
+mov ah, 0ch
+
+draw_status_bar_y:
+
+draw_status_bar_x:
+
+int 10h
+inc cx
+cmp cx, 950d
+jnz draw_status_bar_x
+
+inc dx
+mov cx, 0
+cmp dx, 1024d
+jnz draw_status_bar_y
+
+popa
+
+ret
+
+status_bar endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+inline_chat_window proc
+
+pusha
+
+mov cx, 950d
+mov dx, 0
+mov al, 5h
+mov ah, 0ch
+
+draw_inline_chat_y:
+
+draw_inline_chat_x:
+
+int 10h
+inc cx
+cmp cx, 1280d
+jnz draw_inline_chat_x
+
+inc dx
+mov cx, 950d
+cmp dx, 1024d
+jnz draw_inline_chat_y
+
+popa
+
+ret
+
+inline_chat_window endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1533,36 +1666,36 @@ pass_file_header endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    ;load_background proc
-    ;
-    ;                                                pusha
-    ;
-    ;                                                mov   bx, file_handle
-    ;                                               mov   ah, 3fh
-    ;                                              mov   cx, image_size
-    ;                                             mov   dx, offset bitmap_background_buffer
-    ;                                            int   21h
-    ;                                           mov   bx, offset bitmap_buffer
-    ;                                          add   bx, 1280d
-    ;
-    ;
-    ;
-    ;
-    ;
+    ; load_background proc
+    
+    ;                                                 pusha
+    
+    ;                                                 mov   bx, file_handle
+    ;                                                mov   ah, 3fh
+    ;                                               mov   cx, image_size
+    ;                                              mov   dx, offset bitmap_background_buffer
+    ;                                             int   21h
+    ;                                            mov   bx, offset bitmap_buffer
+    ;                                           add   bx, 1280d
+    
+
+    
+    
+    
     ;   ;Nested loops which print the bitmap image pixel by pixel
     ;                                               mov   si, 1280d
     ;                                              dec   si
-    ;
+    
     ;   loop_y_background:
     ;                                               mov   di, 1280d
     ;                                              dec   di
-    ;
+    
     ;   loop_x_background:
-    ;
+    
     ;   ;Load the color of the current pixel to AL, since AL stored the color when drawing a pixel using INT 10H
     ;                                               mov   al, byte ptr [bx]
-    ;
-    ;;Draws a pixel at the position specified by CX and DX, with color stored in AL.
+    
+    ; ;Draws a pixel at the position specified by CX and DX, with color stored in AL.
     ;                                            push  bx
     ;                                           mov   ah, 0ch
     ;                                          mov   bl, 0
@@ -1572,22 +1705,22 @@ pass_file_header endp
     ;                                      add   dx, 0
     ;                                     int   10h
     ;                                    pop   bx
-    ;
+    
     ;   continue_background_loop:
     ;  ;Go to the next pixel.
     ;                                              dec   bx
     ;                                             dec   di
     ;                                            jnz   loop_x_background
-    ;
+    
     ;                                                add   bx, 2561d
     ;                                               dec   si
     ;                                              jnz   loop_y_background
-    ;
+    
     ;                                                popa
-    ;
+    
     ;                                                ret
-    ;
-    ;load_background endp
+    
+    ; load_background endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1599,11 +1732,15 @@ load_piece proc
     ;Get the actual position of the top left corner of the cell we wish to draw at, and store the coordinates in the x_temp and y_temp variables.
                                                  mov   ax, si
                                                  mul   cell_size
+                                                 add   ax, margin_x
                                                  mov   x_temp, ax
+                                                 
 
                                                  mov   ax, di
                                                  mul   cell_size
+                                                 add   ax, margin_y
                                                  mov   y_temp, ax
+                                                  
                 
     ;Load the image into the bitmap_buffer.
                                                  mov   bx, file_handle
@@ -1738,26 +1875,27 @@ draw_cell_border endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    ;draw_background proc
-    ;
+    ; draw_background proc
+    
     ;                                                pusha
-    ;
+    
     ;                                                add   si, 0                                           ;Adjust the column position using the x_margin.
     ;                                               add   di, 0                                           ;Adjust the row position using the y_margin.
     ;                                              push  si
     ;                                             push  di
+    ;                                             mov dx, offset background_image
     ;                                            call  get_file_handle                                 ;Prepare the file handle for other interrupts
     ;                                           call  pass_file_header                                ;Move the file pointer to the starting point of the image
     ;                                        pop   di
     ;                                          pop   si
     ;                                         call  load_background                                 ;Draw the image at the rows and columns specified by SI and DI.
     ;                                       call  close_file                                      ;Close the file
-    ;
+    
     ;                                                popa
-    ;
+    
     ;                                                ret
 
-    ;draw_background endp
+    ; draw_background endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1792,8 +1930,8 @@ draw_piece proc
                                                  mov   dx, word ptr [white_pieces + bx]
 
     load_and_draw_piece:                         
-                                                 add   si, margin_x                                    ;Adjust the column position using the x_margin.
-                                                 add   di, margin_y                                    ;Adjust the row position using the y_margin.
+                                                                                     ;Adjust the column position using the x_margin.
+                                                                                    ;Adjust the row position using the y_margin.
                                                  push  si
                                                  push  di
                                                  call  get_file_handle                                 ;Prepare the file handle for other interrupts
@@ -1821,19 +1959,22 @@ draw_cell proc
                                                  push  dx
                                                  push  si
                                                  push  di
-                                                 add   si, margin_x
-                                                 add   di, margin_y
+                                                 
+                                                 
 
     ;Calculate and store the actual row and column positions of the upper left corner of each cell, and place them in SI and DI
                                                  mov   ah, 0ch
                                                  push  ax
+
                                                  mov   ax, si
                                                  mul   cell_size
                                                  mov   si, ax
+                                                 add   si, margin_x
 
                                                  mov   ax, di
                                                  mul   cell_size
                                                  mov   di, ax
+                                                 add   di, margin_y
                          
                                                  pop   ax
                          
@@ -2634,8 +2775,7 @@ drawBorder proc
                                                  push  dx
                                                  push  bp
 
-                                                 add   si, margin_x
-                                                 add   di, margin_y
+                                                 
 
                                                  mov   ah, 0ch
                                                  push  ax
@@ -2643,10 +2783,12 @@ drawBorder proc
                                                  mov   ax, si
                                                  mul   cell_size
                                                  mov   si, ax
+                                                 add   si, margin_x
 
                                                  mov   ax, di
                                                  mul   cell_size
                                                  mov   di, ax
+                                                 add   di, margin_y
                          
                                                  pop   ax
 
@@ -3569,7 +3711,17 @@ game_window proc
                                                  mov   al, 14h                                         ;The color by which we will clear the screen (light gray).
                                                  call  clear_screen
 
+
+                                                 ;call set_board_base
+
+
                                                  call  draw_board                                      ;Draw the board
+
+
+                                                 ;call set_border
+                                                 ;call draw_letters
+                                                 ;call draw_numbers
+
                          
                                                  mov   si, 3d
                                                  mov   di, 6d
@@ -3729,14 +3881,18 @@ test_window proc
                                                  call  init_board
                                                  call  init_video_mode
     ;call  draw_background
-    ;mov   al, 14h
-    ;call  clear_screen
-    ;call  set_board_base
-    ;call  draw_board
-    ;call  set_border
-    ;call  draw_letters
-    ;call  draw_numbers
-
+    mov   al, 14h
+    call  clear_screen
+    call  draw_labels
+    call  set_board_base
+    call  draw_board
+    call  set_border
+    call  draw_letters
+    call  draw_numbers
+    call  status_bar
+    call  inline_chat_window
+;ctrl k u uncomment
+;ctrl k c comment
                                                  hlt
 
                                                  ret

@@ -143,7 +143,11 @@
     ; Used for highlighting (hover effect)
     highlighted_cell_color   db      14d
     hover_cell_color         db      102d
+    ; hover_cell_color         db      170d  -> green helw
+    ; hover_cell_color         db      80d   -> purple helw
+    ; hover_cell_color         db      183d 
     possible_take_cell_color db      12d
+    oponent_move_color       db      147d  ;-> green brdoo 
     ;Stores the color of the cell being drawn at a specific iteration.
     temp_color               db      ?
 
@@ -2089,7 +2093,31 @@ removeSelections proc
                                                  cmp   si, -1d
                                                  jz    removeSelections_loop2_break
 
+    ;; preserving the oponents moves when removing selections
+    removeSelections_preserve_oponent_startpos:
+                                                 cmp si, oponent_startPos_SI
+                                                 jnz removeSelections_preserve_oponent_endpos
+                                                 
+                                                 cmp di, oponent_startPos_DI
+                                                 jnz removeSelections_preserve_oponent_endpos
+
+                                                 jmp removeSelections_preserve_oponent_move
+    removeSelections_preserve_oponent_endpos:                                             
+                                                 cmp si, oponent_endPos_SI
+                                                 jnz removeSelections_not_prev_enemy_move
+                                                 
+                                                 cmp di, oponent_endPos_DI
+                                                 jnz removeSelections_not_prev_enemy_move
+       
+    removeSelections_preserve_oponent_move:
+                                                 mov al, oponent_move_color
+                                                 jmp removeSelections_redraw
+
+
+    removeSelections_not_prev_enemy_move:
                                                  call  get_cell_colour
+    removeSelections_redraw:
+
                                                  call  draw_cell
 
                                                  jmp   removeSelections_loop2
@@ -2173,8 +2201,32 @@ hover proc
                                                  push  di
                                                  mov   si, cx
                                                  mov   di, dx
+
+    ;; preserving oponent's prev move when hovering                                            
+    hover_preserve_oponent_startpos:
+                                                 cmp si, oponent_startPos_SI
+                                                 jnz hover_preserve_oponent_endpos
+                                                 
+                                                 cmp di, oponent_startPos_DI
+                                                 jnz hover_preserve_oponent_endpos
+
+                                                 jmp hover_preserve_oponent_move
+    hover_preserve_oponent_endpos:                                             
+                                                 cmp si, oponent_endPos_SI
+                                                 jnz hover_not_prev_enemy_move
+                                                 
+                                                 cmp di, oponent_endPos_DI
+                                                 jnz hover_not_prev_enemy_move
+       
+    hover_preserve_oponent_move:
+                                                 mov al, oponent_move_color
+                                                 jmp hover_redraw_prev_cell
+
+    hover_not_prev_enemy_move:
                                                  call  get_cell_colour
+    hover_redraw_prev_cell:
                                                  call  draw_cell
+
     ; Draw hover cell
                                                  pop   di
                                                  pop   si
@@ -2938,13 +2990,18 @@ goToNextSelection proc
                                                  jmp   goToNextSelection_redraw
 
 
-    continue_change_selection:                   push  bx
+    continue_change_selection:                   
+                                                 
+                                                 push  bx
                                                  lea   bx, hover_cell_color
                                                  call  checkForEnemyPiece
                                    
     ;; color it Red if enemy piece exists
     ;; if carry exists, it will go to the next place in memory which stores the Red color
-                                                 adc   bx, 0d
+                                                 adc   bx, 0
+
+    ;; preserving the color of the oponent's prev move
+    goToNextSelection_not_prev_enemy_move:
                                                  mov   al, [bx]
                                                  pop   bx
                                    
@@ -3028,6 +3085,44 @@ draw_captured_piece proc
                                                  jmp   multiply_by_two
 draw_captured_piece endp
 
+;; will be called in 2 cases:
+; 1) Oponent Makes a move
+; 2) We make a move to one of the colored oponent cells
+removePrevOponentMove PROC
+                        push ax
+                        push si
+                        push di
+                        push dx
+
+                        cmp oponent_endPos_DI, -1d
+                        jz  removePrevOponentMove_end
+
+                        mov si, oponent_startPos_SI
+                        mov di, oponent_startPos_DI
+                        call get_cell_colour
+                        call draw_cell
+
+                        mov si, oponent_endPos_SI
+                        mov di, oponent_endPos_DI
+                        call get_cell_colour
+                        call draw_cell
+
+                        mov oponent_startPos_DI, -1d                        
+                        mov oponent_startPos_SI, -1d                        
+                        mov oponent_endPos_DI, -1d                        
+                        mov oponent_endPos_SI, -1d                        
+
+
+    removePrevOponentMove_end:
+
+                        pop dx
+                        pop di
+                        pop si
+                        pop ax
+                        ret
+    
+removePrevOponentMove ENDP
+
 
     ;moves the piece according to DI,SI (nextPos) & currSelectedPos_DI,currSelectedPos_SI (current pos)
 movePiece PROC
@@ -3086,26 +3181,49 @@ movePiece PROC
 
     movePiece_end:                               
     ;; returning original values to the used registers
+
+                                                ;preserving start pos of our move
                                                  mov startPos_DI, di
                                                  mov startPos_SI, si
+
+                                                ;popping out the new pos (our end pos)
                                                  pop   si
                                                  pop   di
                                                  pop   bx
                                                  pop   dx
 
+                                                ; checking if we can move the piece
                                                  cmp   moreThan_ThreeSeconds, 1
                                                  jnz   not_yet
 
+                                                ;preserving new pos (our end pos)
                                                  mov   endPos_SI, si 
-                                                 mov   endPos_DI, di
-                                                
+                                                 mov   endPos_DI, di                                                
 
                                                  mov   al, hover_cell_color
                                                  call  draw_cell
-
-                                                                               
     
-                                                 mov   currSelectedPos_DI, -1d
+    ;; removing the oponent's previously colored moves (if it is overwritten)
+    movePiece_remove_oponent_startpos:
+                                                 cmp si, oponent_startPos_SI
+                                                 jnz movePiece_remove_oponent_endpos
+                                                 
+                                                 cmp di, oponent_startPos_DI
+                                                 jnz movePiece_remove_oponent_endpos
+
+                                                 jmp movePiece_remove_oponent_move
+    movePiece_remove_oponent_endpos:                                             
+                                                 cmp si, oponent_endPos_SI
+                                                 jnz movePiece_not_prev_enemy_move
+                                                 
+                                                 cmp di, oponent_endPos_DI
+                                                 jnz movePiece_not_prev_enemy_move
+       
+    movePiece_remove_oponent_move:
+                                                 call  removePrevOponentMove 
+
+    movePiece_not_prev_enemy_move:
+                                                 mov   currSelectedPos_DI, -1d   
                                                  mov   currSelectedPos_SI, -1d
 
                                                  mov startSending, 1d 
@@ -3429,49 +3547,12 @@ sendMoveToOponent ENDP
 
 
 
-removePrevOponentMove PROC
-                        push ax
-                        push si
-                        push di
-                        push dx
-
-                        cmp oponent_endPos_DI, -1d
-                        jz  removePrevOponentMove_end
-
-                        mov dl, 'H'
-                        mov ah,2
-                        int 21h
-
-
-                        mov si, oponent_startPos_SI
-                        mov di, oponent_startPos_DI
-                        call get_cell_colour
-                        call draw_cell
-
-                        mov si, oponent_endPos_SI
-                        mov di, oponent_endPos_DI
-                        call get_cell_colour
-                        call draw_cell
-                        
-
-
-    removePrevOponentMove_end:
-
-                        pop dx
-                        pop di
-                        pop si
-                        pop ax
-                        ret
-    
-removePrevOponentMove ENDP
-
-
 showOponentMove PROC
                 push ax
                 push si
                 push di
 
-                mov al, 210d
+                mov al, oponent_move_color
 
                 mov si, oponent_startPos_SI
                 mov di, oponent_startPos_DI

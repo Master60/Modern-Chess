@@ -560,6 +560,9 @@
                              db      1,1,1,1,1,1,1,1,1,1,1,1,1
 
     temp_sp                  dw      ?
+    status_1                 db 'Game has started', '$'
+    status_2                 db 'Cannot move selected piece', '$'
+    status_3                 db 'Game has ended', '$'
 
 .code
 
@@ -1518,6 +1521,55 @@ popa
 ret
 
 status_bar endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+update_status proc
+
+pusha
+
+call status_bar
+
+mov   ah, 2
+mov   bh, 0
+mov   dl, 28d
+mov   dh, 56d
+int   10h
+
+cmp   bx, 0
+jz    start_game_status
+
+cmp   bx, 1
+jz    cannot_move_piece_status
+
+cmp   bx, 2
+jz    end_game_status
+
+start_game_status:
+mov   ah, 9
+mov   dx, offset status_1
+int   21h
+jmp end_status
+
+cannot_move_piece_status:
+mov   ah, 9
+mov   dx, offset status_2
+int   21h
+jmp end_status
+
+end_game_status:
+mov   ah, 9
+mov   dx, offset status_3
+int   21h
+jmp end_status
+
+end_status:
+
+popa
+
+ret
+
+update_status endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -3971,6 +4023,9 @@ test_window proc
     call  draw_letters
     call  draw_numbers
     call  status_bar
+
+    mov bx, 0
+    call  update_status
     call  inline_chat_window
 ;ctrl k u uncomment
 ;ctrl k c comment
@@ -3990,7 +4045,7 @@ main proc far
                                                  mov   ax, @data
                                                  mov   ds, ax
 
-                                                 call initPort
+                                                 call  initPort
 
     ;Setting working directory to the folder containing bitmaps of the pieces
                                                  mov   ah, 3bh

@@ -22,6 +22,20 @@
     ;Message to be displayed if a file fails to open.
     error_msg                db      "Error! Could not open bitmap files.$"
 
+
+
+
+Welcome_Mes db 'Welcome To Our Game...$'
+ Get_Name    db 'Please Enter Your Name: $'
+ User_Name   db  16,?,16 dup('$')
+ dummy       db '$'
+Error_Mes db 'Please Enter a valid Name (Name must start with English Letter) $'
+ Hello  db 'Hello $'
+ Last db 'Please press any key to continue$'
+
+
+
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;VARIABLES USED IN THE MAIN MENU:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -3981,6 +3995,109 @@ main_window proc
 
 main_window endp
 
+
+
+identification_window proc
+
+pusha
+GetName:
+                                                 mov   ax, 0600h
+                                                 mov   bh, 07
+                                                 mov   cx, 0
+                                                 mov   dx, 184Fh
+                                                 int   10h
+
+                                                 mov   ah, 2
+                                                 mov   bh, 0
+                                                 mov   dl, 1Ah
+                                                 mov   dh, 07h
+                                                 int   10h
+
+
+mov dh,1
+ mov dl,28
+ mov ah,2
+ int 10h
+ mov dx, offset Welcome_Mes
+ mov ah,9
+ int 21h
+ 
+ mov dh,5
+ mov dl,0
+ mov ah,2
+ int 10h
+ mov dx, offset Get_Name
+ mov ah,9
+ int 21h
+
+ mov ah,0AH
+ mov dx,offset User_Name
+ int 21h
+
+
+ 
+   
+   
+mov al, User_Name+2
+ Check1:
+ cmp al,41h
+ jb Error
+ cmp al,80h
+ ja Error
+ jmp Done
+   
+   
+   
+   
+Error:
+    mov dh,7
+ mov dl,0
+ mov ah,2
+ int 10h 
+ mov dx, offset Error_Mes
+ mov ah,9
+ int 21h 
+ mov ah,00H
+ int 16h
+
+;mov ah,0
+;int 10h
+jmp GetName 
+ 
+ 
+Done:
+ mov dh,7
+ mov dl,32
+ mov ah,2
+ int 10h
+mov dx, offset Hello
+ mov ah,9
+ int 21h 
+  
+mov dx, offset User_Name+2
+ mov ah,9
+ int 21h  
+ mov dh,8
+ mov dl,28
+ mov ah,2
+ int 10h
+mov dx, offset Last
+ mov ah,9
+ int 21h  
+ 
+ mov ah,00H
+ int 16h
+
+call main_window 
+
+popa
+
+ret
+
+identification_window endp
+
+
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PROCEDURES USED IN THE WELCOME SCREEN:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -4010,23 +4127,23 @@ welcome endp
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 test_window proc
-
-                                                 call  init_board
-                                                 call  init_video_mode
+call identification_window
+                                                 ;call  init_board
+                                                 ;call  init_video_mode
     ;call  draw_background
-    mov   al, 14h
-    call  clear_screen
-    call  draw_labels
-    call  set_board_base
-    call  draw_board
-    call  set_border
-    call  draw_letters
-    call  draw_numbers
-    call  status_bar
+    ;mov   al, 14h
+    ;call  clear_screen
+    ;call  draw_labels
+    ;call  set_board_base
+    ;call  draw_board
+    ;call  set_border
+    ;call  draw_letters
+    ;call  draw_numbers
+    ;call  status_bar
 
-    mov bx, 0
-    call  update_status
-    call  inline_chat_window
+    ;mov   bx, 0
+    ;call  update_status
+    ;call  inline_chat_window
 ;ctrl k u uncomment
 ;ctrl k c comment
                                                  hlt
@@ -4052,7 +4169,7 @@ main proc far
                                                  mov   dx, offset pieces_wd
                                                  int   21h
 
-                                                 call  game_window
+                                                 call  test_window
 
 main endp
 end main

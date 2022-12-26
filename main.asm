@@ -104,6 +104,7 @@
     startSending             db      0d
     startPosSent             db      0d
     gotOponentStartPos       db      0d
+    end_game                 db     -1d
     
 
     ;; plays that will be sent to the oponent
@@ -3165,8 +3166,16 @@ movePiece PROC
                                                  mov   al, board[bx]
                                                  cmp   al, 0d                                          ; checking if the player has taken a piece
                                                  jz    conitnue_movePiece
+                                                 cmp al,6d
+                                                 jnz movePiece_capture_piece                                                 
+                                                 
+                                                 mov end_game,1  
 
+
+     movePiece_capture_piece:
     ;;; logic for if piece exists (displaying it next to board)
+
+
                                                  mov   current_captured_piece, al
                                                  call  draw_captured_piece
 
@@ -3568,6 +3577,27 @@ showOponentMove PROC
                 mov di, oponent_endPos_DI
 
                 call getPos
+                mov  ch, board[bx]
+
+                cmp ch, 0
+                jz  showOponentMove_continue
+
+                cmp ch, -6d
+                jnz  showOponentMove_draw_captured_piece
+                ; jmp showOponentMove_draw_captured_piece
+
+
+                
+showOponentMove_end_game:
+                ;; TODO: Talla3 el message eno l game 5eles ya hamadaaa 
+                mov end_game, 1
+
+showOponentMove_draw_captured_piece:
+                ;; TODO: Talla3 el message eno ettakel ya hamadaaa 
+                mov current_captured_piece, ch
+                call draw_captured_piece
+
+showOponentMove_continue:
 
                 mov board[bx], cl
 
@@ -3665,8 +3695,11 @@ game_window proc
                                                  call  sendMoveToOponent
 
                                                  call  listenForOponentMove
-                                                           
-                                                 jmp   play_chess
+
+                                                ;  call checkForCheck
+
+                                                 cmp end_game, 1d       
+                                                 jnz   play_chess
 
                                                  ret
 

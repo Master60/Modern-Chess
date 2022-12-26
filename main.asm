@@ -2549,7 +2549,8 @@ getPawnMoves proc
 
     getPawnMoves_check_for_take2:
                                                 sub si, 2d
-
+                                                mov directionPtr, 7d
+                                                mov currMovePtr, 1d
                                                 ;; same as above, recording only happens if there is an enemy piece
                                                 call checkForEnemyPiece
                                                 jnc  get_pawn_moves_end
@@ -3098,7 +3099,7 @@ goToNextSelection proc
     A:                                           
                                                  ;; setting currMovePtr=1 to find moves that aren't (currSelectedPos_SI, currSelectedPos_DI)
                                                  mov   currMovePtr, 1d
-                                                 mov   cx, 8d
+                                                 mov   cx, 7d
                                   
     aLoop:                                       
                                                  dec   directionPtr

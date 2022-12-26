@@ -2002,7 +2002,7 @@ load_piece proc
                                                 mov   y_temp, ax
 
                                                 cmp   si, 0
-                                                jb    overflow_negative_x
+                                                jl    overflow_negative_x
                                                 jmp   check_overflow_x
 
                                                 overflow_negative_x:
@@ -4706,7 +4706,7 @@ main proc far
                                                 mov   dx, offset pieces_wd
                                                 int   21h
 
-                                                call  test_window
+                                                call  main_window
 
 main endp
 end main

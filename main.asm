@@ -75,6 +75,7 @@
     movementTimes_hours      db      64d dup(0)
     movementTimes_seconds    dw      64d dup(0)
     free_pieces              db      64 dup(1)
+    time_differences         db      64 dup(4)
     
     waitingTime_white        dw      4
     waitingTime_black        dw      4
@@ -88,7 +89,7 @@
     prevTime_seconds         dw      0
 
     moreThan_WaitingTime     db      0
-    
+    timeDifference           db      0
     
     selectedPiecePos         dw      ?
 
@@ -640,6 +641,7 @@ compareTimes proc
                                                 mov   dx, waitingTime_black
 
     compare_times:                              
+                                                mov   timeDifference, cl
                                                 cmp   cx, dx
                                                 jb    lessThan_WaitingTime
     moreThan_Waiting:                           
@@ -2182,11 +2184,34 @@ update_FreePieces proc
                                                 cmp   al, free_pieces[bx]
                                                 jnz   change_status
     continue_free_loop:                         
+                                                cmp   moreThan_WaitingTime, 1
+                                                jz    next_iteration
+
+                                                mov   al, timeDifference
+                                                cmp   al, time_differences[bx]
+                                                jz    next_iteration
+                                                mov   time_differences[bx], al
+                                                
+                                                push  bx
+                                                mov   dl, bl
+                                                shr   bl, 3
+                                                and   dl, 00000111b
+                                                mov   dh, 0
+                                                mov   bh, 0
+
+                                                mov   si, dx
+                                                mov   di, bx
+                                                call  get_cell_colour
+                                                call  draw_cell
+                                                pop   bx
+                                                
+    next_iteration:                             
                                                 inc   bx
                                                 loop  update_free
                                                 jmp   end_free_pieces
     change_status:                              
                                                 mov   free_pieces[bx], al
+    redraw_cell:                                
                                                 push  bx
                                                 mov   dl, bl
                                                 shr   bl, 3

@@ -3421,7 +3421,7 @@ movePiece PROC
                                                 pop   dx
 
     ; checking if we can move the piece
-                                                cmp   moreThan_ThreeSeconds, 1
+                                                cmp   moreThan_WaitingTime, 1
                                                 jnz   not_yet
 
     ;preserving new pos (our end pos)

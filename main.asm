@@ -877,8 +877,8 @@ draw_letters proc
                                                 add   ax, 4
                                                 mov   dx, ax
 
-                                                 mov   al, 0fh    ;3
-                                                 mov   ah, 0ch
+                                                mov   al, 0fh                                        ;3
+                                                mov   ah, 0ch
 
                                                 mov   di, 8
 
@@ -946,8 +946,8 @@ draw_letters proc
                                                 sub   ax, 4
                                                 mov   dx, ax
 
-                                                 mov   al, 0fh
-                                                 mov   ah, 0ch
+                                                mov   al, 0fh
+                                                mov   ah, 0ch
 
                                                 mov   di, 8
 
@@ -1032,8 +1032,8 @@ draw_numbers proc
                                                 add   ax, 31d
                                                 mov   dx, ax
 
-                                                 mov   al, 0fh
-                                                 mov   ah, 0ch
+                                                mov   al, 0fh
+                                                mov   ah, 0ch
 
                                                 mov   di, 8
 
@@ -1110,8 +1110,8 @@ draw_numbers proc
                                                 sub   ax, 31d
                                                 mov   dx, ax
 
-                                                 mov   al, 0fh
-                                                 mov   ah, 0ch
+                                                mov   al, 0fh
+                                                mov   ah, 0ch
 
                                                 mov   di, 8
 
@@ -1436,15 +1436,15 @@ draw_labels proc
                                                 mov   dx, offset temp_name
                                                 int   21h
 
-mov   ah, 2
-mov   bh, 0
-mov   dl, 89d
-mov   dh, 1d
-int   10h
+                                                mov   ah, 2
+                                                mov   bh, 0
+                                                mov   dl, 89d
+                                                mov   dh, 1d
+                                                int   10h
 
-mov   ah, 9
-mov   dx, offset temp_name2
-int   21h
+                                                mov   ah, 9
+                                                mov   dx, offset temp_name2
+                                                int   21h
 
 
                                                 popa
@@ -1499,8 +1499,8 @@ set_board_base proc
                                                 sub   dx, ax
                                                 sub   dx, 25d
 
-                                                 mov   al, 0a7h                                         ;08d light grey, 06d light brown, 0eh light yellow
-                                                 mov   ah, 0ch
+                                                mov   al, 0a7h                                       ;08d light grey, 06d light brown, 0eh light yellow
+                                                mov   ah, 0ch
 
     board_y:                                    
 
@@ -1527,10 +1527,10 @@ set_border proc
 
                                                 pusha
 
-                                                 mov   cx, 150d ;margin x - 25
-                                                 mov   dx, 125d ;margin y - 25
-                                                 mov   al, 16h                                         ;4 dark brown
-                                                 mov   ah, 0ch
+                                                mov   cx, 150d                                       ;margin x - 25
+                                                mov   dx, 125d                                       ;margin y - 25
+                                                mov   al, 16h                                        ;4 dark brown
+                                                mov   ah, 0ch
 
     border_y:                                   
 
@@ -1606,11 +1606,11 @@ update_status proc
 
                                                 call  status_bar
 
-mov   ah, 2
-mov   bh, 0
-mov   dl, 40d
-mov   dh, 56d
-int   10h
+                                                mov   ah, 2
+                                                mov   bh, 0
+                                                mov   dl, 40d
+                                                mov   dh, 56d
+                                                int   10h
 
                                                 cmp   bx, 0
                                                 jz    start_game_status
@@ -1863,34 +1863,34 @@ load_piece proc
 
     ;Get the actual position of the top left corner of the cell we wish to draw at, and store the coordinates in the x_temp and y_temp variables.
 
-                                                 mov   ax, di
-                                                 mul   cell_size
-                                                 add   ax, margin_y
-                                                 mov   y_temp, ax
+                                                mov   ax, di
+                                                mul   cell_size
+                                                add   ax, margin_y
+                                                mov   y_temp, ax
 
-                                                 mov   ax, si
-                                                 mul   cell_size
-                                                 add   ax, margin_x
-                                                 mov   x_temp, ax
+                                                mov   ax, si
+                                                mul   cell_size
+                                                add   ax, margin_x
+                                                mov   x_temp, ax
 
-                                                 cmp si, 0
-                                                 jb overflow_negative_x
-                                                 cmp si, 7
-                                                 ja overflow_x
+                                                cmp   si, 0
+                                                jb    overflow_negative_x
+                                                cmp   si, 7
+                                                ja    overflow_x
 
-                                                 jmp end_overflow_x
+                                                jmp   end_overflow_x
 
-                                                 overflow_negative_x:
-                                                 sub ax, 25d
-                                                 mov x_temp, ax
-                                                 jmp end_overflow_x
+    overflow_negative_x:                        
+                                                sub   ax, 25d
+                                                mov   x_temp, ax
+                                                jmp   end_overflow_x
 
-                                                 overflow_x:
-                                                 add ax, 25d
-                                                 mov x_temp, ax
-                                                 jmp end_overflow_x
+    overflow_x:                                 
+                                                add   ax, 25d
+                                                mov   x_temp, ax
+                                                jmp   end_overflow_x
 
-                                                 end_overflow_x:
+    end_overflow_x:                             
                 
     ;Load the image into the bitmap_buffer.
                                                 mov   bx, file_handle
@@ -3494,10 +3494,10 @@ movePiece PROC
                                                 mov   endPos_SI, si
                                                 mov   endPos_DI, di
 
-                                                 mov   al, hover_cell_color
-                                                 call  draw_cell
+                                                mov   al, hover_cell_color
+                                                call  draw_cell
 
-                                                 call status_bar
+                                                call  status_bar
     
     ;; removing the oponent's previously colored moves (if it is overwritten)
     movePiece_remove_oponent_startpos:          
@@ -3522,16 +3522,16 @@ movePiece PROC
                                                 mov   currSelectedPos_DI, -1d
                                                 mov   currSelectedPos_SI, -1d
 
-                                                 mov startSending, 1d 
+                                                mov   startSending, 1d
 
-                                                 ret
-    not_yet:                                   
-                                                 push bx
-                                                 mov bx, 1
-                                                 call update_status
-                                                 pop bx
-                                                ;; TODO: add status bar message (cannot move this piece yet)
-                                                 ret
+                                                ret
+    not_yet:                                    
+                                                push  bx
+                                                mov   bx, 1
+                                                call  update_status
+                                                pop   bx
+    ;; TODO: add status bar message (cannot move this piece yet)
+                                                ret
 movePiece ENDP
 
     ;Procedures for check
@@ -4138,20 +4138,20 @@ game_window proc
                                                 call  clear_screen
 
 
-                                                 call draw_labels
-                                                 call set_board_base
+                                                call  draw_labels
+                                                call  set_board_base
 
 
                                                 call  draw_board                                     ;Draw the board
 
 
-                                                 call set_border
-                                                 call draw_letters
-                                                 call draw_numbers
-                                                 call status_bar
-                                                 call inline_chat_window
-                                                 mov bx, 0
-                                                 call update_status
+                                                call  set_border
+                                                call  draw_letters
+                                                call  draw_numbers
+                                                call  status_bar
+                                                call  inline_chat_window
+                                                mov   bx, 0
+                                                call  update_status
 
                          
                                                 mov   si, 3d
@@ -4176,10 +4176,10 @@ game_window proc
                                                 cmp   end_game, 1d
                                                 jnz   play_chess
 
-                                                 mov bx, 2
-                                                 call update_status
+                                                mov   bx, 2
+                                                call  update_status
 
-                                                 ret
+                                                ret
 
 game_window endp
 
@@ -4420,25 +4420,25 @@ welcome endp
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 test_window proc
-;call identification_window
-    call  init_board
-    call  init_video_mode
-    mov   al, 14h
-    call  clear_screen
-    call  draw_labels
-    call  set_board_base
-    call  draw_board
-    call  set_border
-    call  draw_letters
-    call  draw_numbers
-    call  status_bar
+    ;call identification_window
+                                                call  init_board
+                                                call  init_video_mode
+                                                mov   al, 14h
+                                                call  clear_screen
+                                                call  draw_labels
+                                                call  set_board_base
+                                                call  draw_board
+                                                call  set_border
+                                                call  draw_letters
+                                                call  draw_numbers
+                                                call  status_bar
 
-    mov   bx, 0
-    call  update_status
-    mov ah,00H
- int 16h
- mov bx,1
- call update_status
+                                                mov   bx, 0
+                                                call  update_status
+                                                mov   ah,00H
+                                                int   16h
+                                                mov   bx,1
+                                                call  update_status
     ;call  inline_chat_window
     ;ctrl k u uncomment
     ;ctrl k c comment
@@ -4465,7 +4465,7 @@ main proc far
                                                 mov   dx, offset pieces_wd
                                                 int   21h
 
-                                                 call  main_window
+                                                call  main_window
 
 main endp
 end main

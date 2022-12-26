@@ -75,7 +75,9 @@
     movementTimes_hours      db      64d dup(0)
     movementTimes_seconds    dw      64d dup(0)
     
-    waitingTime              dw      3
+    waitingTime_white        dw      3
+    waitingTime_black        dw      3
+    
     conversionNum            db      0
     
     currentTime_hours        db      0
@@ -653,20 +655,32 @@ getCurrentTime endp
 compareTimes proc
                                                 push  ax
                                                 push  cx
+                                                push  dx
 
                                                 mov   cx, currentTime_seconds
                                                 sub   cx, prevTime_seconds
                                                 jbe   differentHour
     check_above_WaitingTime:                    
-                                                cmp   cx, waitingTime
+                                                cmp   byte ptr board[bx], 0
+                                                jg    black_piece_check
+    white_piece_check:                          
+                                                mov   dx, waitingTime_white
+                                                jmp   compare_times
+    black_piece_check:                          
+                                                mov   dx, waitingTime_black
+
+    compare_times:                              
+                                                cmp   cx, dx
                                                 jb    lessThan_WaitingTime
     moreThan_Waiting:                           
                                                 mov   moreThan_WaitingTime, 1
+                                                pop   dx
                                                 pop   cx
                                                 pop   ax
                                                 ret
     lessThan_WaitingTime:                       
                                                 mov   moreThan_WaitingTime, 0
+                                                pop   dx
                                                 pop   cx
                                                 pop   ax
                                                 ret

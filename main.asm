@@ -1062,21 +1062,6 @@ draw_timer_1 proc
 
                                                 mov   si, 0
 
-<<<<<<< HEAD
-timer_1_y:
-    timer_1_x:
-    cmp timer_1 + [si], 1
-    je draw_the_timer_1
-        back_from_timer_1:
-        inc si
-        inc cx
-        cmp cx, bp
-        jnz timer_1_x
-    mov cx, di
-    inc dx
-    cmp dx, bx
-    jnz timer_1_y
-=======
     timer_1_y:                                  
     timer_1_x:                                  
                                                 cmp   timer_1 + [si],1
@@ -1090,7 +1075,6 @@ timer_1_y:
                                                 inc   dx
                                                 cmp   dx, bx
                                                 jnz   timer_1_y
->>>>>>> 336bbe646b6c1b7fc8673a7f1c9b88a0a47aec63
 
                                                 jmp   end_timer_1
 
@@ -1128,21 +1112,6 @@ draw_timer_2 proc
 
                                                 mov   si, 0
 
-<<<<<<< HEAD
-timer_2_y:
-    timer_2_x:
-    cmp timer_2 + [si], 1
-    je draw_the_timer_2
-        back_from_timer_2:
-        inc si
-        inc cx
-        cmp cx, bp
-        jnz timer_2_x
-    mov cx, di
-    inc dx
-    cmp dx, bx
-    jnz timer_2_y
-=======
     timer_2_y:                                  
     timer_2_x:                                  
                                                 cmp   timer_2 + [si],1
@@ -1156,7 +1125,6 @@ timer_2_y:
                                                 inc   dx
                                                 cmp   dx, bx
                                                 jnz   timer_2_y
->>>>>>> 336bbe646b6c1b7fc8673a7f1c9b88a0a47aec63
 
                                                 jmp   end_timer_2
 
@@ -1194,21 +1162,6 @@ draw_timer_3 proc
 
                                                 mov   si, 0
 
-<<<<<<< HEAD
-timer_3_y:
-    timer_3_x:
-    cmp timer_3 + [si], 1
-    je draw_the_timer_3
-        back_from_timer_3:
-        inc si
-        inc cx
-        cmp cx, bp
-        jnz timer_3_x
-    mov cx, di
-    inc dx
-    cmp dx, bx
-    jnz timer_3_y
-=======
     timer_3_y:                                  
     timer_3_x:                                  
                                                 cmp   timer_3 + [si],1
@@ -1222,7 +1175,6 @@ timer_3_y:
                                                 inc   dx
                                                 cmp   dx, bx
                                                 jnz   timer_3_y
->>>>>>> 336bbe646b6c1b7fc8673a7f1c9b88a0a47aec63
 
                                                 jmp   end_timer_3
 
@@ -3939,6 +3891,7 @@ movePiece PROC
                                                 ; pop dx
 
                                                 ; checking if we can move the piece
+NotKing:
                                                  cmp   free_pieces[bx], 1
                                                  jnz   not_yet
 
@@ -5458,15 +5411,9 @@ test_window proc
                                                 call  draw_numbers
                                                 call  status_bar
 
-<<<<<<< HEAD
-mov di, 100d
-mov si, 100d
-call draw_timer_p
-=======
                                                 mov   di, 100d
                                                 mov   si, 100d
                                                 call  draw_timer_3
->>>>>>> 336bbe646b6c1b7fc8673a7f1c9b88a0a47aec63
 
 
     ;mov   bx, 0

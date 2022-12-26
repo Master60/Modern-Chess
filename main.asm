@@ -243,6 +243,12 @@ Error_Mes db 'Please Enter a valid Name (Name must start with English Letter) $'
     captured_pieces_white    db      16 dup(0)
     captured_pieces_black    db      16 dup(0)
 
+
+
+    ;Variables for check
+
+    Kingpos_si               dw      4d
+    Kingpos_di               dw      7d  
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;DEFINING LETTERS AND NUMBERS:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -3353,7 +3359,10 @@ movePiece PROC
                                                  mov   dx, bx
 
     ; getting the pos that we will read from
-                                   
+                                                                                                    
+                                                
+
+
                                                  mov si, currSelectedPos_SI
                                                  mov di, currSelectedPos_DI
                                                  call  getPos
@@ -3370,6 +3379,12 @@ movePiece PROC
                                                  mov   cl, board[bx]
                                                  mov   byte ptr board[bx], 0d                          ; removing the piece from its currentPos on the board
                                                  
+                                                
+                                                
+
+
+
+
                                                  mov   bx, dx
                                                  mov   al, board[bx]
                                                  cmp   al, 0d                                          ; checking if the player has taken a piece
@@ -3408,9 +3423,15 @@ movePiece PROC
                                                  pop   di
                                                  pop   bx
                                                  pop   dx
+                                                ;check to update king's position   
+                                                 cmp cl,-6d
+                                                 jnz NotKing
+                                                 mov Kingpos_si,si
+                                                 mov Kingpos_di,di                                     
+                                                
 
                                                 ; checking if we can move the piece
-                                                 cmp   moreThan_ThreeSeconds, 1
+    NotKing:                                     cmp   moreThan_ThreeSeconds, 1
                                                  jnz   not_yet
 
                                                 ;preserving new pos (our end pos)
@@ -3450,6 +3471,172 @@ movePiece PROC
                                                 ;; TODO: add status bar message (cannot move this piece yet)
                                                  ret
 movePiece ENDP
+
+;Procedures for check
+
+check_king_vertical proc
+
+pusha
+
+                           mov si,Kingpos_si
+                            mov di,Kingpos_di 
+vertical_up:
+         cmp di,0d  
+         jz end_vertical_up
+         dec di
+         call getpos  
+         cmp board[bx],0d
+         jz vertical_up
+         mov cl,board[bx]   ;cl contains the piece in front of the king we've to check if its same color or not and if not check type to see if it can kill the king
+         cmp cl,0d
+         jb end_vertical_up  ;if cl contains negative then its a white piece so king is safe from vertical up
+       ;we've to check if the enemy piece is blck rook,black queen or black king with max distance 2 
+         cmp cl,4d
+         jz AlertPlayer
+         cmp cl,5d 
+         jz AlertPlayer
+         cmp cl,6d
+         jnz end_vertical_up
+         mov ax, Kingpos_di
+         sub ax, di
+         cmp ax,2d
+         jbe AlertPlayer
+         jmp end_vertical_up
+
+
+end_vertical_up:
+
+          mov di,Kingpos_di 
+           
+vertical_down:
+         cmp di,7d  
+         jz end_vertical_down
+         inc di
+         call getpos  
+         cmp board[bx],0d
+         jz vertical_down
+         mov cl,board[bx]   ;cl contains the piece behind of the king we've to check if its same color or not and if not check type to see if it can kill the king
+         cmp cl,0d
+         jb end_vertical_down  ;if cl contains negative then its a white piece so king is safe from vertical down
+       ;we've to check if the enemy piece is black rook,black queen or black king with max distance 2 
+         cmp cl,4d
+         jz AlertPlayer
+         cmp cl,5d 
+         jz AlertPlayer
+         cmp cl,6d
+         jnz end_vertical_down
+         sub di, Kingpos_di
+         cmp di,2d
+         jbe AlertPlayer
+         jmp end_vertical_down
+
+
+end_vertical_down:
+          popa
+          ret
+
+
+AlertPlayer:
+mov dl, 'h'
+mov ah,2
+int 21h
+;display message
+popa
+
+
+ret
+check_king_vertical ENDP   
+
+
+check_king_horizontal proc
+
+pusha
+
+                           mov si,Kingpos_si
+                           mov di,Kingpos_di 
+horizontal_left:
+         cmp si,0d  
+         jz end_horizontal_left
+         dec si
+         call getpos  
+         cmp board[bx],0d
+         jz horizontal_left
+         mov cl,board[bx]   ;cl contains the piece left to the king we've to check if its same color or not and if not check type to see if it can kill the king
+         cmp cl,0d
+         jb end_horizontal_left  ;if cl contains negative then its a white piece so king is safe from horizontal left
+       ;we've to check if the enemy piece is blck rook,black queen or black king with max distance 2 
+         cmp cl,4d
+         jz AlertPlayerH
+         cmp cl,5d 
+         jz AlertPlayerH
+         cmp cl,6d
+         jnz end_horizontal_left
+         mov ax, Kingpos_si
+         sub ax, si
+         cmp ax,2d
+         jbe AlertPlayerH
+         jmp end_horizontal_left
+
+
+end_horizontal_left:
+
+          mov si,Kingpos_si 
+           
+horizontal_right:
+         cmp si,7d  
+         jz end_horizontal_right
+         inc si
+         call getpos  
+         cmp board[bx],0d
+         jz horizontal_right
+         mov cl,board[bx]   ;cl contains the piece right to the king we've to check if its same color or not and if not check type to see if it can kill the king
+         cmp cl,0d
+         jb end_horizontal_right  ;if cl contains negative then its a white piece so king is safe from horizontal right
+       ;we've to check if the enemy piece is black rook,black queen or black king with max distance 2 
+         cmp cl,4d
+         jz AlertPlayerH
+         cmp cl,5d 
+         jz AlertPlayerH
+         cmp cl,6d
+         jnz end_horizontal_right
+         sub si, Kingpos_si
+         cmp si,2d
+         jbe AlertPlayerH
+         jmp end_horizontal_right
+
+
+end_horizontal_right:
+          popa
+          ret
+
+
+AlertPlayerH:
+mov dl, 'h'
+mov ah,2
+int 21h
+;display message
+popa
+ret
+
+
+check_king_horizontal ENDP            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 getPlayerSelection PROC
@@ -3914,7 +4101,8 @@ game_window proc
 
                                                  call  listenForOponentMove
 
-                                                ;  call checkForCheck
+                                                 call check_king_vertical
+                                                 call check_king_horizontal
 
                                                  cmp end_game, 1d       
                                                  jnz   play_chess
@@ -4202,7 +4390,7 @@ main proc far
                                                  mov   dx, offset pieces_wd
                                                  int   21h
 
-                                                 call  test_window
+                                                 call  game_window
 
 main endp
 end main

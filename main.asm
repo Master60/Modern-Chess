@@ -585,49 +585,49 @@
                              db      1,1,1,1,1,1,1,1,1,1,1,1,1
                              db      1,1,1,1,1,1,1,1,1,1,1,1,1
 
-    timers label byte
+                             timers  label byte
 
-    timer_1 db 0,0,0,1,1,1,0,0,0
-            db 0,0,0,1,1,1,0,0,0
-            db 0,0,0,1,1,1,0,0,0
-            db 0,0,0,1,1,1,0,0,0
-            db 0,0,0,1,1,1,0,0,0
-            db 0,0,0,1,1,1,0,0,0
-            db 0,0,0,1,1,1,0,0,0
-            db 0,0,0,1,1,1,0,0,0
-            db 0,0,0,1,1,1,0,0,0
-            db 0,0,0,1,1,1,0,0,0
-            db 0,0,0,1,1,1,0,0,0
-            db 0,0,0,1,1,1,0,0,0
-            db 0,0,0,1,1,1,0,0,0
+    timer_1                  db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
 
-    timer_2 db 1,1,1,1,1,1,1,1,1
-            db 1,1,1,1,1,1,1,1,1
-            db 0,0,0,0,0,0,0,1,1
-            db 0,0,0,0,0,0,0,1,1
-            db 0,0,0,0,0,0,0,1,1
-            db 0,0,0,0,0,0,0,1,1
-            db 1,1,1,1,1,1,1,1,1
-            db 1,1,1,1,1,1,1,1,1
-            db 1,1,0,0,0,0,0,0,0
-            db 1,1,0,0,0,0,0,0,0
-            db 1,1,0,0,0,0,0,0,0
-            db 1,1,1,1,1,1,1,1,1
-            db 1,1,1,1,1,1,1,1,1
+    timer_2                  db      1,1,1,1,1,1,1,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      1,1,0,0,0,0,0,0,0
+                             db      1,1,0,0,0,0,0,0,0
+                             db      1,1,0,0,0,0,0,0,0
+                             db      1,1,1,1,1,1,1,1,1
+                             db      1,1,1,1,1,1,1,1,1
 
-    timer_3 db 1,1,1,1,1,1,1,1,1
-            db 1,1,1,1,1,1,1,1,1
-            db 0,0,0,0,0,0,0,1,1
-            db 0,0,0,0,0,0,0,1,1
-            db 0,0,0,0,0,0,0,1,1
-            db 0,0,0,0,0,0,0,1,1
-            db 1,1,1,1,1,1,1,1,1
-            db 1,1,1,1,1,1,1,1,1
-            db 0,0,0,0,0,0,0,1,1
-            db 0,0,0,0,0,0,0,1,1
-            db 0,0,0,0,0,0,0,1,1
-            db 1,1,1,1,1,1,1,1,1
-            db 1,1,1,1,1,1,1,1,1
+    timer_3                  db      1,1,1,1,1,1,1,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      1,1,1,1,1,1,1,1,1
 
     temp_sp                  dw      ?
     status_1                 db      'Game has started', '$'
@@ -978,157 +978,157 @@ draw_letters proc
 
 draw_letters endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 draw_timer_1 proc
 
-pusha
+                                                pusha
 
-add di, 33d
-add si, 31d
+                                                add   di, 33d
+                                                add   si, 31d
 
-mov bp, di
-mov bx, si
+                                                mov   bp, di
+                                                mov   bx, si
 
-add bp, 09d
-add bx, 13d
+                                                add   bp, 09d
+                                                add   bx, 13d
 
-mov cx, di
-mov dx, si
-mov al, 04h
-mov ah, 0ch
+                                                mov   cx, di
+                                                mov   dx, si
+                                                mov   al, 04h
+                                                mov   ah, 0ch
 
-mov si, 0
+                                                mov   si, 0
 
-timer_1_y:
-    timer_1_x:
-    cmp timer_1 + [si],1
-    je draw_the_timer_1
-        back_from_timer_1:
-        inc si
-        inc cx
-        cmp cx, bp
-        jnz timer_1_x
-    mov cx, di
-    inc dx
-    cmp dx, bx
-    jnz timer_1_y
+    timer_1_y:                                  
+    timer_1_x:                                  
+                                                cmp   timer_1 + [si],1
+                                                je    draw_the_timer_1
+    back_from_timer_1:                          
+                                                inc   si
+                                                inc   cx
+                                                cmp   cx, bp
+                                                jnz   timer_1_x
+                                                mov   cx, di
+                                                inc   dx
+                                                cmp   dx, bx
+                                                jnz   timer_1_y
 
-jmp end_timer_1
+                                                jmp   end_timer_1
 
-draw_the_timer_1:
-int 10h
-jmp back_from_timer_1
+    draw_the_timer_1:                           
+                                                int   10h
+                                                jmp   back_from_timer_1
 
-end_timer_1:
+    end_timer_1:                                
 
-popa
+                                                popa
 
-ret
+                                                ret
 
 draw_timer_1 endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 draw_timer_2 proc
 
-pusha
+                                                pusha
 
-add di, 33d
-add si, 31d
+                                                add   di, 33d
+                                                add   si, 31d
 
-mov bp, di
-mov bx, si
+                                                mov   bp, di
+                                                mov   bx, si
 
-add bp, 09d
-add bx, 13d
+                                                add   bp, 09d
+                                                add   bx, 13d
 
-mov cx, di
-mov dx, si
-mov al, 04h
-mov ah, 0ch
+                                                mov   cx, di
+                                                mov   dx, si
+                                                mov   al, 04h
+                                                mov   ah, 0ch
 
-mov si, 0
+                                                mov   si, 0
 
-timer_2_y:
-    timer_2_x:
-    cmp timer_2 + [si],1
-    je draw_the_timer_2
-        back_from_timer_2:
-        inc si
-        inc cx
-        cmp cx, bp
-        jnz timer_2_x
-    mov cx, di
-    inc dx
-    cmp dx, bx
-    jnz timer_2_y
+    timer_2_y:                                  
+    timer_2_x:                                  
+                                                cmp   timer_2 + [si],1
+                                                je    draw_the_timer_2
+    back_from_timer_2:                          
+                                                inc   si
+                                                inc   cx
+                                                cmp   cx, bp
+                                                jnz   timer_2_x
+                                                mov   cx, di
+                                                inc   dx
+                                                cmp   dx, bx
+                                                jnz   timer_2_y
 
-jmp end_timer_2
+                                                jmp   end_timer_2
 
-draw_the_timer_2:
-int 10h
-jmp back_from_timer_2
+    draw_the_timer_2:                           
+                                                int   10h
+                                                jmp   back_from_timer_2
 
-end_timer_2:
+    end_timer_2:                                
 
-popa
+                                                popa
 
-ret
+                                                ret
 
 draw_timer_2 endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 draw_timer_3 proc
 
-pusha
+                                                pusha
 
-add di, 33d
-add si, 31d
+                                                add   di, 33d
+                                                add   si, 31d
 
-mov bp, di
-mov bx, si
+                                                mov   bp, di
+                                                mov   bx, si
 
-add bp, 09d
-add bx, 13d
+                                                add   bp, 09d
+                                                add   bx, 13d
 
-mov cx, di
-mov dx, si
-mov al, 04h
-mov ah, 0ch
+                                                mov   cx, di
+                                                mov   dx, si
+                                                mov   al, 04h
+                                                mov   ah, 0ch
 
-mov si, 0
+                                                mov   si, 0
 
-timer_3_y:
-    timer_3_x:
-    cmp timer_3 + [si],1
-    je draw_the_timer_3
-        back_from_timer_3:
-        inc si
-        inc cx
-        cmp cx, bp
-        jnz timer_3_x
-    mov cx, di
-    inc dx
-    cmp dx, bx
-    jnz timer_3_y
+    timer_3_y:                                  
+    timer_3_x:                                  
+                                                cmp   timer_3 + [si],1
+                                                je    draw_the_timer_3
+    back_from_timer_3:                          
+                                                inc   si
+                                                inc   cx
+                                                cmp   cx, bp
+                                                jnz   timer_3_x
+                                                mov   cx, di
+                                                inc   dx
+                                                cmp   dx, bx
+                                                jnz   timer_3_y
 
-jmp end_timer_3
+                                                jmp   end_timer_3
 
-draw_the_timer_3:
-int 10h
-jmp back_from_timer_3
+    draw_the_timer_3:                           
+                                                int   10h
+                                                jmp   back_from_timer_3
 
-end_timer_3:
+    end_timer_3:                                
 
-popa
+                                                popa
 
-ret
+                                                ret
 
 draw_timer_3 endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 draw_numbers proc
 
@@ -2007,7 +2007,7 @@ load_piece proc
                                                 jl    overflow_negative_x
                                                 jmp   check_overflow_x
 
-                                                overflow_negative_x:
+    overflow_negative_x:                        
                                                 neg   si
                                                 mov   ax, si
                                                 mul   cell_size
@@ -2015,12 +2015,12 @@ load_piece proc
                                                 mov   bx, margin_x
                                                 sub   bx, ax
                                                 mov   ax, bx
-                                                pop   bx                        
+                                                pop   bx
                                                 sub   ax, 25d
                                                 mov   x_temp, ax
                                                 jmp   end_overflow_x
 
-                                                check_overflow_x:
+    check_overflow_x:                           
                                                 cmp   si, 7
                                                 ja    overflow_positive_x
                                                 mov   ax, si
@@ -2029,15 +2029,15 @@ load_piece proc
                                                 mov   x_temp, ax
                                                 jmp   end_overflow_x
 
-                                                overflow_positive_x:
+    overflow_positive_x:                        
                                                 mov   ax, si
                                                 mul   cell_size
-                                                add   ax, margin_x                                
+                                                add   ax, margin_x
                                                 add   ax, 25d
                                                 mov   x_temp, ax
                                                 jmp   end_overflow_x
 
-    end_overflow_x:                           
+    end_overflow_x:                             
                 
     ;Load the image into the bitmap_buffer.
                                                 mov   bx, file_handle
@@ -2250,16 +2250,6 @@ draw_jail proc
 
                                                 pusha
 
-                                                mov   ax, si
-                                                mul   cell_size
-                                                mov   si, ax
-                                                add   si, margin_x
-
-                                                mov   ax, di
-                                                mul   cell_size
-                                                mov   di, ax
-                                                add   di, margin_y
-
                                                 mov   ah, 0ch
                                                 mov   al, 0d
                                                 
@@ -2346,6 +2336,9 @@ draw_cell proc
     ;After drawing the cell, we now wish to draw the piece in the cell (if any).
 
     ;Get back the original row and column positions (from 0 to 7).
+                                                mov   cx, si
+                                                mov   dx, di
+                                                
                                                 pop   di
                                                 pop   si
                                       
@@ -2359,12 +2352,37 @@ draw_cell proc
                                                 mov   piece_to_draw, al
                                                 call  draw_piece
     ;If the piece cannot move, draw a jail.
+                                                push  si
+                                                push  di
                                                 cmp   free_pieces[bx], 1
                                                 jz    exit_draw_cell
+                                                
+                                                mov   si, cx
+                                                mov   di, dx
                                                 call  draw_jail
+                                                xchg  si, di
+
+                                                cmp   time_differences[bx], 1
+                                                jz    draw_3
+                                                cmp   time_differences[bx], 2
+                                                jz    draw_2
+                                                cmp   time_differences[bx], 3
+                                                jz    draw_1
+
+    draw_3:                                     
+                                                call  draw_timer_3
+                                                jmp   exit_draw_cell
+    draw_2:                                     
+                                                call  draw_timer_2
+                                                jmp   exit_draw_cell
+
+    draw_1:                                     
+                                                call  draw_timer_1
     
     exit_draw_cell:                             
     ;Exiting
+                                                pop   di
+                                                pop   si
                                                 pop   dx
                                                 pop   cx
                                                 pop   bx
@@ -4540,7 +4558,7 @@ main_window proc
                                                 call  game_window
                                                 jmp   main_start
 
-    program_end:                                   
+    program_end:                                
                                                 call  terminate
 
                                                 popa
@@ -4694,17 +4712,17 @@ test_window proc
                                                 call  draw_numbers
                                                 call  status_bar
 
-mov di, 100d
-mov si, 100d
-call draw_timer_3
+                                                mov   di, 100d
+                                                mov   si, 100d
+                                                call  draw_timer_3
 
 
-                                                ;mov   bx, 0
-                                                ;call  update_status
-                                                ;mov   ah,00H
-                                                ;int   16h
-                                                ;mov   bx,1
-                                                ;call  update_status
+    ;mov   bx, 0
+    ;call  update_status
+    ;mov   ah,00H
+    ;int   16h
+    ;mov   bx,1
+    ;call  update_status
     ;call  inline_chat_window
     ;ctrl k u uncomment
     ;ctrl k c comment

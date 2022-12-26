@@ -74,10 +74,10 @@
     ;An array that will store the last time at which every piece on the board moved.
     movementTimes_hours      db      64d dup(0)
     movementTimes_seconds    dw      64d dup(0)
-    jailed_pieces            db      64 dup(0)
+    free_pieces              db      64 dup(1)
     
-    waitingTime_white        dw      3
-    waitingTime_black        dw      3
+    waitingTime_white        dw      4
+    waitingTime_black        dw      4
     
     conversionNum            db      0
     
@@ -595,46 +595,15 @@
     ;MISCELLANEOUS PROCEDURES:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-convert_BCD_To_Decimal proc
-                                                push  ax
-                                                push  bx
-                                                push  cx
-
-                                                mov   al, conversionNum
-                                                mov   bl, al
-                                                and   al, 0f0h
-                                                and   bl, 0fh
-                                                shr   al, 4
-                                                mov   cl, 10
-                                                mul   cl
-                                                add   al, bl
-                                                mov   conversionNum, al
-
-                                                pop   cx
-                                                pop   bx
-                                                pop   ax
-
-                                                ret
-convert_BCD_To_Decimal endp
-
-
 getCurrentTime proc
                                                 push  ax
                                                 push  cx
                                                 push  dx
                            
-                                                mov   ah, 2
-                                                int   1ah
+                                                mov   ah, 2ch
+                                                int   21h
 
                                                 mov   currentTime_hours, ch
-
-                                                mov   conversionNum, cl
-                                                call  convert_BCD_To_Decimal
-                                                mov   cl, conversionNum
-
-                                                mov   conversionNum, dh
-                                                call  convert_BCD_To_Decimal
-                                                mov   dh, conversionNum
 
                                                 xor   ah, ah
                                                 mov   al, cl
@@ -738,36 +707,6 @@ updateMovementTimes proc
                               
                                                 ret
 updateMovementTimes endp
-
-update_JailedPieces proc
-
-                                                push  bx
-                                                push  cx
-                                                
-                                                call  getCurrentTime
-                                                mov   bx, 0
-                                                mov   cx, 64d
-    update_jails:                               
-                                                call  getPrevTime
-                                                call  compareTimes
-                                                cmp   moreThan_WaitingTime, 1
-                                                jnz   not_allowed_to_move
-
-    ;Allowed to move
-                                                mov   jailed_pieces[bx], 0
-                                                jmp   continue_jail_loop
-    not_allowed_to_move:                        
-                                                mov   jailed_pieces[bx], 1
-    continue_jail_loop:                         
-                                                inc   bx
-                                                loop  update_jails
-
-                                                pop   cx
-                                                pop   bx
-                                                ret
-
-update_JailedPieces endp
-
 
     ;sets carry flag
 setcarry PROC
@@ -2113,6 +2052,50 @@ draw_piece proc
 draw_piece endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
+    
+draw_jail proc
+
+                                                pusha
+
+                                                mov   ax, si
+                                                mul   cell_size
+                                                mov   si, ax
+                                                add   si, margin_x
+
+                                                mov   ax, di
+                                                mul   cell_size
+                                                mov   di, ax
+                                                add   di, margin_y
+
+                                                mov   ah, 0ch
+                                                mov   al, 0d
+                                                
+                                                mov   cx, si
+                                                add   cx, cell_size
+
+                                                mov   dx, di
+                                                add   dx, cell_size
+                                                mov   bx, dx
+
+                                                
+    loop_x_jail:                                
+                                                mov   dx, bx
+    loop_y_jail:                                
+                                                int   10h
+                                                dec   dx
+                                                cmp   dx, di
+                                                jnz   loop_y_jail
+                                                sub   cx, 5
+                                                cmp   cx, si
+                                                jnz   loop_x_jail
+                                                
+                                                popa
+                                                ret
+
+draw_jail endp
+    
+    
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;Draws a cell at the row and columns positions specified by SI and DI.
 draw_cell proc
@@ -2179,9 +2162,15 @@ draw_cell proc
     ;Multiplies by 8, we don't need to move 3 to register first in this assembler. We multiply the row number by 8 since each row has 8 positions.
                                                 shl   bx, 3
                                                 add   bx, si
-                                                mov   bl, byte ptr [bx + offset board]
-                                                mov   piece_to_draw, bl
+                                                mov   al, byte ptr [bx + offset board]
+                                                mov   piece_to_draw, al
                                                 call  draw_piece
+    ;If the piece cannot move, draw a jail.
+                                                cmp   free_pieces[bx], 1
+                                                jz    exit_draw_cell
+                                                call  draw_jail
+    
+    exit_draw_cell:                             
     ;Exiting
                                                 pop   dx
                                                 pop   cx
@@ -2192,6 +2181,47 @@ draw_cell proc
 
 draw_cell endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+update_FreePieces proc
+
+                                                pusha
+                                                
+                                                call  getCurrentTime
+                                                mov   bx, 0
+                                                mov   cx, 64d
+    update_free:                                
+                                                call  getPrevTime
+                                                call  compareTimes
+                                                mov   al, moreThan_WaitingTime
+                                                cmp   al, free_pieces[bx]
+                                                jnz   change_status
+    continue_free_loop:                         
+                                                inc   bx
+                                                loop  update_free
+                                                jmp   end_free_pieces
+    change_status:                              
+                                                mov   free_pieces[bx], al
+                                                push  bx
+                                                mov   dl, bl
+                                                shr   bl, 3
+                                                and   dl, 00000111b
+                                                mov   dh, 0
+                                                mov   bh, 0
+
+                                                mov   si, dx
+                                                mov   di, bx
+                                                call  get_cell_colour
+                                                call  draw_cell
+                                                pop   bx
+                                                jmp   continue_free_loop
+
+    end_free_pieces:                            
+                                                popa
+                                                
+                                                ret
+
+update_FreePieces endp
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;Calls draw_cell in a nested loop to display the whole board.
@@ -3453,7 +3483,7 @@ movePiece PROC
                                                 mov   di, currSelectedPos_DI
                                                 call  getPos
 
-                                                cmp   jailed_pieces[bx], 0
+                                                cmp   free_pieces[bx], 1
                                                 jnz   movePiece_end
 
                                                 call  updateMovementTimes
@@ -3502,7 +3532,7 @@ movePiece PROC
                                                 pop   dx
 
     ; checking if we can move the piece
-                                                cmp   jailed_pieces[bx], 0
+                                                cmp   free_pieces[bx], 1
                                                 jnz   not_yet
 
     ;preserving new pos (our end pos)
@@ -4180,11 +4210,11 @@ game_window proc
 
                                                 call  moveInSelections
 
+                                                call  update_FreePieces
+
                                                 call  sendMoveToOponent
 
                                                 call  listenForOponentMove
-
-                                                call  update_JailedPieces
 
     ;  call checkForCheck
 

@@ -2147,8 +2147,8 @@ draw_cell proc
     ;Multiplies by 8, we don't need to move 3 to register first in this assembler. We multiply the row number by 8 since each row has 8 positions.
                                                 shl   bx, 3
                                                 add   bx, si
-                                                mov   al, [bx + offset board]
-                                                mov   piece_to_draw, al
+                                                mov   bl, byte ptr [bx + offset board]
+                                                mov   piece_to_draw, bl
                                                 call  draw_piece
     ;If the piece cannot move, draw a jail.
                                                 cmp   free_pieces[bx], 1

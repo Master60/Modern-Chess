@@ -847,13 +847,8 @@ draw_letters proc
                                                 add   ax, 4
                                                 mov   dx, ax
 
-<<<<<<< HEAD
                                                  mov   al, 0fh    ;3
                                                  mov   ah, 0ch
-=======
-                                                mov   al, 3
-                                                mov   ah, 0ch
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
                                                 mov   di, 8
 
@@ -921,13 +916,8 @@ draw_letters proc
                                                 sub   ax, 4
                                                 mov   dx, ax
 
-<<<<<<< HEAD
                                                  mov   al, 0fh
                                                  mov   ah, 0ch
-=======
-                                                mov   al, 3
-                                                mov   ah, 0ch
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
                                                 mov   di, 8
 
@@ -1012,13 +1002,8 @@ draw_numbers proc
                                                 add   ax, 31d
                                                 mov   dx, ax
 
-<<<<<<< HEAD
                                                  mov   al, 0fh
                                                  mov   ah, 0ch
-=======
-                                                mov   al, 3
-                                                mov   ah, 0ch
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
                                                 mov   di, 8
 
@@ -1095,13 +1080,8 @@ draw_numbers proc
                                                 sub   ax, 31d
                                                 mov   dx, ax
 
-<<<<<<< HEAD
                                                  mov   al, 0fh
                                                  mov   ah, 0ch
-=======
-                                                mov   al, 3
-                                                mov   ah, 0ch
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
                                                 mov   di, 8
 
@@ -1489,13 +1469,8 @@ set_board_base proc
                                                 sub   dx, ax
                                                 sub   dx, 25d
 
-<<<<<<< HEAD
                                                  mov   al, 0a7h                                         ;08d light grey, 06d light brown, 0eh light yellow
                                                  mov   ah, 0ch
-=======
-                                                mov   al, 06d                                        ;08d light grey, 06d light brown, 0eh light yellow
-                                                mov   ah, 0ch
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
     board_y:                                    
 
@@ -1522,17 +1497,10 @@ set_border proc
 
                                                 pusha
 
-<<<<<<< HEAD
                                                  mov   cx, 150d ;margin x - 25
                                                  mov   dx, 125d ;margin y - 25
                                                  mov   al, 16h                                         ;4 dark brown
                                                  mov   ah, 0ch
-=======
-                                                mov   cx, 150d                                       ;margin x - 25
-                                                mov   dx, 125d                                       ;margin y - 25
-                                                mov   al, 0eh                                        ;4 dark brown
-                                                mov   ah, 0ch
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
     border_y:                                   
 
@@ -1608,19 +1576,11 @@ update_status proc
 
                                                 call  status_bar
 
-<<<<<<< HEAD
 mov   ah, 2
 mov   bh, 0
 mov   dl, 40d
 mov   dh, 56d
 int   10h
-=======
-                                                mov   ah, 2
-                                                mov   bh, 0
-                                                mov   dl, 28d
-                                                mov   dh, 56d
-                                                int   10h
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
                                                 cmp   bx, 0
                                                 jz    start_game_status
@@ -1872,7 +1832,6 @@ pass_file_header endp
 load_piece proc
 
     ;Get the actual position of the top left corner of the cell we wish to draw at, and store the coordinates in the x_temp and y_temp variables.
-<<<<<<< HEAD
 
                                                  mov   ax, di
                                                  mul   cell_size
@@ -1902,19 +1861,6 @@ load_piece proc
                                                  jmp end_overflow_x
 
                                                  end_overflow_x:
-=======
-                                                mov   ax, si
-                                                mul   cell_size
-                                                add   ax, margin_x
-                                                mov   x_temp, ax
-                                                 
-
-                                                mov   ax, di
-                                                mul   cell_size
-                                                add   ax, margin_y
-                                                mov   y_temp, ax
-                                                  
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
                 
     ;Load the image into the bitmap_buffer.
                                                 mov   bx, file_handle
@@ -3460,15 +3406,6 @@ movePiece PROC
                                                                                                     
                                                 
 
-<<<<<<< HEAD
-                                                 call  getCurrentTime
-                                                 call  getPrevTime
-                                                 call  compareTimes
-                                                 cmp   moreThan_ThreeSeconds, 1
-
-                                                 jnz   movePiece_end
-=======
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
                                                 mov   si, currSelectedPos_SI
                                                 mov   di, currSelectedPos_DI
@@ -3533,15 +3470,10 @@ movePiece PROC
                                                 mov   endPos_SI, si
                                                 mov   endPos_DI, di
 
-<<<<<<< HEAD
                                                  mov   al, hover_cell_color
                                                  call  draw_cell
 
                                                  call status_bar
-=======
-                                                mov   al, hover_cell_color
-                                                call  draw_cell
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
     
     ;; removing the oponent's previously colored moves (if it is overwritten)
     movePiece_remove_oponent_startpos:          
@@ -3556,25 +3488,16 @@ movePiece PROC
                                                 cmp   si, oponent_endPos_SI
                                                 jnz   movePiece_not_prev_enemy_move
                                                  
-<<<<<<< HEAD
-                                                 cmp di, oponent_endPos_DI
-                                                 jnz movePiece_not_prev_enemy_move
-
-    movePiece_remove_oponent_move:
-                                                 call  removePrevOponentMove 
-=======
                                                 cmp   di, oponent_endPos_DI
                                                 jnz   movePiece_not_prev_enemy_move
        
     movePiece_remove_oponent_move:              
                                                 call  removePrevOponentMove
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
     movePiece_not_prev_enemy_move:              
                                                 mov   currSelectedPos_DI, -1d
                                                 mov   currSelectedPos_SI, -1d
 
-<<<<<<< HEAD
                                                  mov startSending, 1d 
 
                                                  ret
@@ -3585,14 +3508,6 @@ movePiece PROC
                                                  pop bx
                                                 ;; TODO: add status bar message (cannot move this piece yet)
                                                  ret
-=======
-                                                mov   startSending, 1d
-                                                 
-                                                ret
-    not_yet:                                    
-    ;; TODO: add status bar message (cannot move this piece yet)
-                                                ret
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 movePiece ENDP
 
     ;Procedures for check
@@ -4199,18 +4114,13 @@ game_window proc
                                                 call  clear_screen
 
 
-<<<<<<< HEAD
                                                  call draw_labels
                                                  call set_board_base
-=======
-    ;call set_board_base
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
 
                                                 call  draw_board                                     ;Draw the board
 
 
-<<<<<<< HEAD
                                                  call set_border
                                                  call draw_letters
                                                  call draw_numbers
@@ -4218,11 +4128,6 @@ game_window proc
                                                  call inline_chat_window
                                                  mov bx, 0
                                                  call update_status
-=======
-    ;call set_border
-    ;call draw_letters
-    ;call draw_numbers
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
                          
                                                 mov   si, 3d
@@ -4244,16 +4149,10 @@ game_window proc
                                                 cmp   end_game, 1d
                                                 jnz   play_chess
 
-<<<<<<< HEAD
-                                                 push bx
                                                  mov bx, 2
                                                  call update_status
-                                                 pop bx
 
                                                  ret
-=======
-                                                ret
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
 game_window endp
 
@@ -4292,17 +4191,6 @@ terminate endp
 
 main_window proc
 
-<<<<<<< HEAD
-                                                 pusha
-    
-    main_start:                                  
-
-                                                 mov   ax, 0600h
-                                                 mov   bh, 07
-                                                 mov   cx, 0
-                                                 mov   dx, 184Fh
-                                                 int   10h
-=======
                                                 pusha
 
     main_start:                                 
@@ -4311,7 +4199,6 @@ main_window proc
                                                 mov   cx, 0
                                                 mov   dx, 184Fh
                                                 int   10h
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
                                                 mov   ah, 2
                                                 mov   bh, 0
@@ -4506,7 +4393,6 @@ welcome endp
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 test_window proc
-<<<<<<< HEAD
 ;call identification_window
     call  init_board
     call  init_video_mode
@@ -4519,21 +4405,6 @@ test_window proc
     call  draw_letters
     call  draw_numbers
     call  status_bar
-=======
-                                                call  identification_window
-    ;call  init_board
-    ;call  init_video_mode
-    ;call  draw_background
-    ;mov   al, 14h
-    ;call  clear_screen
-    ;call  draw_labels
-    ;call  set_board_base
-    ;call  draw_board
-    ;call  set_border
-    ;call  draw_letters
-    ;call  draw_numbers
-    ;call  status_bar
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
     mov   bx, 0
     call  update_status
@@ -4567,11 +4438,7 @@ main proc far
                                                 mov   dx, offset pieces_wd
                                                 int   21h
 
-<<<<<<< HEAD
                                                  call  main_window
-=======
-                                                call  test_window
->>>>>>> f3a61f149c111c5d201c568e37d6879f68dce4e4
 
 main endp
 end main

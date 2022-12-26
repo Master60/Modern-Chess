@@ -126,6 +126,16 @@
     startPosSent             db      0d
     gotOponentStartPos       db      0d
     end_game                 db      -1d
+    king_in_danger           db      0d
+    
+    checked_up               db      0d
+    checked_down             db      0d
+    checked_right            db      0d
+    checked_left             db      0d
+    checked_upright          db      0d
+    checked_upleft           db      0d
+    checked_downright        db      0d
+    checked_downleft        db      0d
     
 
     ;; plays that will be sent to the oponent
@@ -141,6 +151,9 @@
 
     oponent_endPos_SI        dw      -1d
     oponent_endPos_DI        dw      -1d
+
+    oponent_checkpos_SI      dw       -1d
+    oponent_checkpos_DI      dw       -1d
 
     ; Navigation Buttons
     Left_Arrow               db      4Bh
@@ -3858,15 +3871,29 @@ movePiece PROC
                                                 mov   startPos_DI, di
                                                 mov   startPos_SI, si
 
-    ;popping out the new pos (our end pos)
-                                                pop   si
-                                                pop   di
-                                                pop   bx
-                                                pop   dx
+                                                ;popping out the new pos (our end pos)
+                                                 pop   si
+                                                 pop   di
+                                                 pop   bx
+                                                 pop   dx
+                                                ;check to update king's position   
+                                                 cmp cl,-6d
+                                                 jnz NotKing
+                                                 mov   Kingpos_si,si
+                                                 mov   Kingpos_di,di
+                                                 mov   king_in_danger, 0d
+                                                ; push dx
+                                                ; push ax
+                                                ; mov dl, king_in_danger
+                                                ; mov ah, 2
+                                                ; int 21h
+                                                ; pop ax
+                                                ; pop dx
 
-    ; checking if we can move the piece
-                                                cmp   free_pieces[bx], 1
-                                                jnz   not_yet
+                                                ; checking if we can move the piece
+NotKing:
+                                                 cmp   free_pieces[bx], 1
+                                                 jnz   not_yet
 
     ;preserving new pos (our end pos)
                                                 mov   endPos_SI, si
@@ -3914,12 +3941,101 @@ movePiece ENDP
 
     ;Procedures for check
 
+;description
+resetCheckFlags PROC
+            mov checked_up, 0d
+            mov checked_down, 0d
+            mov checked_left, 0d
+            mov checked_right, 0d
+            mov checked_upright, 0d
+            mov checked_upleft, 0d
+            mov checked_downright, 0d  
+
+            ret  
+resetCheckFlags ENDP
+
+
+reInitializeFlags PROC
+                    cmp checked_up, 0
+                    jz  reInitializeFlags_end
+                    
+                    cmp checked_down, 0
+                    jz  reInitializeFlags_end
+
+                    cmp checked_left, 0
+                    jz  reInitializeFlags_end
+
+                    cmp checked_right, 0
+                    jz  reInitializeFlags_end
+
+                    ; cmp checked_upright, 0
+                    ; jz  reInitializeFlags_end
+
+                    ; cmp checked_upleft, 0
+                    ; jz  reInitializeFlags_end
+
+                    ; cmp checked_downright, 0
+                    ; jz  reInitializeFlags_end
+
+
+                    call resetCheckFlags
+
+reInitializeFlags_end:
+                    ret
+reInitializeFlags ENDP
+
+
+MOVE_CURSOR PROC
+    
+    MOV AH,3H
+    MOV BH,0 
+    INT 10H 
+
+    inc cx 
+    MOV AH,2 
+    INT 10H
+
+    RET 
+MOVE_CURSOR ENDP
+
+;debugging purposes
+print PROC
+        push ax
+        push dx
+        push bx
+
+        mov dl, '1'
+        mov ah, 2
+        int 21h 
+
+        call MOVE_CURSOR
+
+        push bx
+        pop dx
+        pop ax
+
+        ret  
+print ENDP
+
+
+
 check_king_vertical proc
 
                                                 pusha
 
-                                                mov   si,Kingpos_si
-                                                mov   di,Kingpos_di
+                                                cmp  king_in_danger, 1d
+                                                jnz  check_king_vertical_continue0
+
+                                                jmp far ptr check_king_vertical_end
+    check_king_vertical_continue0:
+                                                mov   si, Kingpos_si
+                                                mov   di, Kingpos_di
+
+                                                cmp  checked_up, 1d
+                                                jnz  vertical_up
+
+                                                jmp  far ptr vertical_down
+
     vertical_up:                                
                                                 cmp   di,0d
                                                 jz    end_vertical_up
@@ -3939,14 +4055,15 @@ check_king_vertical proc
                                                 jnz   end_vertical_up
                                                 mov   ax, Kingpos_di
                                                 sub   ax, di
-                                                cmp   ax,2d
+                                                cmp   ax,1d
                                                 jbe   AlertPlayer
-                                                jmp   end_vertical_up
-
-
+                                                
     end_vertical_up:                            
 
                                                 mov   di,Kingpos_di
+                                                mov  checked_up, 1d
+                                                popa
+                                                ret
            
     vertical_down:                              
                                                 cmp   di,7d
@@ -3965,22 +4082,36 @@ check_king_vertical proc
                                                 jz    AlertPlayer
                                                 cmp   cl,6d
                                                 jnz   end_vertical_down
-                                                sub   di, Kingpos_di
-                                                cmp   di,2d
+                                                mov   ax, di
+                                                sub   ax, Kingpos_di
+                                                cmp   ax, 1d
                                                 jbe   AlertPlayer
-                                                jmp   end_vertical_down
-
+                                                
 
     end_vertical_down:                          
+                                                mov checked_down, 1d  
                                                 popa
                                                 ret
 
 
     AlertPlayer:                                
-                                                mov   dl, 'h'
-                                                mov   ah,2
-                                                int   21h
+                                                ; call print
+
+                                                call  resetCheckFlags
+
+                                                mov  oponent_checkpos_DI, di
+                                                mov  oponent_checkpos_SI, si
+
+                                                mov  king_in_danger, 1d
+                                                push dx
+                                                push ax
+                                                mov dl, king_in_danger
+                                                mov ah, 2
+                                                int 21h
+                                                pop ax
+                                                pop dx
     ;display message
+    check_king_vertical_end:
                                                 popa
 
 
@@ -3991,10 +4122,34 @@ check_king_vertical ENDP
 check_king_horizontal proc
 
                                                 pusha
+                                                pusha
 
-                                                mov   si,Kingpos_si
-                                                mov   di,Kingpos_di
+                                                cmp  king_in_danger, 1d
+                                                jnz  check_king_horizontal_continue0
+
+                                                jmp far ptr check_king_horizontal_end
+    check_king_horizontal_continue0:
+                                                mov   si, Kingpos_si
+                                                mov   di, Kingpos_di
+
+                                                cmp checked_up, 0d
+                                                jnz check_king_horizontal_continue1
+                                                ; call print
+                                                jmp far ptr check_king_horizontal_end
+
+    check_king_horizontal_continue1:
+                                                cmp checked_down, 0d
+                                                jnz check_king_horizontal_continue2
+                                                jmp far ptr check_king_horizontal_end
+
+    check_king_horizontal_continue2:
+                                                cmp checked_left, 1d
+                                                jnz horizontal_left
+
+                                                jmp far ptr horizontal_right
+
     horizontal_left:                            
+                                                ; call print
                                                 cmp   si,0d
                                                 jz    end_horizontal_left
                                                 dec   si
@@ -4013,16 +4168,20 @@ check_king_horizontal proc
                                                 jnz   end_horizontal_left
                                                 mov   ax, Kingpos_si
                                                 sub   ax, si
-                                                cmp   ax,2d
+                                                cmp   ax,1d
                                                 jbe   AlertPlayerH
-                                                jmp   end_horizontal_left
+                                                
+                                                
 
 
     end_horizontal_left:                        
-
-                                                mov   si,Kingpos_si
+                                                ; mov   si,Kingpos_si
+                                                mov   checked_left, 1d
+                                                popa
+                                                ret
            
     horizontal_right:                           
+                                                ; call print
                                                 cmp   si,7d
                                                 jz    end_horizontal_right
                                                 inc   si
@@ -4039,23 +4198,38 @@ check_king_horizontal proc
                                                 jz    AlertPlayerH
                                                 cmp   cl,6d
                                                 jnz   end_horizontal_right
-                                                sub   si, Kingpos_si
-                                                cmp   si,2d
+                                                mov   ax, si
+                                                sub   ax, Kingpos_si
+                                                cmp   ax,1d
                                                 jbe   AlertPlayerH
-                                                jmp   end_horizontal_right
+                                                
 
 
     end_horizontal_right:                       
+                                                mov   checked_right, 1d
                                                 popa
                                                 ret
 
 
     AlertPlayerH:                               
-                                                mov   dl, 'h'
-                                                mov   ah,2
-                                                int   21h
+                                                ; call print
+                                                call resetCheckFlags
+                                                mov  king_in_danger, 1d
+
+                                                mov oponent_checkpos_DI, di
+                                                mov oponent_checkpos_DI, si
+
+                                                push dx
+                                                push ax
+                                                mov dl, king_in_danger
+                                                mov ah, 2
+                                                int 21h
+                                                pop ax
+                                                pop dx
     ;display message
+    check_king_horizontal_end:
                                                 popa
+                                                
                                                 ret
 
 
@@ -4063,18 +4237,423 @@ check_king_horizontal ENDP
 
 
 
+check_up_diagonals PROC
+                                                push ax
+                                                push bx
+                                                push cx
+                                                push dx
+                                                push si
+                                                push di
+
+                                                cmp  king_in_danger, 1d
+                                                jnz  check_up_diagonals_continue0
+
+                                                jmp far ptr check_up_diagonals_end
+
+ check_up_diagonals_continue0:
+                                                mov si, Kingpos_si
+                                                mov di, Kingpos_di
+;                                                 cmp checked_left, 1d
+;                                                 jz  check_up_diagonals_continue
+;                                                 jmp far ptr check_up_diagonals_end
+; check_up_diagonals_continue1:     
+                                                cmp checked_right, 1d
+                                                jz  check_up_diagonals_continue1
+                                                jmp far ptr check_up_diagonals_end
+check_up_diagonals_continue1:                    
+                                                cmp checked_upright, 1d
+                                                jnz check_upright    
+
+                                                cmp checked_upleft, 1d
+                                                jnz check_upleft
+
+                                                jmp far ptr check_up_diagonals_end                      
+
+
+check_upright:                                  cmp si, 7d
+                                                jz  check_upright_end
+                                                cmp di, 0d
+                                                jz  check_upright_end
+
+                                                inc si
+                                                dec di
+                                                call getPos
+
+                                                mov cl, board[bx]
+                                                cmp cl,0
+                                                jz  check_upright
+
+                                                cmp cl, 0
+                                                jb  check_upright_end
+
+                                                cmp cl, 3d
+                                                jnz  check_up_diagonals_continue3
+                                                jmp far ptr check_updiagonals_Alert
+check_up_diagonals_continue3:
+                                                cmp cl, 5d
+                                                jnz check_up_diagonals_continue4
+                                                jmp check_updiagonals_Alert
+check_up_diagonals_continue4:
+                                                cmp cl, 1d
+                                                jnz  check_up_diagonals_king0
+                                                jmp  check_up_diagonals_pawn0
+
+check_up_diagonals_king0:
+                                                cmp cl, 6d
+                                                jnz  check_upright_end
+check_up_diagonals_pawn0:
+                                                mov ax, si
+                                                sub ax, Kingpos_si
+                                                cmp ax, 1d
+                                                jnz check_upright_end
+
+                                                mov ax, Kingpos_di
+                                                sub ax, di
+                                                cmp ax, 1d
+                                                jnz check_upright_end
+
+                                                jmp check_updiagonals_Alert
+
+check_upright_end:
+                                                mov checked_upright, 1d
+                                                jmp check_up_diagonals_end
 
 
 
+check_upleft:
+                                                cmp si, 0d
+                                                jz  check_upleft_end
+                                                cmp di, 0d
+                                                jz  check_upleft_end
+
+                                                dec si
+                                                dec di
+                                                call getPos
+
+                                                mov cl, board[bx]
+                                                cmp cl,0
+                                                jz  check_upleft
+
+                                                cmp cl, 0
+                                                jb  check_upleft_end
+
+                                                cmp cl, 3d
+                                                jz  check_updiagonals_Alert
+
+                                                cmp cl, 5d
+                                                jz  check_updiagonals_Alert
+
+                                                cmp cl, 1d
+                                                jnz  check_up_diagonals_king
+                                                jmp  check_up_diagonals_pawn
+
+check_up_diagonals_king:
+                                                cmp cl, 6d
+                                                jnz  check_upleft_end
+check_up_diagonals_pawn:
+                                                mov ax, Kingpos_si
+                                                sub ax, si
+                                                cmp ax, 1d
+                                                jnz check_upleft_end
+
+                                                mov ax, Kingpos_di
+                                                sub ax, di
+                                                cmp ax, 1d
+                                                jnz check_upleft_end
+
+                                                jmp check_updiagonals_Alert
+
+check_upleft_end:
+                                                mov checked_upleft, 1d
+                                                jmp  check_up_diagonals_end
+
+check_updiagonals_Alert:
+                                                call resetCheckFlags
+                                                mov king_in_danger, 1d
+                                                mov oponent_checkpos_DI, di
+                                                mov oponent_checkpos_SI, si
+                                                push dx
+                                                push ax
+                                                mov dl, king_in_danger
+                                                mov ah, 2
+                                                int 21h
+                                                pop ax
+                                                pop dx
+check_up_diagonals_end:
+                                                pop di
+                                                pop si
+                                                pop dx
+                                                pop cx
+                                                pop bx
+                                                pop ax
+
+                                                ret
+check_up_diagonals ENDP
 
 
 
+check_down_diagonals PROC
+                                                push ax
+                                                push bx
+                                                push cx
+                                                push dx
+                                                push si
+                                                push di
+
+                                                cmp  king_in_danger, 1d
+                                                jnz  check_down_diagonals_continue0
+
+                                                jmp far ptr check_down_diagonals_end
+
+ check_down_diagonals_continue0:
+                                                mov si, Kingpos_si
+                                                mov di, Kingpos_di
+
+                                                cmp checked_upleft, 1d
+                                                jz  check_down_diagonals_continue1
+                                                jmp far ptr check_down_diagonals_end
+check_down_diagonals_continue1:                    
+                                                cmp checked_downright, 1d
+                                                jnz check_downright    
+
+                                                jmp far ptr check_downleft                  
+
+
+check_downright:                                cmp si, 7d
+                                                jz  check_downright_end
+                                                cmp di, 7d
+                                                jz  check_downright_end
+
+                                                inc si
+                                                inc di
+                                                call getPos
+
+                                                mov cl, board[bx]
+                                                cmp cl,0
+                                                jz  check_downright
+
+                                                cmp cl, 0
+                                                jb  check_downright_end
+
+                                                cmp cl, 3d
+                                                jnz  check_down_diagonals_continue3
+                                                jmp far ptr check_downdiagonals_Alert
+check_down_diagonals_continue3:
+                                                cmp cl, 5d
+                                                jnz check_down_diagonals_continue4
+                                                jmp check_downdiagonals_Alert
+check_down_diagonals_continue4:
+                                                
+                                                cmp cl, 6d
+                                                jnz  check_downright_end
+
+                                                mov ax, si
+                                                sub ax, Kingpos_si
+                                                cmp ax, 1d
+                                                jnz check_downright_end
+
+                                                mov ax, di
+                                                sub ax, Kingpos_di
+                                                cmp ax, 1d
+                                                jnz check_downright_end
+
+                                                jmp check_downdiagonals_Alert
+
+check_downright_end:
+                                                mov checked_downright, 1d
+                                                jmp check_down_diagonals_end
 
 
 
+check_downleft:
+                                                cmp si, 0d
+                                                jz  check_downleft_end
+                                                cmp di, 7d
+                                                jz  check_downleft_end
+
+                                                dec si
+                                                inc di
+                                                call getPos
+
+                                                mov cl, board[bx]
+                                                cmp cl,0
+                                                jz  check_downleft
+
+                                                cmp cl, 0
+                                                jb  check_downleft_end
+
+                                                cmp cl, 3d
+                                                jz  check_downdiagonals_Alert
+
+                                                cmp cl, 5d
+                                                jz  check_downdiagonals_Alert
+
+                                                cmp cl, 6d
+                                                jnz  check_downleft_end
+
+                                                mov ax, Kingpos_si
+                                                sub ax, si
+                                                cmp ax, 1d
+                                                jnz check_downleft_end
+
+                                                mov ax, di
+                                                sub ax, Kingpos_di
+                                                cmp ax, 1d
+                                                jnz check_downleft_end
+
+                                                jmp check_downdiagonals_Alert
+
+check_downleft_end:
+                                                mov  checked_downleft, 1d
+                                                jmp  check_down_diagonals_end
+
+check_downdiagonals_Alert:
+                                                call resetCheckFlags
+                                                mov king_in_danger, 1d
+                                                mov oponent_checkpos_DI, di
+                                                mov oponent_checkpos_SI, si
+                                                push dx
+                                                push ax
+                                                mov dl, king_in_danger
+                                                mov ah, 2
+                                                int 21h
+                                                pop ax
+                                                pop dx
+check_down_diagonals_end:
+                                                pop di
+                                                pop si
+                                                pop dx
+                                                pop cx
+                                                pop bx
+                                                pop ax
+
+                                                ret
+check_down_diagonals ENDP
 
 
 
+check_knight PROC
+                                                push  si
+                                                push  di
+
+                                                cmp king_in_danger, 1d
+                                                jnz check_knight_continue_func
+
+                                                jmp far ptr check_knight_end
+
+    check_knight_continue_func:
+                                                cmp checked_downleft, 1d
+                                                jz  check_knight_continue_func2
+
+                                                jmp far ptr check_knight_end
+
+    check_knight_continue_func2:
+                                                mov  si, Kingpos_si
+                                                mov  di, Kingpos_di
+
+
+                                                add   si, 1d
+                                                add   di, -2d
+
+                                                call getPos
+                                                cmp  board[bx], 2d
+                                                jnz   check_knight_continue0
+                                                jmp far ptr check_knight_Alert
+
+check_knight_continue0:
+                                                add   si, 1d
+                                                add   di, 1d
+
+                                                call getPos
+                                                cmp  board[bx], 2d
+                                                jnz   check_knight_continue1
+                                                jmp far ptr check_knight_Alert
+
+check_knight_continue1:
+                
+                                                add   di, 2d
+                                                
+                                                call getPos
+                                                cmp  board[bx], 2d
+                                                jnz   check_knight_continue2
+                                                jmp far ptr check_knight_Alert
+
+check_knight_continue2:
+                
+                                                add   si, -1d
+                                                add   di, 1d
+                                                
+                                                call getPos
+                                                cmp  board[bx], 2d
+                                                jnz   check_knight_continue3
+                                                jmp far ptr check_knight_Alert
+
+check_knight_continue3:
+                
+                                                add   si, -2d
+                                                
+                                                call getPos
+                                                cmp  board[bx], 2d
+                                                jnz   check_knight_continue4
+                                                jmp far ptr check_knight_Alert
+
+check_knight_continue4:
+
+                
+                                                add   si, -1d
+                                                add   di, -1d
+                                                
+                                                call getPos
+                                                cmp  board[bx], 2d
+                                                jnz   check_knight_continue5
+                                                jmp far ptr check_knight_Alert
+
+check_knight_continue5:
+
+                
+                                                add   di, -2d
+                                                
+                                                call getPos
+                                                cmp  board[bx], 2d
+                                                jnz   check_knight_continue6
+                                                jmp far ptr check_knight_Alert
+
+check_knight_continue6:
+                
+                                                add   si, 1d
+                                                add   di, -1d
+                                                
+                                                call getPos
+                                                cmp  board[bx], 2d
+                                                jnz   check_knight_not_found
+                                                jmp far ptr check_knight_Alert
+
+    check_knight_not_found: 
+                                                call resetCheckFlags
+                                                jmp  check_knight_end
+                                            
+
+    check_knight_Alert:
+                                                call resetCheckFlags
+                                                mov king_in_danger, 1d
+                                                mov oponent_checkpos_DI, di
+                                                mov oponent_checkpos_SI, si
+                                                push dx
+                                                push ax
+                                                mov dl, king_in_danger
+                                                mov ah, 2
+                                                int 21h
+                                                pop ax
+                                                pop dx
+                                                
+                
+    check_knight_end:                         
+                                                pop   di
+                                                pop   si
+
+                                                ret
+           
+check_knight ENDP
 
 
 
@@ -4153,7 +4732,7 @@ moveInSelections PROC
                                                 call  getPos
 
                                                 cmp   board[bx], 0d
-                                                jnz   moveInSelections_continue
+                                                jl   moveInSelections_continue
                                                 mov   currSelectedPos_DI, -1d
                                                 mov   currSelectedPos_DI, -1d
                                                 ret
@@ -4172,11 +4751,11 @@ moveInSelections PROC
 
                                                 mov   ah, board[bx]
                                     
-                                                cmp   ah, 0
-                                                jl    white_piece
-                                                mov   walker, 1d
-                                                neg   ah
-                                                jmp   determine_piece_type
+                                                ; cmp   ah, 0
+                                                ; jl    white_piece
+                                                ; mov   walker, 1d
+                                                ; neg   ah
+                                                ; jmp   determine_piece_type
 
     white_piece:                                mov   walker, -1d
                                    
@@ -4401,6 +4980,23 @@ showOponentMove PROC
                                                 mov   si, oponent_startPos_SI
                                                 mov   di, oponent_startPos_DI
 
+                                                cmp  si, oponent_checkpos_SI
+                                                jnz  showOponentMove_continue0
+
+                                                cmp  di, oponent_checkpos_dI
+                                                jnz  showOponentMove_continue0
+
+                                                mov king_in_danger,0d
+                                                push ax
+                                                push dx
+                                                mov dl,'s'
+                                                mov ah,2
+                                                int 21h
+                                                pop dx
+                                                pop ax
+
+    showOponentMove_continue0:
+
                                                 call  getPos
 
                                                 mov   cl, board[bx]
@@ -4549,7 +5145,11 @@ game_window proc
 
                                                 call  listenForOponentMove
 
-    ;  call checkForCheck
+                                                call  check_king_vertical
+                                                call  check_king_horizontal
+                                                call  check_up_diagonals
+                                                call  check_down_diagonals
+                                                call  check_knight
 
                                                 cmp   end_game, 1d
                                                 jnz   play_chess
@@ -4848,7 +5448,7 @@ main proc far
                                                 mov   dx, offset pieces_wd
                                                 int   21h
 
-                                                call  test_window
+                                                call  game_window
 
 main endp
 end main

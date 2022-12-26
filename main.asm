@@ -55,7 +55,7 @@
     chat_title               db      'Chat', '$'
 
     ;Name of the other player (to be modified in phase 2)
-    temp_name                db      'Miro', '$'
+    temp_name                db      'Mero', '$'
 
     temp_name2               db      'Bas', '$'
 
@@ -74,6 +74,11 @@
     ;An array that will store the last time at which every piece on the board moved.
     movementTimes_hours      db      64d dup(0)
     movementTimes_seconds    dw      64d dup(0)
+    free_pieces              db      64 dup(1)
+    time_differences         db      64 dup(4)
+    
+    waitingTime_white        dw      4
+    waitingTime_black        dw      4
     
     conversionNum            db      0
     
@@ -83,8 +88,8 @@
     prevTime_hours           db      0
     prevTime_seconds         dw      0
 
-    moreThan_ThreeSeconds    db      0
-    
+    moreThan_WaitingTime     db      0
+    timeDifference           db      0
     
     selectedPiecePos         dw      ?
 
@@ -593,6 +598,50 @@
                              db      1,1,1,1,1,1,1,1,1,1,1,1,1
                              db      1,1,1,1,1,1,1,1,1,1,1,1,1
 
+                             timers  label byte
+
+    timer_1                  db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+                             db      0,0,0,1,1,1,0,0,0
+
+    timer_2                  db      1,1,1,1,1,1,1,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      1,1,0,0,0,0,0,0,0
+                             db      1,1,0,0,0,0,0,0,0
+                             db      1,1,0,0,0,0,0,0,0
+                             db      1,1,1,1,1,1,1,1,1
+                             db      1,1,1,1,1,1,1,1,1
+
+    timer_3                  db      1,1,1,1,1,1,1,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      0,0,0,0,0,0,0,1,1
+                             db      1,1,1,1,1,1,1,1,1
+                             db      1,1,1,1,1,1,1,1,1
+
     temp_sp                  dw      ?
     status_1                 db      'Game has started', '$'
     status_2                 db      'Cannot move selected piece', '$'
@@ -604,46 +653,15 @@
     ;MISCELLANEOUS PROCEDURES:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-convert_BCD_To_Decimal proc
-                                                push  ax
-                                                push  bx
-                                                push  cx
-
-                                                mov   al, conversionNum
-                                                mov   bl, al
-                                                and   al, 0f0h
-                                                and   bl, 0fh
-                                                shr   al, 4
-                                                mov   cl, 10
-                                                mul   cl
-                                                add   al, bl
-                                                mov   conversionNum, al
-
-                                                pop   cx
-                                                pop   bx
-                                                pop   ax
-
-                                                ret
-convert_BCD_To_Decimal endp
-
-
 getCurrentTime proc
                                                 push  ax
                                                 push  cx
                                                 push  dx
                            
-                                                mov   ah, 2
-                                                int   1ah
+                                                mov   ah, 2ch
+                                                int   21h
 
                                                 mov   currentTime_hours, ch
-
-                                                mov   conversionNum, cl
-                                                call  convert_BCD_To_Decimal
-                                                mov   cl, conversionNum
-
-                                                mov   conversionNum, dh
-                                                call  convert_BCD_To_Decimal
-                                                mov   dh, conversionNum
 
                                                 xor   ah, ah
                                                 mov   al, cl
@@ -665,33 +683,46 @@ getCurrentTime endp
 compareTimes proc
                                                 push  ax
                                                 push  cx
+                                                push  dx
 
                                                 mov   cx, currentTime_seconds
                                                 sub   cx, prevTime_seconds
-                                                jbe   differentHour_OrLessThan3
-    check_above_3:                              
-                                                cmp   cx, 3
-                                                jb    lessThan3
-    moreThan3:                                  
-                                                mov   moreThan_ThreeSeconds, 1
+                                                jbe   differentHour
+    check_above_WaitingTime:                    
+                                                cmp   byte ptr board[bx], 0
+                                                jg    black_piece_check
+    white_piece_check:                          
+                                                mov   dx, waitingTime_white
+                                                jmp   compare_times
+    black_piece_check:                          
+                                                mov   dx, waitingTime_black
+
+    compare_times:                              
+                                                mov   timeDifference, cl
+                                                cmp   cx, dx
+                                                jb    lessThan_WaitingTime
+    moreThan_Waiting:                           
+                                                mov   moreThan_WaitingTime, 1
+                                                pop   dx
                                                 pop   cx
                                                 pop   ax
                                                 ret
-    lessThan3:                                  
-                                                mov   moreThan_ThreeSeconds, 0
+    lessThan_WaitingTime:                       
+                                                mov   moreThan_WaitingTime, 0
+                                                pop   dx
                                                 pop   cx
                                                 pop   ax
                                                 ret
-    differentHour_OrLessThan3:                  
+    differentHour:                              
                                                 mov   al, currentTime_hours
                                                 sub   al, prevTime_hours
-                                                jbe   lessThan3
+                                                jbe   lessThan_WaitingTime
                                                 cmp   al, 1
-                                                ja    moreThan3
+                                                ja    moreThan_Waiting
                                                 mov   cx, 3600
                                                 sub   cx, prevTime_seconds
                                                 add   cx, currentTime_seconds
-                                                jmp   check_above_3
+                                                jmp   check_above_WaitingTime
 compareTimes endp
 
 
@@ -735,7 +766,6 @@ updateMovementTimes proc
                               
                                                 ret
 updateMovementTimes endp
-
 
     ;sets carry flag
 setcarry PROC
@@ -845,7 +875,7 @@ draw_letters proc
                                                 add   ax, 4
                                                 mov   dx, ax
 
-                                                mov   al, 3
+                                                mov   al, 0fh                                        ;3
                                                 mov   ah, 0ch
 
                                                 mov   di, 8
@@ -914,7 +944,7 @@ draw_letters proc
                                                 sub   ax, 4
                                                 mov   dx, ax
 
-                                                mov   al, 3
+                                                mov   al, 0fh
                                                 mov   ah, 0ch
 
                                                 mov   di, 8
@@ -961,7 +991,157 @@ draw_letters proc
 
 draw_letters endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+draw_timer_1 proc
+
+                                                pusha
+
+                                                add   di, 33d
+                                                add   si, 31d
+
+                                                mov   bp, di
+                                                mov   bx, si
+
+                                                add   bp, 09d
+                                                add   bx, 13d
+
+                                                mov   cx, di
+                                                mov   dx, si
+                                                mov   al, 04h
+                                                mov   ah, 0ch
+
+                                                mov   si, 0
+
+    timer_1_y:                                  
+    timer_1_x:                                  
+                                                cmp   timer_1 + [si],1
+                                                je    draw_the_timer_1
+    back_from_timer_1:                          
+                                                inc   si
+                                                inc   cx
+                                                cmp   cx, bp
+                                                jnz   timer_1_x
+                                                mov   cx, di
+                                                inc   dx
+                                                cmp   dx, bx
+                                                jnz   timer_1_y
+
+                                                jmp   end_timer_1
+
+    draw_the_timer_1:                           
+                                                int   10h
+                                                jmp   back_from_timer_1
+
+    end_timer_1:                                
+
+                                                popa
+
+                                                ret
+
+draw_timer_1 endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+draw_timer_2 proc
+
+                                                pusha
+
+                                                add   di, 33d
+                                                add   si, 31d
+
+                                                mov   bp, di
+                                                mov   bx, si
+
+                                                add   bp, 09d
+                                                add   bx, 13d
+
+                                                mov   cx, di
+                                                mov   dx, si
+                                                mov   al, 04h
+                                                mov   ah, 0ch
+
+                                                mov   si, 0
+
+    timer_2_y:                                  
+    timer_2_x:                                  
+                                                cmp   timer_2 + [si],1
+                                                je    draw_the_timer_2
+    back_from_timer_2:                          
+                                                inc   si
+                                                inc   cx
+                                                cmp   cx, bp
+                                                jnz   timer_2_x
+                                                mov   cx, di
+                                                inc   dx
+                                                cmp   dx, bx
+                                                jnz   timer_2_y
+
+                                                jmp   end_timer_2
+
+    draw_the_timer_2:                           
+                                                int   10h
+                                                jmp   back_from_timer_2
+
+    end_timer_2:                                
+
+                                                popa
+
+                                                ret
+
+draw_timer_2 endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+draw_timer_3 proc
+
+                                                pusha
+
+                                                add   di, 33d
+                                                add   si, 31d
+
+                                                mov   bp, di
+                                                mov   bx, si
+
+                                                add   bp, 09d
+                                                add   bx, 13d
+
+                                                mov   cx, di
+                                                mov   dx, si
+                                                mov   al, 04h
+                                                mov   ah, 0ch
+
+                                                mov   si, 0
+
+    timer_3_y:                                  
+    timer_3_x:                                  
+                                                cmp   timer_3 + [si],1
+                                                je    draw_the_timer_3
+    back_from_timer_3:                          
+                                                inc   si
+                                                inc   cx
+                                                cmp   cx, bp
+                                                jnz   timer_3_x
+                                                mov   cx, di
+                                                inc   dx
+                                                cmp   dx, bx
+                                                jnz   timer_3_y
+
+                                                jmp   end_timer_3
+
+    draw_the_timer_3:                           
+                                                int   10h
+                                                jmp   back_from_timer_3
+
+    end_timer_3:                                
+
+                                                popa
+
+                                                ret
+
+draw_timer_3 endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 draw_numbers proc
 
@@ -1000,7 +1180,7 @@ draw_numbers proc
                                                 add   ax, 31d
                                                 mov   dx, ax
 
-                                                mov   al, 3
+                                                mov   al, 0fh
                                                 mov   ah, 0ch
 
                                                 mov   di, 8
@@ -1078,7 +1258,7 @@ draw_numbers proc
                                                 sub   ax, 31d
                                                 mov   dx, ax
 
-                                                mov   al, 3
+                                                mov   al, 0fh
                                                 mov   ah, 0ch
 
                                                 mov   di, 8
@@ -1404,6 +1584,16 @@ draw_labels proc
                                                 mov   dx, offset temp_name
                                                 int   21h
 
+                                                mov   ah, 2
+                                                mov   bh, 0
+                                                mov   dl, 89d
+                                                mov   dh, 1d
+                                                int   10h
+
+                                                mov   ah, 9
+                                                mov   dx, offset temp_name2
+                                                int   21h
+
 
                                                 popa
 
@@ -1457,7 +1647,7 @@ set_board_base proc
                                                 sub   dx, ax
                                                 sub   dx, 25d
 
-                                                mov   al, 06d                                        ;08d light grey, 06d light brown, 0eh light yellow
+                                                mov   al, 0a7h                                       ;08d light grey, 06d light brown, 0eh light yellow
                                                 mov   ah, 0ch
 
     board_y:                                    
@@ -1487,7 +1677,7 @@ set_border proc
 
                                                 mov   cx, 150d                                       ;margin x - 25
                                                 mov   dx, 125d                                       ;margin y - 25
-                                                mov   al, 0eh                                        ;4 dark brown
+                                                mov   al, 16h                                        ;4 dark brown
                                                 mov   ah, 0ch
 
     border_y:                                   
@@ -1566,7 +1756,7 @@ update_status proc
 
                                                 mov   ah, 2
                                                 mov   bh, 0
-                                                mov   dl, 28d
+                                                mov   dl, 40d
                                                 mov   dh, 56d
                                                 int   10h
 
@@ -1820,17 +2010,47 @@ pass_file_header endp
 load_piece proc
 
     ;Get the actual position of the top left corner of the cell we wish to draw at, and store the coordinates in the x_temp and y_temp variables.
-                                                mov   ax, si
-                                                mul   cell_size
-                                                add   ax, margin_x
-                                                mov   x_temp, ax
-                                                 
 
                                                 mov   ax, di
                                                 mul   cell_size
                                                 add   ax, margin_y
                                                 mov   y_temp, ax
-                                                  
+
+                                                cmp   si, 0
+                                                jl    overflow_negative_x
+                                                jmp   check_overflow_x
+
+    overflow_negative_x:                        
+                                                neg   si
+                                                mov   ax, si
+                                                mul   cell_size
+                                                push  bx
+                                                mov   bx, margin_x
+                                                sub   bx, ax
+                                                mov   ax, bx
+                                                pop   bx
+                                                sub   ax, 25d
+                                                mov   x_temp, ax
+                                                jmp   end_overflow_x
+
+    check_overflow_x:                           
+                                                cmp   si, 7
+                                                ja    overflow_positive_x
+                                                mov   ax, si
+                                                mul   cell_size
+                                                add   ax, margin_x
+                                                mov   x_temp, ax
+                                                jmp   end_overflow_x
+
+    overflow_positive_x:                        
+                                                mov   ax, si
+                                                mul   cell_size
+                                                add   ax, margin_x
+                                                add   ax, 25d
+                                                mov   x_temp, ax
+                                                jmp   end_overflow_x
+
+    end_overflow_x:                             
                 
     ;Load the image into the bitmap_buffer.
                                                 mov   bx, file_handle
@@ -2038,6 +2258,40 @@ draw_piece proc
 draw_piece endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
+    
+draw_jail proc
+
+                                                pusha
+
+                                                mov   ah, 0ch
+                                                mov   al, 0d
+                                                
+                                                mov   cx, si
+                                                add   cx, cell_size
+
+                                                mov   dx, di
+                                                add   dx, cell_size
+                                                mov   bx, dx
+
+                                                
+    loop_x_jail:                                
+                                                mov   dx, bx
+    loop_y_jail:                                
+                                                int   10h
+                                                dec   dx
+                                                cmp   dx, di
+                                                jnz   loop_y_jail
+                                                sub   cx, 5
+                                                cmp   cx, si
+                                                jnz   loop_x_jail
+                                                
+                                                popa
+                                                ret
+
+draw_jail endp
+    
+    
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;Draws a cell at the row and columns positions specified by SI and DI.
 draw_cell proc
@@ -2095,6 +2349,9 @@ draw_cell proc
     ;After drawing the cell, we now wish to draw the piece in the cell (if any).
 
     ;Get back the original row and column positions (from 0 to 7).
+                                                mov   cx, si
+                                                mov   dx, di
+                                                
                                                 pop   di
                                                 pop   si
                                       
@@ -2104,10 +2361,41 @@ draw_cell proc
     ;Multiplies by 8, we don't need to move 3 to register first in this assembler. We multiply the row number by 8 since each row has 8 positions.
                                                 shl   bx, 3
                                                 add   bx, si
-                                                mov   bl, [bx + offset board]
-                                                mov   piece_to_draw, bl
+                                                mov   al, byte ptr [bx + offset board]
+                                                mov   piece_to_draw, al
                                                 call  draw_piece
+    ;If the piece cannot move, draw a jail.
+                                                push  si
+                                                push  di
+                                                cmp   free_pieces[bx], 1
+                                                jz    exit_draw_cell
+                                                
+                                                mov   si, cx
+                                                mov   di, dx
+                                                call  draw_jail
+                                                xchg  si, di
+
+                                                cmp   time_differences[bx], 1
+                                                jz    draw_3
+                                                cmp   time_differences[bx], 2
+                                                jz    draw_2
+                                                cmp   time_differences[bx], 3
+                                                jz    draw_1
+
+    draw_3:                                     
+                                                call  draw_timer_3
+                                                jmp   exit_draw_cell
+    draw_2:                                     
+                                                call  draw_timer_2
+                                                jmp   exit_draw_cell
+
+    draw_1:                                     
+                                                call  draw_timer_1
+    
+    exit_draw_cell:                             
     ;Exiting
+                                                pop   di
+                                                pop   si
                                                 pop   dx
                                                 pop   cx
                                                 pop   bx
@@ -2117,6 +2405,70 @@ draw_cell proc
 
 draw_cell endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+update_FreePieces proc
+
+                                                pusha
+                                                
+                                                call  getCurrentTime
+                                                mov   bx, 0
+                                                mov   cx, 64d
+    update_free:                                
+                                                call  getPrevTime
+                                                call  compareTimes
+                                                mov   al, moreThan_WaitingTime
+                                                cmp   al, free_pieces[bx]
+                                                jnz   change_status
+    continue_free_loop:                         
+                                                cmp   moreThan_WaitingTime, 1
+                                                jz    next_iteration
+
+                                                mov   al, timeDifference
+                                                cmp   al, time_differences[bx]
+                                                jz    next_iteration
+                                                mov   time_differences[bx], al
+                                                
+                                                push  bx
+                                                mov   dl, bl
+                                                shr   bl, 3
+                                                and   dl, 00000111b
+                                                mov   dh, 0
+                                                mov   bh, 0
+
+                                                mov   si, dx
+                                                mov   di, bx
+                                                call  get_cell_colour
+                                                call  draw_cell
+                                                pop   bx
+                                                
+    next_iteration:                             
+                                                inc   bx
+                                                loop  update_free
+                                                jmp   end_free_pieces
+    change_status:                              
+                                                mov   free_pieces[bx], al
+    redraw_cell:                                
+                                                push  bx
+                                                mov   dl, bl
+                                                shr   bl, 3
+                                                and   dl, 00000111b
+                                                mov   dh, 0
+                                                mov   bh, 0
+
+                                                mov   si, dx
+                                                mov   di, bx
+                                                call  get_cell_colour
+                                                call  draw_cell
+                                                pop   bx
+                                                jmp   continue_free_loop
+
+    end_free_pieces:                            
+                                                popa
+                                                
+                                                ret
+
+update_FreePieces endp
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;Calls draw_cell in a nested loop to display the whole board.
@@ -3374,17 +3726,11 @@ movePiece PROC
 
     ; getting the pos that we will read from
                                                                                                     
-                                                
-
-
                                                 mov   si, currSelectedPos_SI
                                                 mov   di, currSelectedPos_DI
                                                 call  getPos
 
-                                                call  getCurrentTime
-                                                call  getPrevTime
-                                                call  compareTimes
-                                                cmp   moreThan_ThreeSeconds, 1
+                                                cmp   free_pieces[bx], 1
                                                 jnz   movePiece_end
 
                                                 call  updateMovementTimes
@@ -3393,12 +3739,6 @@ movePiece PROC
                                                 mov   cl, board[bx]
                                                 mov   byte ptr board[bx], 0d                         ; removing the piece from its currentPos on the board
                                                  
-                                                
-                                                
-
-
-
-
                                                 mov   bx, dx
                                                 mov   al, board[bx]
                                                 cmp   al, 0d                                         ; checking if the player has taken a piece
@@ -3432,17 +3772,17 @@ movePiece PROC
                                                 mov   startPos_DI, di
                                                 mov   startPos_SI, si
 
-    ;popping out the new pos (our end pos)
-                                                pop   si
-                                                pop   di
-                                                pop   bx
-                                                pop   dx
-    ;check to update king's position
-                                                cmp   cl,-6d
-                                                jnz   NotKing
-                                                mov   Kingpos_si,si
-                                                mov   Kingpos_di,di
-                                                mov   king_in_danger, 0d
+                                                ;popping out the new pos (our end pos)
+                                                 pop   si
+                                                 pop   di
+                                                 pop   bx
+                                                 pop   dx
+                                                ;check to update king's position   
+                                                 cmp cl,-6d
+                                                 jnz NotKing
+                                                 mov   Kingpos_si,si
+                                                 mov   Kingpos_di,di
+                                                 mov   king_in_danger, 0d
                                                 ; push dx
                                                 ; push ax
                                                 ; mov dl, king_in_danger
@@ -3450,11 +3790,10 @@ movePiece PROC
                                                 ; int 21h
                                                 ; pop ax
                                                 ; pop dx
-                                                
 
-    ; checking if we can move the piece
-    NotKing:                                    cmp   moreThan_ThreeSeconds, 1
-                                                jnz   not_yet
+                                                ; checking if we can move the piece
+                                                 cmp   free_pieces[bx], 1
+                                                 jnz   not_yet
 
     ;preserving new pos (our end pos)
                                                 mov   endPos_SI, si
@@ -3462,6 +3801,8 @@ movePiece PROC
 
                                                 mov   al, hover_cell_color
                                                 call  draw_cell
+
+                                                call  status_bar
     
     ;; removing the oponent's previously colored moves (if it is overwritten)
     movePiece_remove_oponent_startpos:          
@@ -3487,9 +3828,13 @@ movePiece PROC
                                                 mov   currSelectedPos_SI, -1d
 
                                                 mov   startSending, 1d
-                                                 
+
                                                 ret
     not_yet:                                    
+                                                push  bx
+                                                mov   bx, 1
+                                                call  update_status
+                                                pop   bx
     ;; TODO: add status bar message (cannot move this piece yet)
                                                 ret
 movePiece ENDP
@@ -3676,6 +4021,7 @@ check_king_vertical ENDP
 
 check_king_horizontal proc
 
+                                                pusha
                                                 pusha
 
                                                 cmp  king_in_danger, 1d
@@ -4666,15 +5012,20 @@ game_window proc
                                                 call  clear_screen
 
 
-    ;call set_board_base
+                                                call  draw_labels
+                                                call  set_board_base
 
 
                                                 call  draw_board                                     ;Draw the board
 
 
-    ;call set_border
-    ;call draw_letters
-    ;call draw_numbers
+                                                call  set_border
+                                                call  draw_letters
+                                                call  draw_numbers
+                                                call  status_bar
+                                                call  inline_chat_window
+                                                mov   bx, 0
+                                                call  update_status
 
                          
                                                 mov   si, 3d
@@ -4683,9 +5034,12 @@ game_window proc
                                                 call  draw_cell
 
     play_chess:                                 
+                                                
                                                 call  getPlayerSelection
-    
+
                                                 call  moveInSelections
+
+                                                call  update_FreePieces
 
                                                 call  sendMoveToOponent
 
@@ -4699,9 +5053,10 @@ game_window proc
 
                                                 cmp   end_game, 1d
                                                 jnz   play_chess
-                                                
-                                                call print
-                                                int 21h
+
+                                                mov   bx, 2
+                                                call  update_status
+
                                                 ret
 
 game_window endp
@@ -4790,9 +5145,9 @@ main_window proc
                                                 jz    start_game
 
                                                 cmp   ah, 01h
-                                                jz    main_end
+                                                jz    program_end
 
-                                                jmp   main_end
+                                                jmp   main_start
 
     start_chat:                                 
                                                 call  chat_window
@@ -4802,7 +5157,7 @@ main_window proc
                                                 call  game_window
                                                 jmp   main_start
 
-    main_end:                                   
+    program_end:                                
                                                 call  terminate
 
                                                 popa
@@ -4943,21 +5298,29 @@ welcome endp
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 test_window proc
-                                                call  identification_window
-    ;call  init_board
-    ;call  init_video_mode
-    ;call  draw_background
-    ;mov   al, 14h
-    ;call  clear_screen
-    ;call  draw_labels
-    ;call  set_board_base
-    ;call  draw_board
-    ;call  set_border
-    ;call  draw_letters
-    ;call  draw_numbers
-    ;call  status_bar
+    ;call identification_window
+                                                call  init_board
+                                                call  init_video_mode
+                                                mov   al, 14h
+                                                call  clear_screen
+                                                call  draw_labels
+                                                call  set_board_base
+                                                call  draw_board
+                                                call  set_border
+                                                call  draw_letters
+                                                call  draw_numbers
+                                                call  status_bar
+
+                                                mov   di, 100d
+                                                mov   si, 100d
+                                                call  draw_timer_3
+
 
     ;mov   bx, 0
+    ;call  update_status
+    ;mov   ah,00H
+    ;int   16h
+    ;mov   bx,1
     ;call  update_status
     ;call  inline_chat_window
     ;ctrl k u uncomment

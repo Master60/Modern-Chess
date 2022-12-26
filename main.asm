@@ -1869,8 +1869,23 @@ load_piece proc
                                                 mov   y_temp, ax
 
                                                 mov   ax, si
+
+                                                cmp   si, 0
+                                                ja    captured_black_piece
+                                                
+                                                neg   ax
+                                                mul   cell_size
+                                                sub   ax, margin_x
+                                                neg   ax
+                                                jmp   continue_load_piece
+
+                                                captured_black_piece:
+                                                
                                                 mul   cell_size
                                                 add   ax, margin_x
+
+                                                continue_load_piece:
+
                                                 mov   x_temp, ax
 
                                                 cmp   si, 0
@@ -4267,9 +4282,9 @@ main_window proc
                                                 jz    start_game
 
                                                 cmp   ah, 01h
-                                                jz    main_end
+                                                jz    program_end
 
-                                                jmp   main_end
+                                                jmp   main_start
 
     start_chat:                                 
                                                 call  chat_window
@@ -4279,7 +4294,7 @@ main_window proc
                                                 call  game_window
                                                 jmp   main_start
 
-    main_end:                                   
+    program_end:                                   
                                                 call  terminate
 
                                                 popa

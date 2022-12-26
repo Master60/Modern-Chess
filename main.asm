@@ -74,6 +74,7 @@
     ;An array that will store the last time at which every piece on the board moved.
     movementTimes_hours      db      64d dup(0)
     movementTimes_seconds    dw      64d dup(0)
+    jailed_pieces            db      64 dup(0)
     
     waitingTime_white        dw      3
     waitingTime_black        dw      3
@@ -737,6 +738,35 @@ updateMovementTimes proc
                               
                                                 ret
 updateMovementTimes endp
+
+update_JailedPieces proc
+
+                                                push  bx
+                                                push  cx
+                                                
+                                                call  getCurrentTime
+                                                mov   bx, 0
+                                                mov   cx, 64d
+    update_jails:                               
+                                                call  getPrevTime
+                                                call  compareTimes
+                                                cmp   moreThan_WaitingTime, 1
+                                                jnz   not_allowed_to_move
+
+    ;Allowed to move
+                                                mov   jailed_pieces[bx], 0
+                                                jmp   continue_jail_loop
+    not_allowed_to_move:                        
+                                                mov   jailed_pieces[bx], 1
+    continue_jail_loop:                         
+                                                inc   bx
+                                                loop  update_jails
+
+                                                pop   cx
+                                                pop   bx
+                                                ret
+
+update_JailedPieces endp
 
 
     ;sets carry flag
@@ -3376,17 +3406,11 @@ movePiece PROC
 
     ; getting the pos that we will read from
                                                                                                     
-                                                
-
-
                                                 mov   si, currSelectedPos_SI
                                                 mov   di, currSelectedPos_DI
                                                 call  getPos
 
-                                                call  getCurrentTime
-                                                call  getPrevTime
-                                                call  compareTimes
-                                                cmp   moreThan_WaitingTime, 1
+                                                cmp   jailed_pieces[bx], 0
                                                 jnz   movePiece_end
 
                                                 call  updateMovementTimes
@@ -3435,7 +3459,7 @@ movePiece PROC
                                                 pop   dx
 
     ; checking if we can move the piece
-                                                cmp   moreThan_WaitingTime, 1
+                                                cmp   jailed_pieces[bx], 0
                                                 jnz   not_yet
 
     ;preserving new pos (our end pos)
@@ -4097,13 +4121,16 @@ game_window proc
                                                 call  draw_cell
 
     play_chess:                                 
+                                                
                                                 call  getPlayerSelection
-    
+
                                                 call  moveInSelections
 
                                                 call  sendMoveToOponent
 
                                                 call  listenForOponentMove
+
+                                                call  update_JailedPieces
 
     ;  call checkForCheck
 

@@ -22,8 +22,9 @@
     ;Message to be displayed if a file fails to open.
     error_msg                db      "Error! Could not open bitmap files.$"
 
-
-
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;VARIABLES USED IN THE IDENTIFICATION WINDOW:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     Welcome_Mes              db      'Welcome To Our Game...$'
     Get_Name                 db      'Please Enter Your Name: $'
@@ -156,6 +157,10 @@
     checked_downright        db      0d
     checked_downleft         db      0d
 
+    ;Variables for check
+    Kingpos_si               dw      4d
+    Kingpos_di               dw      7d
+
     startSignal              db      0ffh
     blackPlayer              db      0
 
@@ -282,12 +287,6 @@
     captured_pieces_white    db      16 dup(0)
     captured_pieces_black    db      16 dup(0)
 
-
-
-    ;Variables for check
-
-    Kingpos_si               dw      4d
-    Kingpos_di               dw      7d
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;DEFINING LETTERS AND NUMBERS:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -695,6 +694,10 @@
                              db      0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0
                              db      0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;MISCELLANEOUS VARIABLES:
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
     temp_sp                  dw      ?
 
     status_1                 db      'Game has started', '$'
@@ -709,6 +712,7 @@
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 getCurrentTime proc
+
                                                 push  ax
                                                 push  cx
                                                 push  dx
@@ -732,10 +736,13 @@ getCurrentTime proc
                                                 pop   ax
 
                                                 ret
+
 getCurrentTime endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 compareTimes proc
+
                                                 push  ax
                                                 push  cx
                                                 push  dx
@@ -761,12 +768,14 @@ compareTimes proc
                                                 pop   dx
                                                 pop   cx
                                                 pop   ax
+
                                                 ret
     lessThan_WaitingTime:                       
                                                 mov   moreThan_WaitingTime, 0
                                                 pop   dx
                                                 pop   cx
                                                 pop   ax
+
                                                 ret
     differentHour:                              
                                                 mov   al, currentTime_hours
@@ -778,10 +787,13 @@ compareTimes proc
                                                 sub   cx, prevTime_seconds
                                                 add   cx, currentTime_seconds
                                                 jmp   check_above_WaitingTime
+
 compareTimes endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 getPrevTime proc
+
                                                 push  ax
                                                 push  bx
 
@@ -795,10 +807,13 @@ getPrevTime proc
                                                 pop   ax
 
                                                 ret
+
 getPrevTime endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 updateMovementTimes proc
+
                                                 push  bx
                                                 push  cx
                               
@@ -820,10 +835,14 @@ updateMovementTimes proc
                                                 pop   bx
                               
                                                 ret
+
 updateMovementTimes endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
     ;sets carry flag
-setcarry PROC
+setcarry proc
+
                                                 push  ax
     
                                                 mov   ax, 0ffffh
@@ -831,7 +850,10 @@ setcarry PROC
 
                                                 pop   ax
                                                 ret
-setcarry ENDP
+
+setcarry endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;delays according to no. of 'delay_loops' in memory
 delay proc
@@ -1414,7 +1436,10 @@ draw_numbers proc
 
 draw_numbers endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
 intializePort proc
+
                                                 mov   dx,3fbh                                        ;line control register
                                                 mov   al,10000000b                                   ;set divisor latch access bit
                                                 out   dx,al                                          ;out it
@@ -1432,9 +1457,13 @@ intializePort proc
                                                 out   dx,al
 
                                                 ret
+
 intializePort endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
 WRITEINPUT PROC
+
                                                 cmp   al,13d
                                                 jne   cont1
                                                 cmp   Iy,24d
@@ -1482,10 +1511,13 @@ WRITEINPUT PROC
                                                 MOV   DH,IY
                                                 int   10h
                                                 RET
+
 WRITEINPUT ENDP
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 WRITEOUTPUT PROC
+
                                                 cmp   al,13d
                                                 jne   cont2
                                                 cmp   oy,24d
@@ -1528,15 +1560,23 @@ WRITEOUTPUT PROC
                                                 MOV   DH,OY
                                                 int   10h
                                                 RET
+
 WRITEOUTPUT ENDP
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
 SENDKEY PROC
+
                                                 MOV   DX,3F8H
                                                 OUT   DX,AL
                                                 RET
+
 SENDKEY ENDP
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
 inializeScreen proc
+
                                                 mov   ah,0
                                                 mov   al,3h
                                                 int   10h
@@ -1556,8 +1596,10 @@ inializeScreen proc
 
 
                                                 ret
+
 inializeScreen endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 clearInputScreen proc
                                                 pusha
@@ -1579,6 +1621,7 @@ clearInputScreen proc
                                                 ret
 clearInputScreen endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 clearOutputScreen proc
                                                 pusha
@@ -1600,11 +1643,15 @@ clearOutputScreen proc
                                                 ret
 clearOutputScreen endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
 newILine proc
                                                 mov   IX,0
                                                 inc   IY
                                                 ret
 newILine endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 newOLine proc
                                                 mov   OX,39
@@ -1704,6 +1751,8 @@ chat_window proc
                                                 ret
 
 chat_window endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 chat_window_2 proc
 
@@ -2672,7 +2721,6 @@ draw_jail proc
 
 draw_jail endp
     
-    
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;Draws a cell at the row and columns positions specified by SI and DI.
@@ -2899,6 +2947,7 @@ update_FreePieces proc
                                                 ret
 
 update_FreePieces endp
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;Calls draw_cell in a nested loop to display the whole board.
@@ -2971,6 +3020,7 @@ getPos proc
 
 getPos endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ; ZF=1 -> EMPTY CELL | CF=0 -> PLAYER PIECE\EMPTY CELL  |  CF=1 -> ENEMY PIECE
 checkForEnemyPiece PROC
@@ -2998,6 +3048,8 @@ checkForEnemyPiece PROC
 
 checkForEnemyPiece ENDP
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
     ; writes move without any checks (mainly for removeSelections)
 writeMove PROC
                                                 push  bx
@@ -3016,6 +3068,9 @@ writeMove PROC
                                                 pop   bx
                                                 ret
 writeMove ENDP
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
     ;Writes possible moves to memory
 
 recordMove proc
@@ -3254,10 +3309,6 @@ hover endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-   
-
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
-
     ; puts the current position as the first possible move in all directions
 recordCurrPos proc
 
@@ -3280,7 +3331,6 @@ recordCurrPos proc
 recordCurrPos endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
-
 
 getPawnMoves proc
  
@@ -3365,6 +3415,7 @@ getPawnMoves proc
 
 getPawnMoves endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 getKnightMoves PROC
                                                 push  si
@@ -3436,6 +3487,7 @@ getKnightMoves PROC
                                                 ret
 getKnightMoves ENDP
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 getPossibleDiagonalMoves PROC
                                                 push  dx
@@ -3509,8 +3561,7 @@ getPossibleDiagonalMoves PROC
     
 getPossibleDiagonalMoves ENDP
 
-
-
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 getPossibleVerticalHorizontalMoves PROC
 
@@ -3580,6 +3631,7 @@ getPossibleVerticalHorizontalMoves PROC
     
 getPossibleVerticalHorizontalMoves ENDP
         
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 getQueenMoves PROC
 
@@ -3590,7 +3642,7 @@ getQueenMoves PROC
     
 getQueenMoves ENDP
 
-
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 getKingMoves PROC
             
@@ -3838,8 +3890,7 @@ initPort PROC
 
 initPort ENDP
 
-
-
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 getFirstSelection proc
 
@@ -4031,6 +4082,7 @@ goToNextSelection proc
 
 goToNextSelection endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 draw_captured_piece proc
                                                 pusha
@@ -4094,6 +4146,8 @@ draw_captured_piece proc
                                                 jmp   multiply_by_two
 draw_captured_piece endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
     ;; will be called in 2 cases:
     ; 1) Oponent Makes a move
     ; 2) We make a move to one of the colored oponent cells
@@ -4132,6 +4186,7 @@ removePrevOponentMove PROC
     
 removePrevOponentMove ENDP
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;moves the piece according to DI,SI (nextPos) & currSelectedPos_DI,currSelectedPos_SI (current pos)
 movePiece PROC
@@ -4291,6 +4346,9 @@ movePiece PROC
                                                 pop   bx
                                                 ret
 movePiece ENDP
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
     ;Procedures for check
 
     ;description
@@ -4307,6 +4365,8 @@ resetCheckFlags PROC
 
                                                 ret
 resetCheckFlags ENDP
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 reInitializeFlags PROC
                                                 cmp   checked_up, 0
@@ -4337,6 +4397,7 @@ reInitializeFlags PROC
                                                 ret
 reInitializeFlags ENDP
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 MOVE_CURSOR PROC
     
@@ -4350,6 +4411,8 @@ MOVE_CURSOR PROC
 
                                                 RET
 MOVE_CURSOR ENDP
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;debugging purposes
 print PROC
@@ -4369,6 +4432,8 @@ print PROC
 
                                                 ret
 print ENDP
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 check_king_vertical proc
 
@@ -4473,6 +4538,7 @@ check_king_vertical proc
                                                 ret
 check_king_vertical ENDP
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 check_king_horizontal proc
 
@@ -4593,7 +4659,7 @@ check_king_horizontal proc
 
 check_king_horizontal ENDP
 
-
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 check_up_diagonals PROC
                                                 push  ax
@@ -4749,7 +4815,7 @@ check_up_diagonals PROC
                                                 ret
 check_up_diagonals ENDP
 
-
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 check_down_diagonals PROC
                                                 push  ax
@@ -4895,7 +4961,7 @@ check_down_diagonals PROC
                                                 ret
 check_down_diagonals ENDP
 
-
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 check_knight PROC
                                                 push  ax
@@ -5028,23 +5094,7 @@ check_knight PROC
            
 check_knight ENDP
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 getPlayerSelection PROC
     ;Listen for keyboard press and change its colour
@@ -5091,7 +5141,7 @@ getPlayerSelection PROC
 
 getPlayerSelection ENDP
 
-
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 moveInSelections PROC
                                                 cmp   currSelectedPos_DI, -1d
@@ -5254,6 +5304,7 @@ moveInSelections PROC
                                                 ret
 moveInSelections ENDP
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;; Data Format AL = DI_0_SI  where di and si are 3 bits
     ; compresses the data in DI,SI to AL
@@ -5285,8 +5336,7 @@ compressData PROC
                                                 ret
 compressData ENDP
 
-
-
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 deCompressData PROC
                                                 push  ax
@@ -5308,6 +5358,7 @@ deCompressData PROC
                                                 pop   ax
 deCompressData ENDP
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 sendMoveToOponent PROC
                                                 push  ax
@@ -5369,8 +5420,7 @@ sendMoveToOponent PROC
     
 sendMoveToOponent ENDP
 
-
-
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 showOponentMove PROC
                                                 push  ax
@@ -5444,6 +5494,7 @@ showOponentMove PROC
 
 showOponentMove ENDP
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 listenForOponentMove PROC
                                                 push  dx
@@ -5497,6 +5548,8 @@ listenForOponentMove PROC
 
                                                 ret
 listenForOponentMove ENDP
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;description
 setPieceColors PROC
@@ -5588,6 +5641,8 @@ game_window proc
 
 game_window endp
 
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
 sendStartSignal PROC
                                                 push  ax
                                                 push  bx
@@ -5610,6 +5665,8 @@ sendStartSignal PROC
 
                                                 ret
 sendStartSignal ENDP
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
     ;description
 checkForStartSignal PROC
@@ -5776,7 +5833,7 @@ main_window proc
 
 main_window endp
 
-
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 identification_window proc
 
@@ -5876,8 +5933,6 @@ identification_window proc
                                                 ret
 
 identification_window endp
-
-
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PROCEDURES USED IN THE WELCOME SCREEN:

@@ -1448,7 +1448,7 @@ newILine endp
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 newOLine proc
-                                                mov   OX,40d
+                                                mov   OX,42d
                                                 inc   OY
                                                 ret
 newOLine endp
@@ -1460,7 +1460,7 @@ inializeScreen proc
                                                 int   10h
 
                                                 mov   ah,2
-                                                mov   dl,38
+                                                mov   dl,39
                                                 mov   dh,0
                                                 mov   cx,25
     lp:                                         
@@ -1468,9 +1468,24 @@ inializeScreen proc
                                                 int   10h
                                                 mov   dl,'#'
                                                 int   21h
-                                                mov   dl,38
+                                                mov   dl,39
                                                 inc   dh
                                                 LOOP  lp
+
+
+                                                mov   ah,2
+                                                mov   dl,40
+                                                mov   dh,0
+                                                mov   cx,25
+    lp2:                                         
+                                                mov   ah, 2
+                                                int   10h
+                                                mov   dl,'#'
+                                                int   21h
+                                                mov   dl,40
+                                                inc   dh
+                                                LOOP  lp2
+
 
                                                 mov IX, 1
                                                 mov IY, 0
@@ -1481,7 +1496,7 @@ inializeScreen proc
                                                 int   10h
 
 
-                                                mov OX, 40d
+                                                mov OX, 42d
                                                 mov OY, 0
 
 
@@ -1563,7 +1578,7 @@ WRITEINPUT PROC
                                                 jne   cont1
                                                 cmp   Iy,24d
                                                 jb    cont1
-                                                cmp   ix,40d
+                                                cmp   ix,38d
                                                 jb    cc
                                                 CALL  newILine
                                                 mov   AH,2
@@ -1586,7 +1601,7 @@ WRITEINPUT PROC
                                                 je    WRITEINPUT_backspace
                                                 CMP   AL,13d
                                                 JE    IENTER
-                                                CMP   ix,40d
+                                                CMP   ix,38d
                                                 jb    p1
                                                 mov   IX, 1
                                                 inc   IY
@@ -1612,7 +1627,7 @@ WRITEINPUT PROC
                                                 ret
 
             WRITEINPUT_backspace_continue2:
-                                                mov IX, 37d
+                                                mov IX, 38d
                                                 dec IY
                                                             
             
@@ -1676,7 +1691,7 @@ WRITEOUTPUT PROC
                                                 JE    OENTER
                                                 CMP   OX, 79d
                                                 jb    p2
-                                                mov   OX, 40d
+                                                mov   OX, 42d
                                                 inc   oY
     p2:                                         
                                                 mov   AH,2
@@ -1693,7 +1708,7 @@ WRITEOUTPUT PROC
     WRITEOUTPUT_backspace:
                                                 
                                                 
-                                                cmp OX, 40d
+                                                cmp OX, 42d
                                                 jne WRITEOUTPUT_backspace_continue
                                                 
                                                 cmp OY, 0

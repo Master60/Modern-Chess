@@ -66,7 +66,7 @@
 
     IY                       DB      0D
     IX                       DB      0D
-    OX                       DB      39D
+    OX                       DB      41D
     OY                       DB      0D
     VLine                    db      '#'
 
@@ -1468,7 +1468,7 @@ WRITEINPUT PROC
                                                 jne   cont1
                                                 cmp   Iy,24d
                                                 jb    cont1
-                                                cmp   ix,37d
+                                                cmp   ix,40d
                                                 jb    cc
                                                 CALL  newILine
                                                 mov   AH,2
@@ -1489,7 +1489,7 @@ WRITEINPUT PROC
     cont1:                                      
                                                 CMP   AL,13d
                                                 JE    IENTER
-                                                CMP   ix,37
+                                                CMP   ix,40d
                                                 jb    p1
                                                 mov   IX,0
                                                 inc   IY
@@ -1540,8 +1540,7 @@ WRITEOUTPUT PROC
                                                 JE    OENTER
                                                 CMP   ox,79
                                                 jb    p2
-                                                mov   oX,39
-                                                inc   oY
+                                                call newOLine
     p2:                                         
                                                 mov   AH,2
                                                 mov   DL,oX
@@ -1582,18 +1581,22 @@ inializeScreen proc
                                                 int   10h
 
                                                 mov   ah,2
-                                                mov   dl,38
+                                                mov   dl,40
                                                 mov   dh,0
                                                 mov   cx,25
     lp:                                         
                                                 mov   ah,2
                                                 int   10h
-                                                mov   dl,'#'
+                                                mov   dl,'|'
                                                 int   21h
-                                                mov   dl,38
+                                                mov   dl,40
                                                 inc   dh
                                                 LOOP  lp
 
+                                                mov dl,0
+                                                mov dh,0
+                                                mov ah,2
+                                                int 10h
 
                                                 ret
 
@@ -1609,7 +1612,7 @@ clearInputScreen proc
                                                 mov   ch,0                                           ; upper left Y
                                                 mov   cl,0                                           ; upper left X
                                                 mov   dh,24                                          ; lower right Y
-                                                mov   dl,37                                          ; lower right X
+                                                mov   dl,39                                          ; lower right X
                                                 int   10h
                                                 mov   ah,3
                                                 mov   bh,0
@@ -1629,7 +1632,7 @@ clearOutputScreen proc
                                                 mov   ah,6h
                                                 mov   bh,07h                                         ; normal video attribute
                                                 mov   ch,0                                           ; upper left Y
-                                                mov   cl,39                                          ; upper left X
+                                                mov   cl,41                                          ; upper left X
                                                 mov   dh,24                                          ; lower right Y
                                                 mov   dl,79                                          ; lower right X
                                                 int   10h
@@ -1654,7 +1657,7 @@ newILine endp
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 newOLine proc
-                                                mov   OX,39
+                                                mov   OX,41d
                                                 inc   OY
                                                 ret
 newOLine endp
@@ -5617,6 +5620,8 @@ game_window proc
                                                 call  sendMoveToOponent
 
                                                 call  listenForOponentMove
+
+                                                call update_FreePieces
 
                                                 call  check_king_vertical
                                                 call  check_king_horizontal

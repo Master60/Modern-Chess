@@ -64,6 +64,8 @@
 
     dummy2                   db      'Press F3 to exit', '$'
 
+    test1                    db      'This is a message','$'
+
     ICursor_Y                       DB      0D
     ICursor_X                       DB      0D
     OCursor_X                       DB      42D
@@ -747,6 +749,7 @@ getCurrentTime proc
 
 getCurrentTime endp
 
+;---------------------------------------------------------------------------------------------------------------------------------------------
 
 ;description
 genRandomPos PROC
@@ -1554,7 +1557,7 @@ inializeScreen proc
                                                 mov   AH,2
                                                 mov   DL, ICursor_X
                                                 MOV   DH, ICursor_Y
-                                                 int   10h
+                                                int   10h
 
 
                                                 mov OCursor_X, 42d
@@ -1583,7 +1586,7 @@ input_scroll_up proc
                                                 mov   bh,07h                                         ; normal video attribute
                                                 mov   cl,0                                           ; upper left X
                                                 mov   ch,0                                           ; upper left Y
-                                                mov   dl,37                                           ; lower right X
+                                                mov   dl,37                                          ; lower right X
                                                 mov   dh,24                                          ; lower right Y
                                                 int   10h
                                                 ; mov   ah,3
@@ -1604,6 +1607,46 @@ input_scroll_up proc
                                                 popa
                                                 ret
 input_scroll_up endp
+
+;---------------------------------------------------------------------------------------------------------------------------------------------
+
+inline_input_scroll_up proc
+                                                pusha
+                                                
+                                                mov ICursor_X, 1
+                                                dec ICursor_Y
+
+                                                mov   AH,2
+                                                mov   DL, ICursor_X
+                                                MOV   DH, ICursor_Y
+                                                int   10h
+
+                                                mov   al,1d                                         ; function 6
+                                                mov   ah,6h
+                                                mov   bh,07h                                         ; normal video attribute
+                                                mov   cl,0                                           ; upper left X
+                                                mov   ch,0                                           ; upper left Y
+                                                mov   dl,37                                          ; lower right X
+                                                mov   dh,24                                          ; lower right Y
+                                                int   10h
+                                                ; mov   ah,3
+                                                ; mov   bh,0
+                                                ; int   10h
+
+                                               
+                                                ; mov   ah,2
+                                                ; mov   dl,0
+                                                ; int   21h
+
+                                                ; mov   AH,2
+                                                ; mov   DL, ICursor_X
+                                                ; MOV   DH, ICursor_Y
+                                                ; int   10h
+                                               
+
+                                                popa
+                                                ret
+inline_input_scroll_up endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1630,6 +1673,34 @@ output_scroll_up proc
                                                 popa
                                                 ret
 output_scroll_up endp
+
+;---------------------------------------------------------------------------------------------------------------------------------------------
+
+inline_output_scroll_up proc
+                                                pusha
+                                                
+                                                mov OCursor_X, 42d
+                                                dec OCursor_Y
+
+                                                mov   AH,2
+                                                mov   DL, OCursor_X
+                                                MOV   DH, OCursor_Y
+                                                int   10h
+                                                
+                                                mov   al,1h                                          ; function 6
+                                                mov   ah,6h
+                                                mov   bh,07h                                         ; normal video attribute
+                                                mov   ch,0                                           ; upper left Y
+                                                mov   cl,42d                                         ; upper left X
+                                                mov   dh,24d                                         ; lower right Y
+                                                mov   dl,79d                                         ; lower right X
+                                                int   10h
+                                                
+                                                popa
+                                                ret
+inline_output_scroll_up endp
+
+;---------------------------------------------------------------------------------------------------------------------------------------------
 
 intializePort proc
 
@@ -1727,6 +1798,84 @@ WRITEINPUT PROC
 
 WRITEINPUT ENDP
 
+;---------------------------------------------------------------------------------------------------------------------------------------------
+
+INLINE_WRITEINPUT PROC
+pusha
+
+                                                cmp   ICursor_X,38d
+                                                jnz   INLINE_WRITEINPUT_check_key_pressed
+                                                call  input_move_down
+
+                                                cmp   ICursor_Y,25d
+                                                jb    INLINE_WRITEINPUT_check_key_pressed
+                                            
+                                                call  input_scroll_up
+                                                jmp   INLINE_WRITEINPUT_check_key_pressed                                               
+                                                
+    INLINE_WRITEINPUT_check_key_pressed:                                      
+                                                cmp   al, 8h
+                                                je    INLINE_WRITEINPUT_backspace
+                                                CMP   AL,13d
+                                                JE    INLINE_IENTER
+
+                                                mov   AH,2
+                                                mov   DL,ICursor_X
+                                                MOV   DH,ICursor_Y
+                                                int   10h
+
+                                                mov   ah,2
+                                                mov   dl,AL
+                                                int   21h
+                                                INC   ICursor_X
+                                                RET
+
+    INLINE_WRITEINPUT_backspace:
+                                                
+                                                cmp ICursor_X, 1
+                                                jne INLINE_WRITEINPUT_backspace_continue
+                                                
+                                                cmp ICursor_Y, 0
+                                                jne INLINE_WRITEINPUT_backspace_continue2
+
+                                                ret
+
+            INLINE_WRITEINPUT_backspace_continue2:
+                                                mov ICursor_X, 38d
+                                                dec ICursor_Y
+                                                            
+            
+            INLINE_WRITEINPUT_backspace_continue:                                                        
+                                                dec   ICursor_X
+                                                mov   AH,2
+                                                mov   DL,ICursor_X
+                                                MOV   DH,ICursor_Y
+                                                int   10h
+
+                                                mov dl, 0
+                                                mov ah, 2
+                                                int 21h
+
+                                                mov   AH,2
+                                                mov   DL,ICursor_X
+                                                MOV   DH,ICursor_Y
+                                                int   10h
+                                                ret
+    INLINE_IENTER:                                     
+                                                CALL  input_move_down
+                                                cmp   ICursor_Y, 25d
+
+                                                jnz  INLINE_WRITEINPUT_end
+
+                                                call input_scroll_up
+                                                
+    INLINE_WRITEINPUT_end:
+
+    popa
+                                                RET
+
+INLINE_WRITEINPUT ENDP
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -1804,6 +1953,7 @@ resetEverything PROC
 
 resetEverything ENDP
 
+;---------------------------------------------------------------------------------------------------------------------------------------------
 
 WRITEOUTPUT PROC
                                                 cmp   OCursor_X, 79d
@@ -1881,6 +2031,84 @@ WRITEOUTPUT PROC
 
 WRITEOUTPUT ENDP
 
+;---------------------------------------------------------------------------------------------------------------------------------------------
+
+INLINE_WRITEOUTPUT PROC
+                                                cmp   OCursor_X, 79d
+                                                jnz   INLINE_WRITEOUTPUT_check_key_pressed
+                                                call  output_move_down
+
+                                                cmp   OCursor_Y, 25d
+                                                jb    INLINE_WRITEOUTPUT_check_key_pressed
+                                            
+                                                call  output_scroll_up
+                                                jmp   INLINE_WRITEOUTPUT_check_key_pressed                                               
+                                                
+    INLINE_WRITEOUTPUT_check_key_pressed:                                      
+                                                cmp   al, 8h
+                                                je    INLINE_WRITEOUTPUT_backspace
+                                                cmp   al, 0
+                                                je    INLINE_WRITEOUTPUT_backspace
+
+                                                CMP   AL,13d
+                                                JE    INLINE_OENTER
+
+                                                mov   AH,2
+                                                mov   DL, OCursor_X
+                                                MOV   DH, OCursor_Y
+                                                int   10h
+
+                                                mov   ah,2
+                                                mov   dl,AL
+                                                int   21h
+                                                INC   OCursor_X
+                                                RET
+
+
+    INLINE_WRITEOUTPUT_backspace:               
+                                                
+                                                cmp OCursor_X, 42d
+                                                jne INLINE_WRITEOUTPUT_backspace_continue
+                                                
+                                                cmp OCursor_Y, 0
+                                                jne INLINE_WRITEOUTPUT_backspace_continue2
+
+                                                ret
+
+            INLINE_WRITEOUTPUT_backspace_continue2:
+                                                mov OCursor_X, 79d
+                                                dec OCursor_Y                                                 
+            
+            
+            INLINE_WRITEOUTPUT_backspace_continue:                                                        
+                                                dec   OCursor_X
+                                                mov   AH,2
+                                                mov   DL, OCursor_X
+                                                MOV   DH, OCursor_Y
+                                                int   10h
+
+                                                mov dl, 0
+                                                mov ah, 2
+                                                int 21h
+
+                                                mov   AH,2
+                                                mov   DL, OCursor_X
+                                                MOV   DH, OCursor_Y
+                                                int   10h
+                                                ret
+    INLINE_OENTER:                                     
+                                                CALL  output_move_down
+                                                cmp   OCursor_Y, 25d
+
+                                                jnz  INLINE_WRITEOUTPUT_end
+
+                                                call output_scroll_up
+                                                
+    INLINE_WRITEOUTPUT_end:
+                                                RET
+
+INLINE_WRITEOUTPUT ENDP
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 SENDKEY PROC
@@ -1890,14 +2118,6 @@ SENDKEY PROC
                                                 RET
 
 SENDKEY ENDP
-
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
-
-
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PROCEDURES USED IN THE CHAT SCREEN:
@@ -1992,13 +2212,14 @@ chat_window proc
 
 chat_window endp
 
+;---------------------------------------------------------------------------------------------------------------------------------------------
 
 ;description
 sendPowerupPos PROC
                                                 mov bx, offset board
                                                 call genRandomPos
                                                 add bx, si
-                                                mov [bx], 'p'
+                                                mov byte ptr [bx], 'p'
                                                 sub bx, offset board
 
                                                 ; push ax
@@ -2022,6 +2243,8 @@ sendPowerupPos PROC
 
                                                 ret
 sendPowerupPos ENDP
+
+;---------------------------------------------------------------------------------------------------------------------------------------------
 
 ;description
 receivePowerupPos PROC
@@ -2054,15 +2277,11 @@ receivePowerupPos PROC
                                                 add  bx, offset board
                                                 
                                                 
-                                                mov [bx], 'p'
+                                                mov byte ptr [bx], 'p'
 
                                                 ret
     
 receivePowerupPos ENDP
-
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
-
-
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PROCEDURES USED IN DRAWING ON THE GAME SCREEN:
@@ -2520,6 +2739,16 @@ inline_chat_window proc
                                                 mov   cx, 950d
                                                 cmp   dx, 1024d
                                                 jnz   draw_inline_chat_y
+
+    mov cx,950d
+    mov dx,512d
+    mov al,0h
+    mov ah,0ch
+    draw_separation:
+    int 10h
+    inc cx
+    cmp cx,1280d
+    jnz draw_separation
 
                                                 popa
 
@@ -5900,6 +6129,76 @@ setPieceColors ENDP
     ;PROCEDURES USED IN THE GAME SCREEN:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+inline_chat proc
+
+pusha
+
+inline_chat_window_2_check_for_input:                            
+
+                                                
+    ;CHECK IF THERE IS A KEY PRESSESD SEND TO THE OTHER USER
+                                                cmp   ax, ax
+                                                MOV   AH,01h
+                                                INT   16H
+                                                JZ   inline_chat_window_2_check_sent_key
+                                                MOV   AH,00
+                                                INT   16H
+                                                CMP   AL,1BH
+                                                JE    inline_EXIT
+                                               
+                    inline_chat_window2_continue:
+                                                call  INLINE_WRITEINPUT
+                                                CALL  SENDKEY
+                                                
+
+
+    inline_chat_window_2_check_sent_key:                               
+    ;CHECK STATE IF THERE IS DATA RECIVED
+    ;IF THERE IS NO DATA RECIVED
+                                               
+                                                MOV   DX,3FDH
+                                                IN    AL,DX
+                                                AND   AL,1
+                                                JZ    inline_chat_window_2_check_for_input
+    ;IF THERE IS DATA RECIVED
+    ;RECIVE DATA AND CALL WRITE IN OUTPUT PROC
+                                                MOV   DX,03F8H
+                                                IN    AL,DX
+
+                                                cmp al, startSignal
+                                                jnz  inline_chatting
+
+                                                ; call sendStartSignal
+                                                call  inline_input_scroll_up
+                                                call  inline_output_scroll_up
+
+                                                popa
+                                                
+                                                ;mov   blackPlayer, 1
+                                                ;call game_window
+
+                                                ret
+                            
+                            inline_chatting:
+                                                CALL  INLINE_WRITEOUTPUT
+                                                
+                                                JMP   inline_chat_window_2_check_for_input
+    ;END CODE
+	           
+                 
+                 
+    inline_EXIT:                                       
+                                                call  inline_input_scroll_up
+                                                call  inline_output_scroll_up
+
+popa
+
+ret
+
+inline_chat endp
+
+;---------------------------------------------------------------------------------------------------------------------------------------------
+
 game_window proc
 
                                                 ; mov   end_game, 1
@@ -5912,17 +6211,31 @@ game_window proc
                                                 call  clear_screen
                                                 call  init_board                                     ;Initialize board
 
+call draw_labels
 
-    ;call set_board_base
+    call set_board_base
 
 
                                                 call  draw_board                                     ;Draw the board
 
 
-    ;call set_border
-    ;call draw_letters
-    ;call draw_numbers
+    call set_border
+    call draw_letters
+    call draw_numbers
 
+    call status_bar
+
+    call inline_chat_window
+
+    ; mov ah, 2
+    ; mov bh, 0
+    ; mov dl, 120d
+    ; mov dh, 1d
+    ; int 10h
+
+    ; mov ah, 9
+    ; mov dx, offset test1
+    ; int 21h
                          
                                                 mov   si, 3d
                                                 mov   di, 6d
@@ -5943,6 +6256,8 @@ game_window proc
                                                 call  listenForOponentMove
 
                                                 call  update_FreePieces
+
+                                                ;call  inline_chat
 
                                                 call  check_king_vertical
                                                 call  check_king_horizontal
@@ -6172,6 +6487,8 @@ chat_window_2 proc
 
 chat_window_2 endp
 
+;---------------------------------------------------------------------------------------------------------------------------------------------
+
 main_window proc
 
                                                 pusha
@@ -6396,6 +6713,9 @@ welcome endp
 
 test_window proc
     ;call identification_window
+    ;call  sendStartSignal
+    ;call  resetEverything
+                                                ;call  setPieceColors
                                                 call  init_board
                                                 call  init_video_mode
                                                 mov   al, 14h
@@ -6408,9 +6728,9 @@ test_window proc
                                                 call  draw_numbers
                                                 call  status_bar
 
-                                                mov   di, 100d
-                                                mov   si, 100d
-                                                call  draw_timer_3
+                                                ;mov   di, 100d
+                                                ;mov   si, 100d
+                                                ;call  draw_timer_3
 
 
     ;mov   bx, 0
@@ -6419,10 +6739,11 @@ test_window proc
     ;int   16h
     ;mov   bx,1
     ;call  update_status
-    ;call  inline_chat_window
+    call  inline_chat_window
+
     ;ctrl k u uncomment
     ;ctrl k c comment
-                                                hlt
+                                                ;hlt
 
                                                 ret
 

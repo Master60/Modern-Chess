@@ -164,6 +164,7 @@
     startSignal              db      0ffh
     blackPlayer              db      0
 
+
     ;; plays that will be sent to the oponent
     startPos_SI              dw      -1d
     startPos_DI              dw      -1d
@@ -1438,6 +1439,100 @@ draw_numbers endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+newILine proc
+                                                mov   IX,1
+                                                inc   IY
+                                                ret
+newILine endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+newOLine proc
+                                                mov   OX,40d
+                                                inc   OY
+                                                ret
+newOLine endp
+
+inializeScreen proc
+
+                                                mov   ah,0
+                                                mov   al,3h
+                                                int   10h
+
+                                                mov   ah,2
+                                                mov   dl,38
+                                                mov   dh,0
+                                                mov   cx,25
+    lp:                                         
+                                                mov   ah, 2
+                                                int   10h
+                                                mov   dl,'#'
+                                                int   21h
+                                                mov   dl,38
+                                                inc   dh
+                                                LOOP  lp
+
+                                                mov IX, 1
+                                                mov IY, 0
+
+                                                mov   AH,2
+                                                mov   DL, IX
+                                                MOV   DH, IY
+                                                int   10h
+
+
+                                                mov OX, 40d
+                                                mov OY, 0
+
+
+                                                ret
+
+inializeScreen endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+clearInputScreen proc
+                                                pusha
+                                                mov   al,1h                                          ; function 6
+                                                mov   ah,6h
+                                                mov   bh,07h                                         ; normal video attribute
+                                                mov   ch,0                                           ; upper left Y
+                                                mov   cl,0                                           ; upper left X
+                                                mov   dh,24                                          ; lower right Y
+                                                mov   dl,37                                          ; lower right X
+                                                int   10h
+                                                mov   ah,3
+                                                mov   bh,0
+                                                int   10h
+                                                mov   ah,2
+                                                mov   dl,' '
+                                                int   21h
+                                                popa
+                                                ret
+clearInputScreen endp
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+clearOutputScreen proc
+                                                pusha
+                                                mov   al,1h                                          ; function 6
+                                                mov   ah,6h
+                                                mov   bh,07h                                         ; normal video attribute
+                                                mov   ch,0                                           ; upper left Y
+                                                mov   cl,39                                          ; upper left X
+                                                mov   dh,24                                          ; lower right Y
+                                                mov   dl,79                                          ; lower right X
+                                                int   10h
+                                                mov   ah,3
+                                                mov   bh,0
+                                                int   10h
+                                                mov   ah,2
+                                                mov   dl,' '
+                                                int   21h
+                                                popa
+                                                ret
+clearOutputScreen endp
+
 intializePort proc
 
                                                 mov   dx,3fbh                                        ;line control register
@@ -1487,11 +1582,13 @@ WRITEINPUT PROC
                                                 int   10h
                                                 ret
     cont1:                                      
+                                                cmp   al, 8h
+                                                je    WRITEINPUT_backspace
                                                 CMP   AL,13d
                                                 JE    IENTER
                                                 CMP   ix,40d
                                                 jb    p1
-                                                mov   IX,0
+                                                mov   IX, 1
                                                 inc   IY
     p1:                                         
                                                 mov   AH,2
@@ -1504,6 +1601,37 @@ WRITEINPUT PROC
                                                 int   21h
                                                 INC   IX
                                                 RET
+
+    WRITEINPUT_backspace:
+                                                cmp IX, 1
+                                                jne WRITEINPUT_backspace_continue
+                                                
+                                                cmp IY, 0
+                                                jne WRITEINPUT_backspace_continue2
+
+                                                ret
+
+            WRITEINPUT_backspace_continue2:
+                                                mov IX, 37d
+                                                dec IY
+                                                            
+            
+            WRITEINPUT_backspace_continue:                                                        
+                                                dec   IX
+                                                mov   AH,2
+                                                mov   DL,IX
+                                                MOV   DH,IY
+                                                int   10h
+
+                                                mov dl, 0
+                                                mov ah, 2
+                                                int 21h
+
+                                                mov   AH,2
+                                                mov   DL,IX
+                                                MOV   DH,IY
+                                                int   10h
+                                                ret
     IENTER:                                     
                                                 CALL  newILine
                                                 mov   AH,2
@@ -1517,41 +1645,83 @@ WRITEINPUT ENDP
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 WRITEOUTPUT PROC
-
+                                                
+                                                
+                                                
                                                 cmp   al,13d
                                                 jne   cont2
-                                                cmp   oy,24d
+                                                cmp   OY, 24d
                                                 jb    cont2
-                                                cmp   ox,79d
+                                                cmp   OX, 79d
                                                 jb    cc1
                                                 call  clearOutputScreen
                                                 RET
     cc1:                                        
                                                 call  clearOutputScreen
                                                 call  newOLine
-                                                mov   oY,24d
+                                                mov   OY,24d
                                                 mov   AH,2
-                                                mov   DL,oX
-                                                MOV   DH,oY
+                                                mov   DL, OX
+                                                MOV   DH, OY
                                                 int   10h
                                                 ret
     cont2:                                      
+                                                
+                                                cmp   al, 8d
+                                                je    WRITEOUTPUT_backspace
+                                                cmp   al, 0d
+                                                je    WRITEOUTPUT_backspace
+
                                                 CMP   AL,13d
                                                 JE    OENTER
-                                                CMP   ox,79
+                                                CMP   OX, 79d
                                                 jb    p2
-                                                call newOLine
+                                                mov   OX, 40d
+                                                inc   oY
     p2:                                         
                                                 mov   AH,2
-                                                mov   DL,oX
-                                                MOV   DH,oy
+                                                mov   DL, OX
+                                                MOV   DH, OY
                                                 int   10h
 
                                                 mov   ah,2
                                                 mov   dl,AL
                                                 int   21h
-                                                INC   oX
+                                                INC   OX
                                                 RET
+
+    WRITEOUTPUT_backspace:
+                                                
+                                                
+                                                cmp OX, 40d
+                                                jne WRITEOUTPUT_backspace_continue
+                                                
+                                                cmp OY, 0
+                                                jne WRITEOUTPUT_backspace_continue2
+
+                                                ret
+
+            WRITEOUTPUT_backspace_continue2:
+                                                mov OX, 79d
+                                                dec OY                                                 
+            
+            
+            WRITEOUTPUT_backspace_continue:                                                        
+                                                dec   OX
+                                                mov   AH,2
+                                                mov   DL, OX
+                                                MOV   DH, OY
+                                                int   10h
+
+                                                mov dl, 0
+                                                mov ah, 2
+                                                int 21h
+
+                                                mov   AH,2
+                                                mov   DL, OX
+                                                MOV   DH, OY
+                                                int   10h
+                                                ret
     OENTER:                                     
                                                 CALL  newOLine
                                                 mov   AH,2
@@ -1574,93 +1744,11 @@ SENDKEY ENDP
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-inializeScreen proc
 
-                                                mov   ah,0
-                                                mov   al,3h
-                                                int   10h
-
-                                                mov   ah,2
-                                                mov   dl,40
-                                                mov   dh,0
-                                                mov   cx,25
-    lp:                                         
-                                                mov   ah,2
-                                                int   10h
-                                                mov   dl,'|'
-                                                int   21h
-                                                mov   dl,40
-                                                inc   dh
-                                                LOOP  lp
-
-                                                mov dl,0
-                                                mov dh,0
-                                                mov ah,2
-                                                int 10h
-
-                                                ret
-
-inializeScreen endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-clearInputScreen proc
-                                                pusha
-                                                mov   al,1h                                          ; function 6
-                                                mov   ah,6h
-                                                mov   bh,07h                                         ; normal video attribute
-                                                mov   ch,0                                           ; upper left Y
-                                                mov   cl,0                                           ; upper left X
-                                                mov   dh,24                                          ; lower right Y
-                                                mov   dl,39                                          ; lower right X
-                                                int   10h
-                                                mov   ah,3
-                                                mov   bh,0
-                                                int   10h
-                                                mov   ah,2
-                                                mov   dl,' '
-                                                int   21h
-                                                popa
-                                                ret
-clearInputScreen endp
 
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
-
-clearOutputScreen proc
-                                                pusha
-                                                mov   al,1h                                          ; function 6
-                                                mov   ah,6h
-                                                mov   bh,07h                                         ; normal video attribute
-                                                mov   ch,0                                           ; upper left Y
-                                                mov   cl,41                                          ; upper left X
-                                                mov   dh,24                                          ; lower right Y
-                                                mov   dl,79                                          ; lower right X
-                                                int   10h
-                                                mov   ah,3
-                                                mov   bh,0
-                                                int   10h
-                                                mov   ah,2
-                                                mov   dl,' '
-                                                int   21h
-                                                popa
-                                                ret
-clearOutputScreen endp
-
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
-
-newILine proc
-                                                mov   IX,0
-                                                inc   IY
-                                                ret
-newILine endp
-
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
-
-newOLine proc
-                                                mov   OX,41d
-                                                inc   OY
-                                                ret
-newOLine endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PROCEDURES USED IN THE CHAT SCREEN:
@@ -1757,57 +1845,7 @@ chat_window endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-chat_window_2 proc
 
-                                                pusha
-
-                                                call  inializeScreen
-                                                CALL  intializePort
-	
-    ;CODE
-    CHECKKEYPRESSED:                            
-	
-    ;CHECK IF THERE IS A KEY PRESSESD SEND TO THE OTHER USER
-                                                MOV   AH,01h
-                                                INT   16H
-                                                JZ    CHECKKEYSENT
-                                                MOV   AH,00
-                                                INT   16H
-                                                CMP   AL,1BH
-                                                JE    EXIT
-                                                call  WRITEINPUT
-                                                CALL  SENDKEY
-	
-
-    CHECKKEYSENT:                               
-    ;CHECK STATE IF THERE IS DATA RECIVED
-    ;IF THERE IS NO DATA RECIVED
-                                                MOV   DX,3FDH
-                                                IN    AL,DX
-                                                AND   AL,1
-                                                JZ    CHECKKEYPRESSED
-    ;IF THERE IS DATA RECIVED
-    ;RECIVE DATA AND CALL WRITE IN OUTPUT PROC
-                                                MOV   DX,03F8H
-                                                IN    AL,DX
-                                                CALL  WRITEOUTPUT
-
-                                                JMP   CHECKKEYPRESSED
-    ;END CODE
-	
-	
-             
-                 
-                 
-    EXIT:                                       
-                                                call  clearInputScreen
-                                                call  clearOutputScreen
-
-                                                popa
-
-                                                ret
-
-chat_window_2 endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PROCEDURES USED IN DRAWING ON THE GAME SCREEN:
@@ -4279,7 +4317,7 @@ movePiece PROC
                                                 pop   bx
                                                 pop   dx
     ;check to update king's position
-                                                cmp   cl,-6d
+                                                cmp   cl, pKing
                                                 jnz   NotKing
                                                 mov   Kingpos_si,si
                                                 mov   Kingpos_di,di
@@ -5587,10 +5625,11 @@ setPieceColors ENDP
 
 game_window proc
 
+
+                                                ; call initPort
                                                 call  setPieceColors
                                                 call  init_board                                     ;Initialize board
                                                 call  init_video_mode                                ;Prepare video mode
-
     ;Clear the screen, in preparation for drawing the board
                                                 mov   al, 14h                                        ;The color by which we will clear the screen (light gray).
                                                 call  clear_screen
@@ -5747,6 +5786,92 @@ terminate endp
     ;PROCEDURES USED IN THE MAIN SCREEN:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+
+
+chat_window_2 proc
+
+                                                pusha
+
+                                                call  inializeScreen
+                                                ; call initPort
+	
+    ;CODE
+    CHECKKEYPRESSED:                            
+
+                                                
+    ;CHECK IF THERE IS A KEY PRESSESD SEND TO THE OTHER USER
+                                                cmp   ax, ax
+                                                MOV   AH,01h
+                                                INT   16H
+                                                JZ   CHECKKEYSENT
+                                                MOV   AH,00
+                                                INT   16H
+                                                CMP   AL,1BH
+                                                JE    EXIT
+                                                CMP   AH,3Ch
+                                                JNZ    chat_window2_continue
+                                                JMP   chat_window2_go_to_game
+
+                    chat_window2_continue:
+                                                call  WRITEINPUT
+                                                CALL  SENDKEY
+                                                jmp CHECKKEYSENT
+                    chat_window2_go_to_game:
+                                                call  sendStartSignal
+                                                call  clearInputScreen
+                                                call  clearOutputScreen
+
+                                                popa
+
+                                                call game_window
+                                                ret
+
+
+    CHECKKEYSENT:                               
+    ;CHECK STATE IF THERE IS DATA RECIVED
+    ;IF THERE IS NO DATA RECIVED
+                                               
+                                                MOV   DX,3FDH
+                                                IN    AL,DX
+                                                AND   AL,1
+                                                JZ    CHECKKEYPRESSED
+    ;IF THERE IS DATA RECIVED
+    ;RECIVE DATA AND CALL WRITE IN OUTPUT PROC
+                                                MOV   DX,03F8H
+                                                IN    AL,DX
+
+                                                cmp al, startSignal
+                                                jnz  chatting
+
+                                                ; call sendStartSignal
+                                                call  clearInputScreen
+                                                call  clearOutputScreen
+
+                                                popa
+                                                
+                                                mov blackPlayer, 1
+                                                call game_window
+
+                                                ret
+                            
+                            chatting:
+                                                CALL  WRITEOUTPUT
+                                                
+                                                JMP   CHECKKEYPRESSED
+    ;END CODE
+	           
+                 
+                 
+    EXIT:                                       
+                                                call  clearInputScreen
+                                                call  clearOutputScreen
+
+                                                popa
+
+                                                ret
+
+chat_window_2 endp
+
 main_window proc
 
                                                 pusha
@@ -5825,6 +5950,7 @@ main_window proc
                                                 jmp   main_start
 
     start_game:                                 
+                                                popa
                                                 call  sendStartSignal
                                                 call  game_window
                                                 jmp   main_start

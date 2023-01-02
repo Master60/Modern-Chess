@@ -64,10 +64,10 @@
 
     dummy2                   db      'Press F3 to exit', '$'
 
-    IY                       DB      0D
-    IX                       DB      0D
-    OX                       DB      39D
-    OY                       DB      0D
+    ICursor_Y                       DB      0D
+    ICursor_X                       DB      0D
+    OCursor_X                       DB      40D
+    OCursor_Y                       DB      0D
     VLine                    db      '#'
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -114,13 +114,6 @@
     ;           v
     ;       Directions
 
-    ; Keeps track of the possible move that the player is currently selecting and are used to write the moves to memory in "recordMove"
-    directionPtr             db      -1d
-    currMovePtr              db      -1d
-
-    ; the position (containing a piece) that the player is currently selecting
-    currSelectedPos_SI       dw      -1d
-    currSelectedPos_DI       dw      -1d
 
     ; Step unit (-1 for white & 1 for black)
     walker                   dw      ?
@@ -140,6 +133,14 @@
     oponentKnight            db      2d
     oponentPawn              db      1d
 
+    ; Keeps track of the possible move that the player is currently selecting and are used to write the moves to memory in "recordMove"
+    directionPtr             db      -1d
+    currMovePtr              db      -1d
+
+    ; the position (containing a piece) that the player is currently selecting
+    currSelectedPos_SI       dw      -1d
+    currSelectedPos_DI       dw      -1d
+
     ; Helpful Flags
     outOfBound               db      0d
     startSending             db      0d
@@ -147,6 +148,8 @@
     gotOponentStartPos       db      0d
     end_game                 db      -1d
     king_in_danger           db      0d
+    killedOpKing             db      0d
+    
 
     checked_up               db      0d
     checked_down             db      0d
@@ -162,6 +165,8 @@
     Kingpos_di               dw      7d
 
     startSignal              db      0ffh
+    endgameSignal            db      0
+
     blackPlayer              db      0
 
 
@@ -1439,19 +1444,28 @@ draw_numbers endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-newILine proc
-                                                mov   IX,1
-                                                inc   IY
+input_move_down proc
+                                                mov   ICursor_X,1
+                                                inc   ICursor_Y
+
+                                                mov   AH,2
+                                                mov   DL,ICursor_X
+                                                MOV   DH,ICursor_Y
+                                                int   10h
                                                 ret
-newILine endp
+input_move_down endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-newOLine proc
-                                                mov   OX,40d
-                                                inc   OY
+output_move_down proc
+                                                mov   OCursor_X,40d
+                                                inc   OCursor_Y
+                                                mov   AH,2
+                                                mov   DL,OCursor_X
+                                                MOV   DH,OCursor_Y
+                                                int   10h
                                                 ret
-newOLine endp
+output_move_down endp
 
 inializeScreen proc
 
@@ -1472,17 +1486,17 @@ inializeScreen proc
                                                 inc   dh
                                                 LOOP  lp
 
-                                                mov IX, 1
-                                                mov IY, 0
+                                                mov ICursor_X, 1
+                                                mov ICursor_Y, 0
 
                                                 mov   AH,2
-                                                mov   DL, IX
-                                                MOV   DH, IY
+                                                mov   DL, ICursor_X
+                                                MOV   DH, ICursor_Y
                                                 int   10h
 
 
-                                                mov OX, 40d
-                                                mov OY, 0
+                                                mov OCursor_X, 40d
+                                                mov OCursor_Y, 0
 
 
                                                 ret
@@ -1491,47 +1505,69 @@ inializeScreen endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-clearInputScreen proc
+input_scroll_up proc
                                                 pusha
-                                                mov   al,1h                                          ; function 6
+                                                
+                                                mov ICursor_X, 1
+                                                mov ICursor_Y, 0
+
+                                                mov   AH,2
+                                                mov   DL, ICursor_X
+                                                MOV   DH, ICursor_Y
+                                                int   10h
+
+                                                mov   al,25d                                         ; function 6
                                                 mov   ah,6h
                                                 mov   bh,07h                                         ; normal video attribute
-                                                mov   ch,0                                           ; upper left Y
                                                 mov   cl,0                                           ; upper left X
+                                                mov   ch,0                                           ; upper left Y
+                                                mov   dl,37                                           ; lower right X
                                                 mov   dh,24                                          ; lower right Y
-                                                mov   dl,37                                          ; lower right X
                                                 int   10h
-                                                mov   ah,3
-                                                mov   bh,0
-                                                int   10h
-                                                mov   ah,2
-                                                mov   dl,' '
-                                                int   21h
+                                                ; mov   ah,3
+                                                ; mov   bh,0
+                                                ; int   10h
+
+                                               
+                                                ; mov   ah,2
+                                                ; mov   dl,0
+                                                ; int   21h
+
+                                                ; mov   AH,2
+                                                ; mov   DL, ICursor_X
+                                                ; MOV   DH, ICursor_Y
+                                                ; int   10h
+                                               
+
                                                 popa
                                                 ret
-clearInputScreen endp
+input_scroll_up endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-clearOutputScreen proc
+output_scroll_up proc
                                                 pusha
-                                                mov   al,1h                                          ; function 6
+                                                
+                                                mov OCursor_X, 40d
+                                                mov OCursor_Y, 0
+
+                                                mov   AH,2
+                                                mov   DL, OCursor_X
+                                                MOV   DH, OCursor_Y
+                                                int   10h
+                                                
+                                                mov   al,25h                                          ; function 6
                                                 mov   ah,6h
                                                 mov   bh,07h                                         ; normal video attribute
                                                 mov   ch,0                                           ; upper left Y
-                                                mov   cl,39                                          ; upper left X
+                                                mov   cl,40                                          ; upper left X
                                                 mov   dh,24                                          ; lower right Y
                                                 mov   dl,79                                          ; lower right X
                                                 int   10h
-                                                mov   ah,3
-                                                mov   bh,0
-                                                int   10h
-                                                mov   ah,2
-                                                mov   dl,' '
-                                                int   21h
+                                                
                                                 popa
                                                 ret
-clearOutputScreen endp
+output_scroll_up endp
 
 intializePort proc
 
@@ -1558,69 +1594,53 @@ intializePort endp
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 WRITEINPUT PROC
+                                                cmp   ICursor_X,37d
+                                                jnz   WRITEINPUT_check_key_pressed
+                                                call  input_move_down
 
-                                                cmp   al,13d
-                                                jne   cont1
-                                                cmp   Iy,24d
-                                                jb    cont1
-                                                cmp   ix,37d
-                                                jb    cc
-                                                CALL  newILine
-                                                mov   AH,2
-                                                mov   DL,IX
-                                                MOV   DH,IY
-                                                int   10h
-                                                call  clearInputScreen
-                                                RET
-    cc:                                         
-                                                call  clearInputScreen
-                                                call  newILine
-                                                mov   IY,24d
-                                                mov   AH,2
-                                                mov   DL,IX
-                                                MOV   DH,IY
-                                                int   10h
-                                                ret
-    cont1:                                      
+                                                cmp   ICursor_Y,25d
+                                                jb    WRITEINPUT_check_key_pressed
+                                            
+                                                call  input_scroll_up
+                                                jmp   WRITEINPUT_check_key_pressed                                               
+                                                
+    WRITEINPUT_check_key_pressed:                                      
                                                 cmp   al, 8h
                                                 je    WRITEINPUT_backspace
                                                 CMP   AL,13d
                                                 JE    IENTER
-                                                CMP   ix,37
-                                                jb    p1
-                                                mov   IX, 1
-                                                inc   IY
-    p1:                                         
+
                                                 mov   AH,2
-                                                mov   DL,IX
-                                                MOV   DH,IY
+                                                mov   DL,ICursor_X
+                                                MOV   DH,ICursor_Y
                                                 int   10h
 
                                                 mov   ah,2
                                                 mov   dl,AL
                                                 int   21h
-                                                INC   IX
+                                                INC   ICursor_X
                                                 RET
 
     WRITEINPUT_backspace:
-                                                cmp IX, 1
+                                                
+                                                cmp ICursor_X, 1
                                                 jne WRITEINPUT_backspace_continue
                                                 
-                                                cmp IY, 0
+                                                cmp ICursor_Y, 0
                                                 jne WRITEINPUT_backspace_continue2
 
                                                 ret
 
             WRITEINPUT_backspace_continue2:
-                                                mov IX, 37d
-                                                dec IY
+                                                mov ICursor_X, 37d
+                                                dec ICursor_Y
                                                             
             
             WRITEINPUT_backspace_continue:                                                        
-                                                dec   IX
+                                                dec   ICursor_X
                                                 mov   AH,2
-                                                mov   DL,IX
-                                                MOV   DH,IY
+                                                mov   DL,ICursor_X
+                                                MOV   DH,ICursor_Y
                                                 int   10h
 
                                                 mov dl, 0
@@ -1628,89 +1648,151 @@ WRITEINPUT PROC
                                                 int 21h
 
                                                 mov   AH,2
-                                                mov   DL,IX
-                                                MOV   DH,IY
+                                                mov   DL,ICursor_X
+                                                MOV   DH,ICursor_Y
                                                 int   10h
                                                 ret
     IENTER:                                     
-                                                CALL  newILine
-                                                mov   AH,2
-                                                mov   DL,IX
-                                                MOV   DH,IY
-                                                int   10h
+                                                CALL  input_move_down
+                                                cmp   ICursor_Y, 25d
+
+                                                jnz  WRITEINPUT_end
+
+                                                call input_scroll_up
+                                                
+    WRITEINPUT_end:
                                                 RET
 
 WRITEINPUT ENDP
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+
+;description
+resetEverything PROC
+    ; Keeps track of the possible move that the player is currently selecting and are used to write the moves to memory in "recordMove"
+    mov   directionPtr       , -1d
+    mov   currMovePtr        , -1d
+
+    ; the position (containing a piece) that the player is currently selecting
+    mov   currSelectedPos_SI , -1d
+    mov   currSelectedPos_DI , -1d
+    
+    ; Helpful Flags
+    mov   outOfBound         , 0d
+    mov   startSending       , 0d
+    mov   startPosSent       , 0d
+    mov   gotOponentStartPos , 0d
+    mov   end_game           , -1d
+    mov   king_in_danger     , 0d
+    mov   killedOpKing       , 0d
+    
+
+    mov   checked_up         , 0d
+    mov   checked_down       , 0d
+    mov   checked_right      , 0d
+    mov   checked_left       , 0d
+    mov   checked_upright    , 0d
+    mov   checked_upleft     , 0d
+    mov   checked_downright  , 0d
+    mov   checked_downleft   , 0d
+
+    ;Variables for check
+
+    cmp blackPlayer, 1
+    jz reset_black
+
+    mov   Kingpos_si         , 4d
+    mov   Kingpos_di         , 7d
+    jmp   reset_everything_continue
+
+    reset_black:
+    
+    mov   Kingpos_si         , 3d
+    mov   Kingpos_di         , 7d
+
+    reset_everything_continue:
+
+    ;; plays that will be sent to the oponent
+    mov   startPos_SI        , -1d
+    mov   startPos_DI        , -1d
+
+    mov   endPos_SI          , -1d
+    mov   endPos_DI          , -1d
+    
+    ;; plays that will be received from the oponent
+    mov   oponent_startPos_SI, -1d
+    mov   oponent_startPos_DI, -1d
+
+    mov   oponent_endPos_SI  , -1d
+    mov   oponent_endPos_DI  , -1d
+
+    mov   oponent_checkpos_SI, -1d
+    mov   oponent_checkpos_DI, -1d
+
+    ; Navigation Buttons
+    mov   Left_Arrow         , 4Bh
+    mov   Right_Arrow        , 4Dh
+    mov   Up_Arrow           , 48h
+    mov   Down_Arrow         , 50h
+
+    ret
+
+resetEverything ENDP
+
+
 WRITEOUTPUT PROC
+                                                cmp   OCursor_X, 79d
+                                                jnz   WRITEOUTPUT_check_key_pressed
+                                                call  output_move_down
+
+                                                cmp   OCursor_Y, 25d
+                                                jb    WRITEOUTPUT_check_key_pressed
+                                            
+                                                call  output_scroll_up
+                                                jmp   WRITEOUTPUT_check_key_pressed                                               
                                                 
-                                                
-                                                
-                                                cmp   al,13d
-                                                jne   cont2
-                                                cmp   OY, 24d
-                                                jb    cont2
-                                                cmp   OX, 79d
-                                                jb    cc1
-                                                call  clearOutputScreen
-                                                RET
-    cc1:                                        
-                                                call  clearOutputScreen
-                                                call  newOLine
-                                                mov   OY,24d
-                                                mov   AH,2
-                                                mov   DL, OX
-                                                MOV   DH, OY
-                                                int   10h
-                                                ret
-    cont2:                                      
-                                                
-                                                cmp   al, 8d
+    WRITEOUTPUT_check_key_pressed:                                      
+                                                cmp   al, 8h
                                                 je    WRITEOUTPUT_backspace
-                                                cmp   al, 0d
+                                                cmp   al, 0
                                                 je    WRITEOUTPUT_backspace
 
                                                 CMP   AL,13d
                                                 JE    OENTER
-                                                CMP   OX, 79d
-                                                jb    p2
-                                                mov   OX, 40d
-                                                inc   oY
-    p2:                                         
+
                                                 mov   AH,2
-                                                mov   DL, OX
-                                                MOV   DH, OY
+                                                mov   DL, OCursor_X
+                                                MOV   DH, OCursor_Y
                                                 int   10h
 
                                                 mov   ah,2
                                                 mov   dl,AL
                                                 int   21h
-                                                INC   OX
+                                                INC   OCursor_X
                                                 RET
 
-    WRITEOUTPUT_backspace:
+
+    WRITEOUTPUT_backspace:               
                                                 
-                                                
-                                                cmp OX, 40d
+                                                cmp OCursor_X, 40d
                                                 jne WRITEOUTPUT_backspace_continue
                                                 
-                                                cmp OY, 0
+                                                cmp OCursor_Y, 0
                                                 jne WRITEOUTPUT_backspace_continue2
 
                                                 ret
 
             WRITEOUTPUT_backspace_continue2:
-                                                mov OX, 79d
-                                                dec OY                                                 
+                                                mov OCursor_X, 79d
+                                                dec OCursor_Y                                                 
             
             
             WRITEOUTPUT_backspace_continue:                                                        
-                                                dec   OX
+                                                dec   OCursor_X
                                                 mov   AH,2
-                                                mov   DL, OX
-                                                MOV   DH, OY
+                                                mov   DL, OCursor_X
+                                                MOV   DH, OCursor_Y
                                                 int   10h
 
                                                 mov dl, 0
@@ -1718,16 +1800,19 @@ WRITEOUTPUT PROC
                                                 int 21h
 
                                                 mov   AH,2
-                                                mov   DL, OX
-                                                MOV   DH, OY
+                                                mov   DL, OCursor_X
+                                                MOV   DH, OCursor_Y
                                                 int   10h
                                                 ret
     OENTER:                                     
-                                                CALL  newOLine
-                                                mov   AH,2
-                                                mov   DL,OX
-                                                MOV   DH,OY
-                                                int   10h
+                                                CALL  output_move_down
+                                                cmp   OCursor_Y, 25d
+
+                                                jnz  WRITEOUTPUT_end
+
+                                                call output_scroll_up
+                                                
+    WRITEOUTPUT_end:
                                                 RET
 
 WRITEOUTPUT ENDP
@@ -1933,6 +2018,7 @@ init_board proc
 
     ;Places the queens on their initial positions on the board, 5 indicates a black queen and 6 indicates a white queen.
                                                 mov   bx, offset board + 3
+                                                add   bl, blackPlayer
                                                 mov   al, oponentQueen
                                                 mov   [bx], al
                                                 add   bx, 56d
@@ -1941,6 +2027,7 @@ init_board proc
 
     ;Places the kings on their initial positions on the board, 6 indicates a black king and -6 indicates a white king.
                                                 mov   bx, offset board + 4
+                                                sub   bl, blackPlayer
                                                 mov   al, oponentKing
                                                 mov   [bx], al
                                                 add   bx, 56d
@@ -4273,13 +4360,14 @@ movePiece PROC
                                                 cmp   al, 'p'
                                                 jz    activate_powerup
 
-                                                cmp   al,6d
+                                                cmp   al, oponentKing
                                                 jnz   movePiece_capture_piece
                                                  
-                                                mov   end_game,1
+                                                mov   killedOpKing, 1
+                                                ; call  sendEndgameSignal
 
 
-    movePiece_capture_piece:                    
+    movePiece_capture_piece:                        
     ;;; logic for if piece exists (displaying it next to board)
                                                 mov   current_captured_piece, al
                                                 call  draw_captured_piece
@@ -5347,7 +5435,7 @@ moveInSelections ENDP
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    ;; Data Format AL = DI_0_SI  where di and si are 3 bits
+    ;; Data Format AL = DI_00_SI  where di and si are 3 bits
     ; compresses the data in DI,SI to AL
 compressData PROC
 
@@ -5359,6 +5447,10 @@ compressData PROC
                                                 mov   cx, 7d
                                                 sub   cx, bx
                                                 xchg  bx,cx
+
+                                                mov   cx, 7d
+                                                sub   cx, ax
+                                                xchg  ax,cx
 
                                                 pop   cx
                             
@@ -5450,6 +5542,11 @@ sendMoveToOponent PROC
     ;; resetting flags after both positions have been sent
                                                 mov   startSending, 0d
                                                 mov   startPosSent, 0d
+                                                
+                                                cmp   killedOpKing, 1d
+                                                jnz   sendMoveToOponent_end
+
+                                                mov   end_game, 1
 
 
     sendMoveToOponent_end:                      
@@ -5506,7 +5603,7 @@ showOponentMove PROC
                                                 cmp   ch, 0
                                                 jz    showOponentMove_continue
 
-                                                cmp   ch, -6d
+                                                cmp   ch, pKing
                                                 jnz   showOponentMove_draw_captured_piece
     ; jmp showOponentMove_draw_captured_piece
 
@@ -5625,8 +5722,9 @@ setPieceColors ENDP
 
 game_window proc
 
-
+                                                ; mov   end_game, 1
                                                 ; call initPort
+                                                call  resetEverything
                                                 call  setPieceColors
                                                 call  init_board                                     ;Initialize board
                                                 call  init_video_mode                                ;Prepare video mode
@@ -5660,7 +5758,7 @@ game_window proc
 
                                                 call  listenForOponentMove
 
-                                                call update_FreePieces
+                                                call  update_FreePieces
 
                                                 call  check_king_vertical
                                                 call  check_king_horizontal
@@ -5678,7 +5776,24 @@ game_window proc
     ; pop dx
     ; pop ax
     test_continue:                              
-                                                jmp   play_chess
+                                                cmp end_game, 1
+                                                jnz play_chess
+
+                                                mov bx,2
+                                                call update_status
+
+                        wait_for_any_key:                                                
+                                                cmp ax, ax
+                                                mov ah, 1
+                                                int 16h
+                                                jz  wait_for_any_key
+
+                                                mov ah, 0
+                                                int 16h
+
+                                                mov ah, 0
+                                                mov al, 3
+                                                int 10h
                                                 
                                                 
                                                 ret
@@ -5796,14 +5911,14 @@ chat_window_2 proc
                                                 ; call initPort
 	
     ;CODE
-    CHECKKEYPRESSED:                            
+    chat_window_2_check_for_input:                            
 
                                                 
     ;CHECK IF THERE IS A KEY PRESSESD SEND TO THE OTHER USER
                                                 cmp   ax, ax
                                                 MOV   AH,01h
                                                 INT   16H
-                                                JZ   CHECKKEYSENT
+                                                JZ   chat_window_2_check_sent_key
                                                 MOV   AH,00
                                                 INT   16H
                                                 CMP   AL,1BH
@@ -5815,11 +5930,12 @@ chat_window_2 proc
                     chat_window2_continue:
                                                 call  WRITEINPUT
                                                 CALL  SENDKEY
-                                                jmp CHECKKEYSENT
+                                                jmp chat_window_2_check_sent_key
                     chat_window2_go_to_game:
+                                                mov   blackPlayer, 0
                                                 call  sendStartSignal
-                                                call  clearInputScreen
-                                                call  clearOutputScreen
+                                                call  input_scroll_up
+                                                call  output_scroll_up
 
                                                 popa
 
@@ -5827,14 +5943,14 @@ chat_window_2 proc
                                                 ret
 
 
-    CHECKKEYSENT:                               
+    chat_window_2_check_sent_key:                               
     ;CHECK STATE IF THERE IS DATA RECIVED
     ;IF THERE IS NO DATA RECIVED
                                                
                                                 MOV   DX,3FDH
                                                 IN    AL,DX
                                                 AND   AL,1
-                                                JZ    CHECKKEYPRESSED
+                                                JZ    chat_window_2_check_for_input
     ;IF THERE IS DATA RECIVED
     ;RECIVE DATA AND CALL WRITE IN OUTPUT PROC
                                                 MOV   DX,03F8H
@@ -5844,12 +5960,12 @@ chat_window_2 proc
                                                 jnz  chatting
 
                                                 ; call sendStartSignal
-                                                call  clearInputScreen
-                                                call  clearOutputScreen
+                                                call  input_scroll_up
+                                                call  output_scroll_up
 
                                                 popa
                                                 
-                                                mov blackPlayer, 1
+                                                mov   blackPlayer, 1
                                                 call game_window
 
                                                 ret
@@ -5857,14 +5973,14 @@ chat_window_2 proc
                             chatting:
                                                 CALL  WRITEOUTPUT
                                                 
-                                                JMP   CHECKKEYPRESSED
+                                                JMP   chat_window_2_check_for_input
     ;END CODE
 	           
                  
                  
     EXIT:                                       
-                                                call  clearInputScreen
-                                                call  clearOutputScreen
+                                                call  input_scroll_up
+                                                call  output_scroll_up
 
                                                 popa
 
@@ -5951,6 +6067,7 @@ main_window proc
 
     start_game:                                 
                                                 popa
+                                                mov   blackPlayer, 0
                                                 call  sendStartSignal
                                                 call  game_window
                                                 jmp   main_start

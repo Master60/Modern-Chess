@@ -164,6 +164,7 @@
     startSignal              db      0ffh
     blackPlayer              db      0
 
+
     ;; plays that will be sent to the oponent
     startPos_SI              dw      -1d
     startPos_DI              dw      -1d
@@ -1438,142 +1439,19 @@ draw_numbers endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-intializePort proc
-
-                                                mov   dx,3fbh                                        ;line control register
-                                                mov   al,10000000b                                   ;set divisor latch access bit
-                                                out   dx,al                                          ;out it
-
-                                                mov   dx,3f8h
-                                                mov   al,0ch
-                                                out   dx,al
-
-                                                mov   dx,3f9h
-                                                mov   al,00h
-                                                out   dx,al
-
-                                                mov   dx,3fbh
-                                                mov   al,00011011b
-                                                out   dx,al
-
-                                                ret
-
-intializePort endp
-
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
-
-WRITEINPUT PROC
-
-                                                cmp   al,13d
-                                                jne   cont1
-                                                cmp   Iy,24d
-                                                jb    cont1
-                                                cmp   ix,37d
-                                                jb    cc
-                                                CALL  newILine
-                                                mov   AH,2
-                                                mov   DL,IX
-                                                MOV   DH,IY
-                                                int   10h
-                                                call  clearInputScreen
-                                                RET
-    cc:                                         
-                                                call  clearInputScreen
-                                                call  newILine
-                                                mov   IY,24d
-                                                mov   AH,2
-                                                mov   DL,IX
-                                                MOV   DH,IY
-                                                int   10h
-                                                ret
-    cont1:                                      
-                                                CMP   AL,13d
-                                                JE    IENTER
-                                                CMP   ix,37
-                                                jb    p1
-                                                mov   IX,0
+newILine proc
+                                                mov   IX,1
                                                 inc   IY
-    p1:                                         
-                                                mov   AH,2
-                                                mov   DL,IX
-                                                MOV   DH,IY
-                                                int   10h
-
-                                                mov   ah,2
-                                                mov   dl,AL
-                                                int   21h
-                                                INC   IX
-                                                RET
-    IENTER:                                     
-                                                CALL  newILine
-                                                mov   AH,2
-                                                mov   DL,IX
-                                                MOV   DH,IY
-                                                int   10h
-                                                RET
-
-WRITEINPUT ENDP
-
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
-
-WRITEOUTPUT PROC
-
-                                                cmp   al,13d
-                                                jne   cont2
-                                                cmp   oy,24d
-                                                jb    cont2
-                                                cmp   ox,79d
-                                                jb    cc1
-                                                call  clearOutputScreen
-                                                RET
-    cc1:                                        
-                                                call  clearOutputScreen
-                                                call  newOLine
-                                                mov   oY,24d
-                                                mov   AH,2
-                                                mov   DL,oX
-                                                MOV   DH,oY
-                                                int   10h
                                                 ret
-    cont2:                                      
-                                                CMP   AL,13d
-                                                JE    OENTER
-                                                CMP   ox,79
-                                                jb    p2
-                                                mov   oX,39
-                                                inc   oY
-    p2:                                         
-                                                mov   AH,2
-                                                mov   DL,oX
-                                                MOV   DH,oy
-                                                int   10h
-
-                                                mov   ah,2
-                                                mov   dl,AL
-                                                int   21h
-                                                INC   oX
-                                                RET
-    OENTER:                                     
-                                                CALL  newOLine
-                                                mov   AH,2
-                                                mov   DL,OX
-                                                MOV   DH,OY
-                                                int   10h
-                                                RET
-
-WRITEOUTPUT ENDP
+newILine endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-SENDKEY PROC
-
-                                                MOV   DX,3F8H
-                                                OUT   DX,AL
-                                                RET
-
-SENDKEY ENDP
-
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
+newOLine proc
+                                                mov   OX,40d
+                                                inc   OY
+                                                ret
+newOLine endp
 
 inializeScreen proc
 
@@ -1586,13 +1464,25 @@ inializeScreen proc
                                                 mov   dh,0
                                                 mov   cx,25
     lp:                                         
-                                                mov   ah,2
+                                                mov   ah, 2
                                                 int   10h
                                                 mov   dl,'#'
                                                 int   21h
                                                 mov   dl,38
                                                 inc   dh
                                                 LOOP  lp
+
+                                                mov IX, 1
+                                                mov IY, 0
+
+                                                mov   AH,2
+                                                mov   DL, IX
+                                                MOV   DH, IY
+                                                int   10h
+
+
+                                                mov OX, 40d
+                                                mov OY, 0
 
 
                                                 ret
@@ -1643,21 +1533,222 @@ clearOutputScreen proc
                                                 ret
 clearOutputScreen endp
 
+intializePort proc
+
+                                                mov   dx,3fbh                                        ;line control register
+                                                mov   al,10000000b                                   ;set divisor latch access bit
+                                                out   dx,al                                          ;out it
+
+                                                mov   dx,3f8h
+                                                mov   al,0ch
+                                                out   dx,al
+
+                                                mov   dx,3f9h
+                                                mov   al,00h
+                                                out   dx,al
+
+                                                mov   dx,3fbh
+                                                mov   al,00011011b
+                                                out   dx,al
+
+                                                ret
+
+intializePort endp
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-newILine proc
-                                                mov   IX,0
+WRITEINPUT PROC
+
+                                                cmp   al,13d
+                                                jne   cont1
+                                                cmp   Iy,24d
+                                                jb    cont1
+                                                cmp   ix,37d
+                                                jb    cc
+                                                CALL  newILine
+                                                mov   AH,2
+                                                mov   DL,IX
+                                                MOV   DH,IY
+                                                int   10h
+                                                call  clearInputScreen
+                                                RET
+    cc:                                         
+                                                call  clearInputScreen
+                                                call  newILine
+                                                mov   IY,24d
+                                                mov   AH,2
+                                                mov   DL,IX
+                                                MOV   DH,IY
+                                                int   10h
+                                                ret
+    cont1:                                      
+                                                cmp   al, 8h
+                                                je    WRITEINPUT_backspace
+                                                CMP   AL,13d
+                                                JE    IENTER
+                                                CMP   ix,37
+                                                jb    p1
+                                                mov   IX, 1
                                                 inc   IY
+    p1:                                         
+                                                mov   AH,2
+                                                mov   DL,IX
+                                                MOV   DH,IY
+                                                int   10h
+
+                                                mov   ah,2
+                                                mov   dl,AL
+                                                int   21h
+                                                INC   IX
+                                                RET
+
+    WRITEINPUT_backspace:
+                                                cmp IX, 1
+                                                jne WRITEINPUT_backspace_continue
+                                                
+                                                cmp IY, 0
+                                                jne WRITEINPUT_backspace_continue2
+
                                                 ret
-newILine endp
+
+            WRITEINPUT_backspace_continue2:
+                                                mov IX, 37d
+                                                dec IY
+                                                            
+            
+            WRITEINPUT_backspace_continue:                                                        
+                                                dec   IX
+                                                mov   AH,2
+                                                mov   DL,IX
+                                                MOV   DH,IY
+                                                int   10h
+
+                                                mov dl, 0
+                                                mov ah, 2
+                                                int 21h
+
+                                                mov   AH,2
+                                                mov   DL,IX
+                                                MOV   DH,IY
+                                                int   10h
+                                                ret
+    IENTER:                                     
+                                                CALL  newILine
+                                                mov   AH,2
+                                                mov   DL,IX
+                                                MOV   DH,IY
+                                                int   10h
+                                                RET
+
+WRITEINPUT ENDP
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-newOLine proc
-                                                mov   OX,39
-                                                inc   OY
+WRITEOUTPUT PROC
+                                                
+                                                
+                                                
+                                                cmp   al,13d
+                                                jne   cont2
+                                                cmp   OY, 24d
+                                                jb    cont2
+                                                cmp   OX, 79d
+                                                jb    cc1
+                                                call  clearOutputScreen
+                                                RET
+    cc1:                                        
+                                                call  clearOutputScreen
+                                                call  newOLine
+                                                mov   OY,24d
+                                                mov   AH,2
+                                                mov   DL, OX
+                                                MOV   DH, OY
+                                                int   10h
                                                 ret
-newOLine endp
+    cont2:                                      
+                                                
+                                                cmp   al, 8d
+                                                je    WRITEOUTPUT_backspace
+                                                cmp   al, 0d
+                                                je    WRITEOUTPUT_backspace
+
+                                                CMP   AL,13d
+                                                JE    OENTER
+                                                CMP   OX, 79d
+                                                jb    p2
+                                                mov   OX, 40d
+                                                inc   oY
+    p2:                                         
+                                                mov   AH,2
+                                                mov   DL, OX
+                                                MOV   DH, OY
+                                                int   10h
+
+                                                mov   ah,2
+                                                mov   dl,AL
+                                                int   21h
+                                                INC   OX
+                                                RET
+
+    WRITEOUTPUT_backspace:
+                                                
+                                                
+                                                cmp OX, 40d
+                                                jne WRITEOUTPUT_backspace_continue
+                                                
+                                                cmp OY, 0
+                                                jne WRITEOUTPUT_backspace_continue2
+
+                                                ret
+
+            WRITEOUTPUT_backspace_continue2:
+                                                mov OX, 79d
+                                                dec OY                                                 
+            
+            
+            WRITEOUTPUT_backspace_continue:                                                        
+                                                dec   OX
+                                                mov   AH,2
+                                                mov   DL, OX
+                                                MOV   DH, OY
+                                                int   10h
+
+                                                mov dl, 0
+                                                mov ah, 2
+                                                int 21h
+
+                                                mov   AH,2
+                                                mov   DL, OX
+                                                MOV   DH, OY
+                                                int   10h
+                                                ret
+    OENTER:                                     
+                                                CALL  newOLine
+                                                mov   AH,2
+                                                mov   DL,OX
+                                                MOV   DH,OY
+                                                int   10h
+                                                RET
+
+WRITEOUTPUT ENDP
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+SENDKEY PROC
+
+                                                MOV   DX,3F8H
+                                                OUT   DX,AL
+                                                RET
+
+SENDKEY ENDP
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PROCEDURES USED IN THE CHAT SCREEN:
@@ -1754,57 +1845,7 @@ chat_window endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-chat_window_2 proc
 
-                                                pusha
-
-                                                call  inializeScreen
-                                                CALL  intializePort
-	
-    ;CODE
-    CHECKKEYPRESSED:                            
-	
-    ;CHECK IF THERE IS A KEY PRESSESD SEND TO THE OTHER USER
-                                                MOV   AH,01h
-                                                INT   16H
-                                                JZ    CHECKKEYSENT
-                                                MOV   AH,00
-                                                INT   16H
-                                                CMP   AL,1BH
-                                                JE    EXIT
-                                                call  WRITEINPUT
-                                                CALL  SENDKEY
-	
-
-    CHECKKEYSENT:                               
-    ;CHECK STATE IF THERE IS DATA RECIVED
-    ;IF THERE IS NO DATA RECIVED
-                                                MOV   DX,3FDH
-                                                IN    AL,DX
-                                                AND   AL,1
-                                                JZ    CHECKKEYPRESSED
-    ;IF THERE IS DATA RECIVED
-    ;RECIVE DATA AND CALL WRITE IN OUTPUT PROC
-                                                MOV   DX,03F8H
-                                                IN    AL,DX
-                                                CALL  WRITEOUTPUT
-
-                                                JMP   CHECKKEYPRESSED
-    ;END CODE
-	
-	
-             
-                 
-                 
-    EXIT:                                       
-                                                call  clearInputScreen
-                                                call  clearOutputScreen
-
-                                                popa
-
-                                                ret
-
-chat_window_2 endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PROCEDURES USED IN DRAWING ON THE GAME SCREEN:
@@ -4276,7 +4317,7 @@ movePiece PROC
                                                 pop   bx
                                                 pop   dx
     ;check to update king's position
-                                                cmp   cl,-6d
+                                                cmp   cl, pKing
                                                 jnz   NotKing
                                                 mov   Kingpos_si,si
                                                 mov   Kingpos_di,di
@@ -5584,10 +5625,11 @@ setPieceColors ENDP
 
 game_window proc
 
+
+                                                ; call initPort
                                                 call  setPieceColors
                                                 call  init_board                                     ;Initialize board
                                                 call  init_video_mode                                ;Prepare video mode
-
     ;Clear the screen, in preparation for drawing the board
                                                 mov   al, 14h                                        ;The color by which we will clear the screen (light gray).
                                                 call  clear_screen
@@ -5617,6 +5659,8 @@ game_window proc
                                                 call  sendMoveToOponent
 
                                                 call  listenForOponentMove
+
+                                                call update_FreePieces
 
                                                 call  check_king_vertical
                                                 call  check_king_horizontal
@@ -5742,6 +5786,92 @@ terminate endp
     ;PROCEDURES USED IN THE MAIN SCREEN:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+
+
+chat_window_2 proc
+
+                                                pusha
+
+                                                call  inializeScreen
+                                                ; call initPort
+	
+    ;CODE
+    CHECKKEYPRESSED:                            
+
+                                                
+    ;CHECK IF THERE IS A KEY PRESSESD SEND TO THE OTHER USER
+                                                cmp   ax, ax
+                                                MOV   AH,01h
+                                                INT   16H
+                                                JZ   CHECKKEYSENT
+                                                MOV   AH,00
+                                                INT   16H
+                                                CMP   AL,1BH
+                                                JE    EXIT
+                                                CMP   AH,3Ch
+                                                JNZ    chat_window2_continue
+                                                JMP   chat_window2_go_to_game
+
+                    chat_window2_continue:
+                                                call  WRITEINPUT
+                                                CALL  SENDKEY
+                                                jmp CHECKKEYSENT
+                    chat_window2_go_to_game:
+                                                call  sendStartSignal
+                                                call  clearInputScreen
+                                                call  clearOutputScreen
+
+                                                popa
+
+                                                call game_window
+                                                ret
+
+
+    CHECKKEYSENT:                               
+    ;CHECK STATE IF THERE IS DATA RECIVED
+    ;IF THERE IS NO DATA RECIVED
+                                               
+                                                MOV   DX,3FDH
+                                                IN    AL,DX
+                                                AND   AL,1
+                                                JZ    CHECKKEYPRESSED
+    ;IF THERE IS DATA RECIVED
+    ;RECIVE DATA AND CALL WRITE IN OUTPUT PROC
+                                                MOV   DX,03F8H
+                                                IN    AL,DX
+
+                                                cmp al, startSignal
+                                                jnz  chatting
+
+                                                ; call sendStartSignal
+                                                call  clearInputScreen
+                                                call  clearOutputScreen
+
+                                                popa
+                                                
+                                                mov blackPlayer, 1
+                                                call game_window
+
+                                                ret
+                            
+                            chatting:
+                                                CALL  WRITEOUTPUT
+                                                
+                                                JMP   CHECKKEYPRESSED
+    ;END CODE
+	           
+                 
+                 
+    EXIT:                                       
+                                                call  clearInputScreen
+                                                call  clearOutputScreen
+
+                                                popa
+
+                                                ret
+
+chat_window_2 endp
+
 main_window proc
 
                                                 pusha
@@ -5820,6 +5950,7 @@ main_window proc
                                                 jmp   main_start
 
     start_game:                                 
+                                                popa
                                                 call  sendStartSignal
                                                 call  game_window
                                                 jmp   main_start

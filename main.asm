@@ -167,7 +167,7 @@
     startSignal              db      0ffh
     endgameSignal            db      0
 
-    blackPlayer              db      0
+    blackPlayer              db      1
 
 
     ;; plays that will be sent to the oponent
@@ -744,6 +744,36 @@ getCurrentTime proc
                                                 ret
 
 getCurrentTime endp
+
+
+;description
+genRandomPos PROC
+                                                push ax
+                                                push bx
+                                                push cx
+                                                push dx
+
+                                                mov   ah, 2ch
+                                                int   21h
+
+                                                mov dl, 0
+
+                                                and dh, 31d
+                                                add dh, 16d
+                                                
+                                                shr dx, 8d
+
+
+                                                mov si, dx
+                                                
+
+                                                pop dx
+                                                pop cx
+                                                pop bx
+                                                pop ax
+
+                                                ret
+genRandomPos ENDP
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1958,6 +1988,74 @@ chat_window proc
 
 chat_window endp
 
+
+;description
+sendPowerupPos PROC
+                                                mov bx, offset board
+                                                call genRandomPos
+                                                add bx, si
+                                                mov [bx], 'p'
+                                                sub bx, offset board
+
+                                                push ax
+                                                push dx
+                                                mov  dl, bl
+                                                mov  ah, 2
+                                                int  21h
+                                                pop  dx
+                                                pop  ax
+
+                    sendPowerupPos_rep:
+                                                mov   dx, 3FDh
+                                                In    al, dx
+                                                and   al, 00100000b
+                                                jz    sendPowerupPos_rep
+
+                                                mov   dx, 3F8h
+                                                mov   al, bl
+                                                out   dx, al
+
+
+                                                ret
+sendPowerupPos ENDP
+
+;description
+receivePowerupPos PROC
+                                                
+                    receivePowerupPos_rep:
+                                                mov   dx, 3FDh
+                                                In    al, dx
+                                                and   al, 1d
+                                                jz    receivePowerupPos_rep
+
+                                                mov   dx, 3F8h
+                                                In    al, dx
+
+                                                mov bh, 0
+                                                mov bl, al
+
+                                                push ax
+                                                push dx
+                                                mov  dl, bl
+                                                mov  ah, 2
+                                                int  21h
+                                                pop  dx
+                                                pop  ax
+
+
+                                                mov  cx, 63d
+                                                sub  cx, bx
+                                                xchg bx, cx
+
+                                                add  bx, offset board
+                                                
+                                                
+                                                mov [bx], 'p'
+
+                                                ret
+    
+receivePowerupPos ENDP
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -2063,6 +2161,18 @@ init_board proc
                                                 add   bx, 56d
                                                 mov   al, pKing
                                                 mov   [bx], al
+
+                                                cmp  blackPlayer, 0d
+                                                jnz  receive_pos
+                                                
+
+                                                call sendPowerupPos
+                                                jmp init_board_end
+
+                            receive_pos:
+                                                call receivePowerupPos
+
+    init_board_end:
 
                                                 ret
 
@@ -3185,6 +3295,8 @@ checkForEnemyPiece PROC
                                                 push  bx
                                                 call  getPos
                                                 cmp   board[bx], 0
+                                                jz    empty_cell
+                                                cmp   board[bx], 'p'
                                                 jz    empty_cell
 
     ; check if the piece is the same color as the player's color
@@ -4394,7 +4506,6 @@ movePiece PROC
                                                 jnz   movePiece_capture_piece
                                                  
                                                 mov   killedOpKing, 1
-                                                ; call  sendEndgameSignal
 
 
     movePiece_capture_piece:                        
@@ -4404,10 +4515,12 @@ movePiece PROC
                                                 jmp   conitnue_movePiece
 
     activate_powerup:                           
-                                                mov   bx, bp
-                                                cmp   board[bx], 0
+                                                cmp   cl, 0
                                                 jl    white_powerup
+
                                                 dec   waitingTime_black
+
+                                                jmp conitnue_movePiece
 
     white_powerup:                              
                                                 dec   waitingTime_white
@@ -5633,8 +5746,14 @@ showOponentMove PROC
                                                 cmp   ch, 0
                                                 jz    showOponentMove_continue
 
+                                                cmp   ch, 'p'
+                                                jz   showOponentMove_continue
+
                                                 cmp   ch, pKing
                                                 jnz   showOponentMove_draw_captured_piece
+
+
+
     ; jmp showOponentMove_draw_captured_piece
 
 
@@ -5756,11 +5875,11 @@ game_window proc
                                                 ; call initPort
                                                 call  resetEverything
                                                 call  setPieceColors
-                                                call  init_board                                     ;Initialize board
                                                 call  init_video_mode                                ;Prepare video mode
     ;Clear the screen, in preparation for drawing the board
                                                 mov   al, 14h                                        ;The color by which we will clear the screen (light gray).
                                                 call  clear_screen
+                                                call  init_board                                     ;Initialize board
 
 
     ;call set_board_base

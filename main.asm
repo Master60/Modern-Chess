@@ -711,7 +711,8 @@
     status_1                 db      'Game has started', '$'
     status_2                 db      'Cannot move selected piece', '$'
     status_3                 db      'Game has ended', '$'
-    status_4                 db      'King Checked', '$'
+    status_4                 db      'King is Checked!!', '$'
+    status_5                 db      'A piece was eaten!', '$'
 
 .code
 
@@ -2095,19 +2096,7 @@ init_board proc
                                                 inc   di
                                                 loop  clear_captured_pieces
     
-    ;Places the pawns on their initial positions on board, 1 indicates a black pawn and -1 indicates a white pawn.
-    ;Pawns fill the second and eighth rows.
-                                                mov   bx, offset board + 8
-                                                mov   cx, 8
-
-    init_pawns:                                 
-                                                mov   al, oponentPawn
-                                                mov   [bx], al
-                                                add   bx, 40d
-                                                mov   al, pPawn
-                                                mov   [bx],  al
-                                                sub   bx, 39d
-                                                loop  init_pawns
+    
 
     ;Places the knights on their initial positions on the board, 2 indicates a black knight and -2 indicates a white knight.
                                                 mov   bx, offset board + 1
@@ -2176,7 +2165,20 @@ init_board proc
                             receive_pos:
                                                 call receivePowerupPos
 
-    init_board_end:
+    init_board_end:     
+    ;Places the pawns on their initial positions on board, 1 indicates a black pawn and -1 indicates a white pawn.
+    ;Pawns fill the second and eighth rows.
+                                                mov   bx, offset board + 8
+                                                mov   cx, 8
+
+    init_pawns:                                 
+                                                mov   al, oponentPawn
+                                                mov   [bx], al
+                                                add   bx, 40d
+                                                mov   al, pPawn
+                                                mov   [bx],  al
+                                                sub   bx, 39d
+                                                loop  init_pawns
 
                                                 ret
 
@@ -2464,6 +2466,10 @@ update_status proc
 
                                                 cmp   bx, 2
                                                 jz    end_game_status
+                                                
+                                                cmp   bx, 3
+                                                jz    piece_taken
+                                                jmp   end_status
 
     start_game_status:                          
                                                 mov   ah, 9
@@ -2474,6 +2480,12 @@ update_status proc
     cannot_move_piece_status:                   
                                                 mov   ah, 9
                                                 mov   dx, offset status_2
+                                                int   21h
+                                                jmp   end_status
+
+    piece_taken:                            
+                                                mov   ah, 9
+                                                mov   dx, offset status_5
                                                 int   21h
                                                 jmp   end_status
 
@@ -3020,6 +3032,7 @@ draw_cell proc
                                                 jnz   draw_cell__continue
                                                 cmp   di, currSelectedPos_DI
                                                 jnz   draw_cell__continue
+                                                ; call  draw_border
                                                 mov   al, highlighted_cell_color
 
             draw_cell__continue:
@@ -4579,14 +4592,15 @@ movePiece PROC
                                                 mov   Kingpos_si,si
                                                 mov   Kingpos_di,di
                                                 mov   king_in_danger, 0d
+                                                call  update_status
 
-                                                push  dx
-                                                push  ax
-                                                mov   dl, 's'
-                                                mov   ah, 2
-                                                int   21h
-                                                pop   ax
-                                                pop   dx
+                                                ; push  dx
+                                                ; push  ax
+                                                ; mov   dl, 's'
+                                                ; mov   ah, 2
+                                                ; int   21h
+                                                ; pop   ax
+                                                ; pop   dx
     ; push dx
     ; push ax
     ; mov dl, king_in_danger
@@ -4824,13 +4838,14 @@ check_king_vertical proc
                                                 mov   oponent_checkpos_SI, si
 
                                                 mov   king_in_danger, 1d
-                                                push  dx
-                                                push  ax
-                                                mov   dl, king_in_danger
-                                                mov   ah, 2
-                                                int   21h
-                                                pop   ax
-                                                pop   dx
+                                                call  update_status
+                                                ; push  dx
+                                                ; push  ax
+                                                ; mov   dl, king_in_danger
+                                                ; mov   ah, 2
+                                                ; int   21h
+                                                ; pop   ax
+                                                ; pop   dx
     ;display message
     check_king_vertical_end:                    
                                                 popa
@@ -4940,17 +4955,18 @@ check_king_horizontal proc
     ; call print
                                                 call  resetCheckFlags
                                                 mov   king_in_danger, 1d
+                                                call  update_status
 
                                                 mov   oponent_checkpos_DI, di
                                                 mov   oponent_checkpos_SI, si
 
-                                                push  dx
-                                                push  ax
-                                                mov   dl, king_in_danger
-                                                mov   ah, 2
-                                                int   21h
-                                                pop   ax
-                                                pop   dx
+                                                ; push  dx
+                                                ; push  ax
+                                                ; mov   dl, king_in_danger
+                                                ; mov   ah, 2
+                                                ; int   21h
+                                                ; pop   ax
+                                                ; pop   dx
     ;display message
     check_king_horizontal_end:                  
                                                 popa
@@ -5096,15 +5112,16 @@ check_up_diagonals PROC
     check_updiagonals_Alert:                    
                                                 call  resetCheckFlags
                                                 mov   king_in_danger, 1d
+                                                call  update_status
                                                 mov   oponent_checkpos_DI, di
                                                 mov   oponent_checkpos_SI, si
-                                                push  dx
-                                                push  ax
-                                                mov   dl, king_in_danger
-                                                mov   ah, 2
-                                                int   21h
-                                                pop   ax
-                                                pop   dx
+                                                ; push  dx
+                                                ; push  ax
+                                                ; mov   dl, king_in_danger
+                                                ; mov   ah, 2
+                                                ; int   21h
+                                                ; pop   ax
+                                                ; pop   dx
     check_up_diagonals_end:                     
                                                 pop   di
                                                 pop   si
@@ -5242,15 +5259,16 @@ check_down_diagonals PROC
     check_downdiagonals_Alert:                  
                                                 call  resetCheckFlags
                                                 mov   king_in_danger, 1d
+                                                call  update_status
                                                 mov   oponent_checkpos_DI, di
                                                 mov   oponent_checkpos_SI, si
-                                                push  dx
-                                                push  ax
-                                                mov   dl, king_in_danger
-                                                mov   ah, 2
-                                                int   21h
-                                                pop   ax
-                                                pop   dx
+                                                ; push  dx
+                                                ; push  ax
+                                                ; mov   dl, king_in_danger
+                                                ; mov   ah, 2
+                                                ; int   21h
+                                                ; pop   ax
+                                                ; pop   dx
     check_down_diagonals_end:                   
                                                 pop   di
                                                 pop   si
@@ -5373,15 +5391,16 @@ check_knight PROC
     check_knight_Alert:                         
                                                 call  resetCheckFlags
                                                 mov   king_in_danger, 1d
+                                                call  update_status
                                                 mov   oponent_checkpos_DI, di
                                                 mov   oponent_checkpos_SI, si
-                                                push  dx
-                                                push  ax
-                                                mov   dl, king_in_danger
-                                                mov   ah, 2
-                                                int   21h
-                                                pop   ax
-                                                pop   dx
+                                                ; push  dx
+                                                ; push  ax
+                                                ; mov   dl, king_in_danger
+                                                ; mov   ah, 2
+                                                ; int   21h
+                                                ; pop   ax
+                                                ; pop   dx
                                                 
                 
     check_knight_end:                           
@@ -5751,13 +5770,14 @@ showOponentMove PROC
                                                 jnz   showOponentMove_continue0
 
                                                 mov   king_in_danger,0d
-                                                push  ax
-                                                push  dx
-                                                mov   dl,'s'
-                                                mov   ah,2
-                                                int   21h
-                                                pop   dx
-                                                pop   ax
+                                                call  update_status
+                                                ; push  ax
+                                                ; push  dx
+                                                ; mov   dl,'s'
+                                                ; mov   ah,2
+                                                ; int   21h
+                                                ; pop   dx
+                                                ; pop   ax
 
     showOponentMove_continue0:                  
 
@@ -5797,6 +5817,10 @@ showOponentMove PROC
     ;; TODO: Talla3 el message eno ettakel ya hamadaaa
                                                 mov   current_captured_piece, ch
                                                 call  draw_captured_piece
+                                                push bx
+                                                mov  bx, 3
+                                                call update_status
+                                                pop bx
 
     showOponentMove_continue:                   
 
@@ -6422,7 +6446,7 @@ test_window proc
     ;call  inline_chat_window
     ;ctrl k u uncomment
     ;ctrl k c comment
-                                                hlt
+                                                
 
                                                 ret
 
@@ -6445,7 +6469,7 @@ main proc far
                                                 mov   dx, offset pieces_wd
                                                 int   21h
 
-                                                call  main_window
+                                                call  test_window
 
 main endp
 end main

@@ -66,7 +66,7 @@
 
     ICursor_Y                       DB      0D
     ICursor_X                       DB      0D
-    OCursor_X                       DB      40D
+    OCursor_X                       DB      42D
     OCursor_Y                       DB      0D
     VLine                    db      '#'
 
@@ -1458,7 +1458,7 @@ input_move_down endp
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 output_move_down proc
-                                                mov   OCursor_X,40d
+                                                mov   OCursor_X,42d
                                                 inc   OCursor_Y
                                                 mov   AH,2
                                                 mov   DL,OCursor_X
@@ -1474,7 +1474,7 @@ inializeScreen proc
                                                 int   10h
 
                                                 mov   ah,2
-                                                mov   dl,38
+                                                mov   dl,39
                                                 mov   dh,0
                                                 mov   cx,25
     lp:                                         
@@ -1482,9 +1482,39 @@ inializeScreen proc
                                                 int   10h
                                                 mov   dl,'#'
                                                 int   21h
-                                                mov   dl,38
+                                                mov   dl,39
                                                 inc   dh
                                                 LOOP  lp
+
+
+                                                mov   ah,2
+                                                mov   dl,40
+                                                mov   dh,0
+                                                mov   cx,25
+    lp2:                                         
+                                                mov   ah, 2
+                                                int   10h
+                                                mov   dl,'#'
+                                                int   21h
+                                                mov   dl,40
+                                                inc   dh
+                                                LOOP  lp2
+
+
+
+    ;                                             mov   ah,2
+    ;                                             mov   dl,40
+    ;                                             mov   dh,0
+    ;                                             mov   cx,25
+    ; lp2:                                         
+    ;                                             mov   ah, 2
+    ;                                             int   10h
+    ;                                             mov   dl,'#'
+    ;                                             int   21h
+    ;                                             mov   dl,40
+    ;                                             inc   dh
+    ;                                             LOOP  lp2
+
 
                                                 mov ICursor_X, 1
                                                 mov ICursor_Y, 0
@@ -1492,10 +1522,10 @@ inializeScreen proc
                                                 mov   AH,2
                                                 mov   DL, ICursor_X
                                                 MOV   DH, ICursor_Y
-                                                int   10h
+                                                 int   10h
 
 
-                                                mov OCursor_X, 40d
+                                                mov OCursor_X, 42d
                                                 mov OCursor_Y, 0
 
 
@@ -1509,14 +1539,14 @@ input_scroll_up proc
                                                 pusha
                                                 
                                                 mov ICursor_X, 1
-                                                mov ICursor_Y, 0
+                                                dec ICursor_Y
 
                                                 mov   AH,2
                                                 mov   DL, ICursor_X
                                                 MOV   DH, ICursor_Y
                                                 int   10h
 
-                                                mov   al,25d                                         ; function 6
+                                                mov   al,1d                                         ; function 6
                                                 mov   ah,6h
                                                 mov   bh,07h                                         ; normal video attribute
                                                 mov   cl,0                                           ; upper left X
@@ -1548,21 +1578,21 @@ input_scroll_up endp
 output_scroll_up proc
                                                 pusha
                                                 
-                                                mov OCursor_X, 40d
-                                                mov OCursor_Y, 0
+                                                mov OCursor_X, 42d
+                                                dec OCursor_Y
 
                                                 mov   AH,2
                                                 mov   DL, OCursor_X
                                                 MOV   DH, OCursor_Y
                                                 int   10h
                                                 
-                                                mov   al,25h                                          ; function 6
+                                                mov   al,1h                                          ; function 6
                                                 mov   ah,6h
                                                 mov   bh,07h                                         ; normal video attribute
                                                 mov   ch,0                                           ; upper left Y
-                                                mov   cl,40                                          ; upper left X
-                                                mov   dh,24                                          ; lower right Y
-                                                mov   dl,79                                          ; lower right X
+                                                mov   cl,42d                                         ; upper left X
+                                                mov   dh,24d                                         ; lower right Y
+                                                mov   dl,79d                                         ; lower right X
                                                 int   10h
                                                 
                                                 popa
@@ -1594,7 +1624,7 @@ intializePort endp
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 WRITEINPUT PROC
-                                                cmp   ICursor_X,37d
+                                                cmp   ICursor_X,38d
                                                 jnz   WRITEINPUT_check_key_pressed
                                                 call  input_move_down
 
@@ -1632,7 +1662,7 @@ WRITEINPUT PROC
                                                 ret
 
             WRITEINPUT_backspace_continue2:
-                                                mov ICursor_X, 37d
+                                                mov ICursor_X, 38d
                                                 dec ICursor_Y
                                                             
             
@@ -1775,7 +1805,7 @@ WRITEOUTPUT PROC
 
     WRITEOUTPUT_backspace:               
                                                 
-                                                cmp OCursor_X, 40d
+                                                cmp OCursor_X, 42d
                                                 jne WRITEOUTPUT_backspace_continue
                                                 
                                                 cmp OCursor_Y, 0

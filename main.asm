@@ -140,6 +140,8 @@
     ; the position (containing a piece) that the player is currently selecting
     currSelectedPos_SI       dw      -1d
     currSelectedPos_DI       dw      -1d
+    currHoverPos_SI          dw      -1d
+    currHoverPos_DI          dw      -1d
 
     ; Helpful Flags
     outOfBound               db      0d
@@ -1737,6 +1739,8 @@ resetEverything PROC
     ; the position (containing a piece) that the player is currently selecting
     mov   currSelectedPos_SI , -1d
     mov   currSelectedPos_DI , -1d
+    mov   currHoverPos_SI , -1d
+    mov   currHoverPos_DI , -1d
     
     ; Helpful Flags
     mov   outOfBound         , 0d
@@ -1997,13 +2001,13 @@ sendPowerupPos PROC
                                                 mov [bx], 'p'
                                                 sub bx, offset board
 
-                                                push ax
-                                                push dx
-                                                mov  dl, bl
-                                                mov  ah, 2
-                                                int  21h
-                                                pop  dx
-                                                pop  ax
+                                                ; push ax
+                                                ; push dx
+                                                ; mov  dl, bl
+                                                ; mov  ah, 2
+                                                ; int  21h
+                                                ; pop  dx
+                                                ; pop  ax
 
                     sendPowerupPos_rep:
                                                 mov   dx, 3FDh
@@ -2034,13 +2038,13 @@ receivePowerupPos PROC
                                                 mov bh, 0
                                                 mov bl, al
 
-                                                push ax
-                                                push dx
-                                                mov  dl, bl
-                                                mov  ah, 2
-                                                int  21h
-                                                pop  dx
-                                                pop  ax
+                                                ; push ax
+                                                ; push dx
+                                                ; mov  dl, bl
+                                                ; mov  ah, 2
+                                                ; int  21h
+                                                ; pop  dx
+                                                ; pop  ax
 
 
                                                 mov  cx, 63d
@@ -3001,6 +3005,24 @@ draw_cell proc
                                                 push  dx
                                                 push  si
                                                 push  di
+
+                                                cmp   si, currHoverPos_SI
+                                                jnz   draw_cell__check_if_selected_pos
+
+                                                cmp   di, currHoverPos_DI
+                                                jnz   draw_cell__check_if_selected_pos
+
+                                                mov   al, hover_cell_color
+                                                jmp   draw_cell__continue
+
+            draw_cell__check_if_selected_pos:
+                                                cmp   si, currSelectedPos_SI
+                                                jnz   draw_cell__continue
+                                                cmp   di, currSelectedPos_DI
+                                                jnz   draw_cell__continue
+                                                mov   al, highlighted_cell_color
+
+            draw_cell__continue:
                                                  
                                                  
 
@@ -3464,18 +3486,18 @@ removeSelections proc
                                                 cmp   directionPtr, 8d
                                                 jnz   removeSelections_loop1
 
-
                                                 mov   directionPtr, -1d
                                                 mov   currMovePtr, -1d
 
                                                 mov   si, currSelectedPos_SI
                                                 mov   di, currSelectedPos_DI
-                                                mov   al, hover_cell_color
-                                                call  draw_cell
-
 
                                                 mov   currSelectedPos_DI, -1d
                                                 mov   currSelectedPos_SI, -1d
+                                                
+                                                mov   al, hover_cell_color
+                                                call  draw_cell
+
 
                                                 ret
 
@@ -3561,6 +3583,8 @@ hover proc
     hover_not_prev_enemy_move:                  
                                                 call  get_cell_colour
     hover_redraw_prev_cell:                     
+                                                mov   currHoverPos_SI, -1d 
+                                                mov   currHoverPos_DI, -1d
                                                 call  draw_cell
 
     ; Draw hover cell
@@ -3568,6 +3592,8 @@ hover proc
                                                 pop   si
                                                 mov   al, hover_cell_color
                                                 call  draw_cell
+                                                mov   currHoverPos_SI, si 
+                                                mov   currHoverPos_DI, di 
 
     dont_move:                                  
                                                 pop   dx
@@ -4606,6 +4632,9 @@ movePiece PROC
                                                 mov   currSelectedPos_DI, -1d
                                                 mov   currSelectedPos_SI, -1d
 
+                                                mov   currHoverPos_SI, si 
+                                                mov   currHoverPos_DI, di 
+
                                                 mov   startSending, 1d
                                                  
                                                 ret
@@ -5405,6 +5434,8 @@ getPlayerSelection PROC
                                                 jmp   getPlayerSelection_no_selection_end
 
     getPlayerSelection_selection_end:           
+                                                mov   currHoverPos_SI,  -1d
+                                                mov   currHoverPos_DI,  -1d
                                                 mov   currSelectedPos_SI, si
                                                 mov   currSelectedPos_DI, di
 
@@ -5895,6 +5926,10 @@ game_window proc
                          
                                                 mov   si, 3d
                                                 mov   di, 6d
+
+                                                mov   currHoverPos_SI, si 
+                                                mov   currHoverPos_DI, di 
+
                                                 mov   al, hover_cell_color
                                                 call  draw_cell
 

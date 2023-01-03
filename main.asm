@@ -1977,7 +1977,7 @@ input_scroll_up endp
 inline_input_scroll_up proc
                                                 pusha
                                                 
-                                                mov ICursor_X, 1
+                                                mov ICursor_X, 120d
                                                 dec ICursor_Y
 
                                                 mov   AH,2
@@ -1988,10 +1988,10 @@ inline_input_scroll_up proc
                                                 mov   al,1d                                         ; function 6
                                                 mov   ah,6h
                                                 mov   bh,07h                                         ; normal video attribute
-                                                mov   cl,80d                                           ; upper left X
+                                                mov   cl,120d                                           ; upper left X
                                                 mov   ch,1d                                           ; upper left Y
                                                 mov   dl,150d                                          ; lower right X
-                                                mov   dh,5d                                          ; lower right Y
+                                                mov   dh,30d                                          ; lower right Y
                                                 int   10h
                                                 ; mov   ah,3
                                                 ; mov   bh,0
@@ -2174,7 +2174,7 @@ pusha
                                                 cmp   ICursor_Y,31d
                                                 jb    INLINE_WRITEINPUT_check_key_pressed
                                             
-                                                ;call  input_scroll_up
+                                                call  inline_input_scroll_up
                                                 jmp   INLINE_WRITEINPUT_check_key_pressed                                               
                                                 
     INLINE_WRITEINPUT_check_key_pressed:                                      
@@ -2233,7 +2233,7 @@ pusha
 
                                                 jnz  INLINE_WRITEINPUT_end
 
-                                                ;call input_scroll_up
+                                                call inline_input_scroll_up
                                                 
     INLINE_WRITEINPUT_end:
 
@@ -7250,7 +7250,7 @@ main proc far
                                                 mov   dx, offset pieces_wd
                                                 int   21h
 
-                                                call  main_window
+                                                call  identification_window
 
 main endp
 end main

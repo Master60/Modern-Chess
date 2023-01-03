@@ -6852,7 +6852,8 @@ checkForStartSignal PROC
         checkForStartSignal_Opponent_Name:
                                                 mov bh, 0
                                                 mov bl, Opponent_Name_Count
-                                                mov Opponent_Name[bx], al
+                                                mov Opponent_Name[bx+2], al
+                                                inc Opponent_Name_Count
 
     checkForStartSignal_end:                    
                                                 pop   di
@@ -7127,8 +7128,6 @@ sendUsername PROC
                                                 mov  temppp, cl
 
                                                
-
-                                                lea bx, User_Name
     ;; check if THR is empty
     try_to_sendUsername:                     
                                                 mov   dx, 3FDh

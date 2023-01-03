@@ -63,6 +63,9 @@
     temp_name2               db      'Bas', '$'
 
     User_Name                db      16,?,16 dup('$')
+    Opponent_Name            db      16,?,16 dup('$')
+    Opponent_Name_Count      db      0
+
 
     ;Dummy text to be displayed
     dummy1                   db      'This window is to be further developed in phase 2, thanks for checking in.', '$'
@@ -2336,6 +2339,8 @@ resetEverything PROC
                                                 mov   oponent_checkpos_SI, -1d
                                                 mov   oponent_checkpos_DI, -1d
 
+                                                mov   Opponent_Name_Count, 0
+
     ; Navigation Buttons
                                                 mov   Left_Arrow         , 4Bh
                                                 mov   Right_Arrow        , 4Dh
@@ -2434,7 +2439,8 @@ INLINE_WRITEOUTPUT PROC
 
                                                 cmp   OCursor_Y, 60d
                                                 jb    INLINE_WRITEOUTPUT_check_key_pressed
-                                            
+
+                                                call  inline_output_scroll_up
     ;call  output_scroll_up
                                                 jmp   INLINE_WRITEOUTPUT_check_key_pressed
                                                 
@@ -2462,10 +2468,10 @@ INLINE_WRITEOUTPUT PROC
 
     INLINE_WRITEOUTPUT_backspace:               
                                                 
-                                                cmp   OCursor_X, 159d
+                                                cmp   OCursor_X, 120d
                                                 jne   INLINE_WRITEOUTPUT_backspace_continue
                                                 
-                                                cmp   OCursor_Y, 0
+                                                cmp   OCursor_Y, 33D
                                                 jne   INLINE_WRITEOUTPUT_backspace_continue2
                                                 popa
                                                 ret
@@ -2498,6 +2504,8 @@ INLINE_WRITEOUTPUT PROC
 
                                                 jnz   INLINE_WRITEOUTPUT_end
 
+                                                call  inline_output_scroll_up
+
     ;call output_scroll_up
                                                 
     INLINE_WRITEOUTPUT_end:                     
@@ -2510,6 +2518,16 @@ INLINE_WRITEOUTPUT ENDP
 
 SENDKEY PROC
 
+                                                cmp al, 0
+                                                jnz  sendkey_normal_continue1
+                                                mov al, 0ffh
+                                                jmp sendkey_normal
+                    sendkey_normal_continue1:                            
+                                                cmp al, 8h
+                                                jnz  sendkey_normal_continue2
+                                                mov al, 0ffh
+                                                jmp sendkey_normal
+                    sendkey_normal_continue2:
                                                 cmp   al, 13d
                                                 jnz   sendkey_normal
                                                 mov   al , 1Ch
@@ -2906,7 +2924,7 @@ draw_labels proc
                                                 int   10h
 
                                                 mov   ah, 9
-                                                mov   dx, offset temp_name2
+                                                mov   dx, offset Opponent_Name
                                                 int   21h
 
 
@@ -4097,6 +4115,9 @@ removeSelections proc
                                                 mov   si, currSelectedPos_SI
                                                 mov   di, currSelectedPos_DI
 
+                                                mov   currHoverPos_SI, si
+                                                mov   currHoverPos_DI, di
+
                                                 mov   currSelectedPos_DI, -1d
                                                 mov   currSelectedPos_SI, -1d
                                                 
@@ -5112,6 +5133,7 @@ movePiece PROC
                                                                                                     
                                                 mov   si, currSelectedPos_SI
                                                 mov   di, currSelectedPos_DI
+                                                
                                                 call  getPos
 
                                                 cmp   free_pieces[bx], 1
@@ -5162,6 +5184,9 @@ movePiece PROC
                                                 call  removeSelections
                                                 mov   bx, dx
                                                 mov   board[bx], cl
+                                                
+                                                mov   currHoverPos_SI, -1d
+                                                mov   currHoverPos_DI, -1d
 
                                                 call  get_cell_colour
                                                 call  draw_cell
@@ -5210,7 +5235,10 @@ movePiece PROC
                                                 mov   endPos_SI, si
                                                 mov   endPos_DI, di
 
-                                                mov   al, hover_cell_color
+                                                mov   currHoverPos_SI, si
+                                                mov   currHoverPos_DI, di
+
+                                                ; mov   al, hover_cell_color
                                                 call  draw_cell
 
                                                 call  status_bar
@@ -6660,9 +6688,20 @@ game_window proc
 
 
                                                 call  set_border
+
+                                                cmp  blackPlayer, 0
+                                                jz  draw_whites_stuff
+
+                                                call  draw_letters_inverted
+                                                call  draw_numbers_inverted
+                                                jmp  game_window_continue
+
+                        draw_whites_stuff:
                                                 call  draw_letters
                                                 call  draw_numbers
 
+
+                        game_window_continue:
                                                 call  status_bar
 
                                                 
@@ -6802,7 +6841,7 @@ checkForStartSignal PROC
                                                 In    al, dx
 
                                                 cmp   al, startSignal
-                                                jnz   checkForStartSignal_end
+                                                jnz   checkForStartSignal_Opponent_Name
 
                                                 pop   di
                                                 pop   si
@@ -6812,6 +6851,12 @@ checkForStartSignal PROC
                                                 
                                                 mov   blackPlayer, 1                                 ;
                                                 call  game_window
+                                                ret
+
+        checkForStartSignal_Opponent_Name:
+                                                mov bh, 0
+                                                mov bl, Opponent_Name_Count
+                                                mov Opponent_Name[bx], al
 
     checkForStartSignal_end:                    
                                                 pop   di
@@ -7024,7 +7069,7 @@ main_window proc
                                                 
     checkForSelection:                          
                                                 call  checkForStartSignal
-
+                                                
 
 
                                                 cmp   ax, ax
@@ -7070,6 +7115,43 @@ main_window proc
 main_window endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+
+;description
+sendUsername PROC
+                                                pusha 
+
+                                                lea bx, User_Name
+                                                mov cx, 0
+                                                
+                                getLength:
+                                                inc bx
+                                                inc cx
+
+                                                cmp [bx], '$'
+                                                jnz getLength
+
+                                               
+
+                                                lea bx, User_Name
+    ;; check if THR is empty
+    try_to_sendUsername:                     
+                                                mov   dx, 3FDh
+                                                In    al, dx
+                                                and   al, 00100000b
+                                                jz    try_to_sendUsername
+            
+                                                mov   dx, 3F8h
+                                                mov   al, [bx]
+                                                out   dx, al
+
+                                                loop try_to_sendUsername 
+                                           
+
+                                                popa
+                                                ret
+sendUsername ENDP
+
 
 identification_window proc
 
@@ -7158,6 +7240,8 @@ identification_window proc
                                                 mov   dx, offset Last
                                                 mov   ah,9
                                                 int   21h
+
+                                                call sendUsername
  
                                                 mov   ah,00H
                                                 int   16h
@@ -7262,14 +7346,14 @@ main proc far
                                                 mov   ax, @data
                                                 mov   ds, ax
 
-                                                call  initPort
+                                                ; call  initPort
 
     ;Setting working directory to the folder containing bitmaps of the pieces
                                                 mov   ah, 3bh
                                                 mov   dx, offset pieces_wd
                                                 int   21h
 
-                                                call  identification_window
+                                                call  game_window
 
 main endp
 end main

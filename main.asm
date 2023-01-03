@@ -2202,8 +2202,6 @@ INLINE_WRITEINPUT PROC
 
                                                 cmp   ICursor_Y,31d
                                                 jb    INLINE_WRITEINPUT_check_key_pressed
-
-                                                console_log 'Q'
                                                 
                                                 call  inline_input_scroll_up
                                                 jmp   INLINE_WRITEINPUT_check_key_pressed
@@ -2901,6 +2899,33 @@ draw_labels proc
                                                 cmp   dx, 50d
                                                 jnz   draw_label2_y
 
+cmp blackPlayer,1
+jne draw_white_name
+
+                                                mov   ah, 2
+                                                mov   bh, 0
+                                                mov   dl, 28d
+                                                mov   dh, 1d
+                                                int   10h
+
+                                                ;mov   ah, 9
+                                                ;mov   dx, offset Opponent_Name + 2
+                                                ;int   21h
+
+                                                mov   ah, 2
+                                                xor   al, al
+                                                mov   bh, 0
+                                                mov   dl, 89d
+                                                mov   dh, 1d
+                                                int   10h
+
+                                                mov   ah, 9
+                                                mov   dx, offset User_Name + 2
+                                                int   21h
+
+                                                jmp end_labels
+
+draw_white_name:
 
                                                 mov   ah, 2
                                                 mov   bh, 0
@@ -2919,10 +2944,11 @@ draw_labels proc
                                                 mov   dh, 1d
                                                 int   10h
 
-                                                mov   ah, 9
-                                                mov   dx, offset Opponent_Name
-                                                int   21h
+                                                ;mov   ah, 9
+                                                ;mov   dx, offset Opponent_Name + 2
+                                                ;int   21h
 
+                                                end_labels:
 
                                                 popa
 
@@ -7065,7 +7091,6 @@ main_window proc
                                                 int   21h
 
                                                 call  display_notification
-                                                console_log temppp
                                                 
     checkForSelection:                          
                                                 call  checkForStartSignal
@@ -7236,7 +7261,6 @@ identification_window proc
                                                 int   21h
 
                                                 call sendUsername
-                                                console_log temppp
  
                                                 mov   ah,00H
                                                 int   16h

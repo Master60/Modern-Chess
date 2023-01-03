@@ -2202,7 +2202,7 @@ INLINE_WRITEINPUT PROC
 
                                                 cmp   ICursor_Y,31d
                                                 jb    INLINE_WRITEINPUT_check_key_pressed
-
+                                                
                                                 console_log 'Q'
                                                 
                                                 call  inline_input_scroll_up

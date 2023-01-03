@@ -173,6 +173,8 @@
 
     blackPlayer              db      1
 
+    sentChar                 db     -1d
+
 
     ;; plays that will be sent to the oponent
     startPos_SI              dw      -1d
@@ -197,7 +199,7 @@
     Up_Arrow                 db      48h
     Down_Arrow               db      50h
 
-    Enter_Key                db      28d
+    Enter_Key                db      0fh
 
     ;The size of each cell on the chessboard.
     cell_size                dw      75d
@@ -2170,7 +2172,7 @@ pusha
                                                 cmp   ICursor_Y,31d
                                                 jb    INLINE_WRITEINPUT_check_key_pressed
                                             
-                                                ;call  input_scroll_up
+                                                ; call  input_scroll_up
                                                 jmp   INLINE_WRITEINPUT_check_key_pressed                                               
                                                 
     INLINE_WRITEINPUT_check_key_pressed:                                      
@@ -6448,6 +6450,15 @@ listenForOponentMove PROC
                                                 mov   dx, 3F8h
                                                 In    al, dx
 
+                                                mov   bl, al
+                                                and   bl, 00011000b
+                                                jz    listenForOponentMove_not_chat_signal
+
+                                                mov  sentChar, al
+                                                jmp  listenForOponentMove_end
+
+
+        listenForOponentMove_not_chat_signal:
                                                 cmp   gotOponentStartPos, 1d
                                                 jz    listenForOponentMove_get_oponent_endpos
 
@@ -6545,7 +6556,7 @@ sendStartSignal ENDP
 
 inline_chat proc
 
-pusha
+                                                pusha
 
 ;inline_chat_window_2_check_for_input:                            
 
@@ -6558,12 +6569,34 @@ pusha
                                                 ;JZ   inline_chat_window_2_check_sent_key
                                                 JZ    inline_EXIT
 
+                                                cmp   ah, Left_Arrow
+                                                jnz    inline_chat_window2_continue1
+                                                jmp    inline_EXIT
+            inline_chat_window2_continue1:
+                                                cmp   ah, Right_Arrow
+                                                jnz    inline_chat_window2_continue2
+                                                jmp    inline_EXIT
+
+            inline_chat_window2_continue2:
+                                                cmp   ah, Up_Arrow
+                                                jnz    inline_chat_window2_continue3
+                                                jmp    inline_EXIT
+
+            inline_chat_window2_continue3:  
+                                                cmp   ah, Down_Arrow
+                                                jnz    inline_chat_window2_continue4
+                                                jmp    inline_EXIT
+
+            inline_chat_window2_continue4:
+                                                cmp   ah, Enter_Key
+                                                jnz    inline_chat_window2_continue
+                                                jmp    inline_EXIT
+
+                    inline_chat_window2_continue:
                                                 MOV   AH,00
                                                 INT   16H
-                                                CMP   AL,1BH
-                                                JE    inline_EXIT
+                                                
                                                
-                    inline_chat_window2_continue:
                                                 call  INLINE_WRITEINPUT
                                                 CALL  SENDKEY
                                                 
@@ -6573,47 +6606,37 @@ pusha
     ;CHECK STATE IF THERE IS DATA RECIVED
     ;IF THERE IS NO DATA RECIVED
                                                
-                                                MOV   DX,3FDH
-                                                IN    AL,DX
-                                                AND   AL,1
+    ;                                             MOV   DX,3FDH
+    ;                                             IN    AL,DX
+    ;                                             AND   AL,1
+    ;                                             JZ    inline_EXIT
+    ; ;IF THERE IS DATA RECIVED
+    ; ;RECIVE DATA AND CALL WRITE IN OUTPUT PROC
+    ;                                             MOV   DX,03F8H
+    ;                                             IN    AL,DX
 
-                                                ;JZ    inline_chat_window_2_check_for_input
-                                                JZ inline_EXIT
+    ;                                             mov   bl, al
+    ;                                             and   bl, 00011000b
+    ;                                             jnz    inline_chatting
 
-    ;IF THERE IS DATA RECIVED
-    ;RECIVE DATA AND CALL WRITE IN OUTPUT PROC
-                                                MOV   DX,03F8H
-                                                IN    AL,DX
+    ;                                             mov   s
 
-                                                cmp al, startSignal
-                                                jnz  inline_chatting
+                                                cmp sentChar, -1D
+                                                jnz inline_chatting
+                                                jmp inline_EXIT
 
-                                                call sendStartSignal
-                                                ;call  inline_input_scroll_up
-                                                ;call  inline_output_scroll_up
-
-                                                ;popa
-                                                
-                                                ;mov   blackPlayer, 1
-                                                ;call game_window
-
-                                                ;ret
                             
                             inline_chatting:
+                                                mov   al, sentChar
+                                                mov sentChar, -1d
+
                                                 CALL  INLINE_WRITEOUTPUT
-                                                
-                                                ;JMP   inline_chat_window_2_check_for_input
-    ;END CODE
-	           
-                 
+                                                           
                  
     inline_EXIT:                                       
-                                                ;call  inline_input_scroll_up
-                                                ;call  inline_output_scroll_up
+                                                popa
 
-popa
-
-ret
+                                                ret
 
 inline_chat endp
 
@@ -6640,8 +6663,8 @@ call draw_labels
 
 
     call set_border
-    call draw_letters_inverted
-    call draw_numbers_inverted
+    call draw_letters
+    call draw_numbers
 
     call status_bar
 
@@ -6695,7 +6718,7 @@ call draw_labels
     ; mov bl, 0fah
     ; int 10h
 
-    call intializePort
+    ; call intializePort
                          
                                                 mov   si, 3d
                                                 mov   di, 6d
@@ -6717,7 +6740,7 @@ call draw_labels
 
                                                 call  update_FreePieces
 
-                                                ;call  inline_chat
+                                                call  inline_chat
 
                                                 call  check_king_vertical
                                                 call  check_king_horizontal

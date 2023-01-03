@@ -2153,6 +2153,20 @@ WRITEINPUT ENDP
 
 ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+console_log MACRO haga
+    push  dx
+    push  ax
+
+    mov dl, haga
+    mov ah, 2
+
+    int 21h
+
+    pop ax
+    pop dx
+
+ENDM
+
 INLINE_WRITEINPUT PROC
 pusha
 
@@ -2162,7 +2176,9 @@ pusha
 
                                                 cmp   ICursor_Y,31d
                                                 jb    INLINE_WRITEINPUT_check_key_pressed
-                                            
+
+                                                console_log 'Q'
+                                                
                                                 call  inline_input_scroll_up
                                                 jmp   INLINE_WRITEINPUT_check_key_pressed                                               
                                                 
@@ -2186,16 +2202,16 @@ pusha
 
     INLINE_WRITEINPUT_backspace:
                                                 
-                                                cmp ICursor_X, 1
+                                                cmp ICursor_X, 120d
                                                 jne INLINE_WRITEINPUT_backspace_continue
                                                 
-                                                cmp ICursor_Y, 0
+                                                cmp ICursor_Y, 1
                                                 jne INLINE_WRITEINPUT_backspace_continue2
                                                 popa
                                                 ret
 
             INLINE_WRITEINPUT_backspace_continue2:
-                                                mov ICursor_X, 159d
+                                                mov ICursor_X, 158d
                                                 dec ICursor_Y
                                                             
             
@@ -3095,10 +3111,20 @@ inline_chat_window proc
 
                                                 pusha
 
-                                                mov   cx, 950d
-                                                mov   dx, 0
-                                                mov   al, 1ch
+                                                mov   al, 00h
                                                 mov   ah, 0ch
+
+                                                mov   cx, 950d
+
+                                                cmp   bp, 0
+                                                jz    inline_chat_window_w0
+                                                mov   dx, 512d
+                                                mov   bx, 1024d
+                                                jmp draw_inline_chat_y
+
+                inline_chat_window_w0:
+                                                mov   dx, 0
+                                                mov bx,   512d
 
     draw_inline_chat_y:                         
 
@@ -3111,12 +3137,12 @@ inline_chat_window proc
 
                                                 inc   dx
                                                 mov   cx, 950d
-                                                cmp   dx, 1024d
+                                                cmp   dx, bx
                                                 jnz   draw_inline_chat_y
 
     mov cx,950d
     mov dx,512d
-    mov al,0h
+    mov al,1ch
     mov ah,0ch
     draw_separation:
     int 10h
@@ -6664,7 +6690,12 @@ call draw_labels
 
     call status_bar
 
+    push bp
+    mov bp, 0
     call inline_chat_window
+    mov bp, 1
+    call inline_chat_window
+    pop bp
 
     mov ICursor_Y,1D
     mov ICursor_X,120D

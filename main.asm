@@ -33,6 +33,7 @@
     Hello                    db      'Hello $'
     Last                     db      'Please press any key to continue$'
 
+    temppp                   db     '?'
     current_player           db      1
 
     request                  db      'A player sent you a game invitation', '$'
@@ -7013,6 +7014,8 @@ main_window proc
 
                                                 pusha
 
+                                                
+
     main_start:                                 
                                                 mov   ax, 0600h
                                                 mov   bh, 07
@@ -7061,6 +7064,7 @@ main_window proc
                                                 int   21h
 
                                                 call  display_notification
+                                                console_log temppp
                                                 
     checkForSelection:                          
                                                 call  checkForStartSignal
@@ -7115,16 +7119,12 @@ main_window endp
 ;description
 sendUsername PROC
                                                 pusha 
-
-                                                lea bx, User_Name
-                                                mov cx, 0
+                                                mov bh, 0
+                                                mov bl, User_Name[2]
                                                 
-                                getLength:
-                                                inc bx
-                                                inc cx
-
-                                                cmp [bx], '$'
-                                                jnz getLength
+                                                mov ch, 0
+                                                mov cl, User_Name[1] 
+                                                mov  temppp, cl
 
                                                
 
@@ -7237,6 +7237,7 @@ identification_window proc
                                                 int   21h
 
                                                 call sendUsername
+                                                console_log temppp
  
                                                 mov   ah,00H
                                                 int   16h
@@ -7341,7 +7342,7 @@ main proc far
                                                 mov   ax, @data
                                                 mov   ds, ax
 
-                                                ; call  initPort
+                                                call  initPort
 
     ;Setting working directory to the folder containing bitmaps of the pieces
                                                 mov   ah, 3bh

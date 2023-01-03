@@ -64,7 +64,7 @@
 
     dummy2                   db      'Press F3 to exit', '$'
 
-    test1                    db      'This is a message','$'
+    test1                    db      'This is a message from me to you','$'
 
     ICursor_Y                       DB      0D
     ICursor_X                       DB      0D
@@ -1110,6 +1110,176 @@ draw_letters proc
 
 draw_letters endp
 
+   ;---------------------------------------------------------------------------------------------------------------------------------------------
+
+draw_letters_inverted proc
+
+                                                pusha
+
+                                                mov   temp_sp, sp
+
+                                                mov   di, cell_size
+                                                mov   si, 0
+
+                                                mov   ax, 0
+                                                add   ax, 8
+                                                mul   di
+                                                add   ax, margin_x
+                                                sub   ax, 31d
+                                                mov   bp, ax
+
+                                                mov   ax, 0
+                                                add   ax, 8
+                                                mul   di
+                                                add   ax, margin_y
+                                                add   ax, 4
+                                                add   ax, 19d
+                                                mov   sp, ax
+
+                                                mov   ax, 0
+                                                add   ax, 8
+                                                mul   di
+                                                add   ax, margin_x
+                                                sub   ax, 31d
+                                                sub   ax, 13d
+                                                mov   bx, ax
+
+                                                mov   ax, 0
+                                                add   ax, 8
+                                                mul   di
+                                                add   ax, margin_x
+                                                sub   ax, 31d
+                                                sub   ax, 13d
+                                                mov   cx, ax
+
+                                                mov   ax, 0
+                                                add   ax, 8
+                                                mul   di
+                                                add   ax, margin_y
+                                                add   ax, 4
+                                                mov   dx, ax
+
+                                                mov   al, 0fh                                        ;3
+                                                mov   ah, 0ch
+
+                                                mov   di, 8
+
+    draw_letters_1_inverted:                             
+
+    loop_y_letter_1_inverted:                            
+
+    loop_x_letter_1_inverted:                            
+                                                cmp   letters + [si], 1
+                                                je    draw_the_letter_1_inverted
+    back_1_inverted:                                     
+                                                inc   si
+                                                inc   cx
+                                                cmp   cx, bp
+                                                jnz   loop_x_letter_1_inverted
+
+                                                inc   dx
+                                                mov   cx, bx
+                                                cmp   dx, sp
+                                                jnz   loop_y_letter_1_inverted
+
+                                                sub   cx, cell_size
+                                                sub   bp, cell_size
+                                                sub   bx, cell_size
+                                                sub   dx, 19d
+                                                dec   di
+                                                jnz   draw_letters_1_inverted
+                                                jmp   end_draw_letters_1_inverted
+
+    draw_the_letter_1_inverted:                          
+                                                int   10h
+                                                jmp   back_1_inverted
+
+    end_draw_letters_1_inverted:                         
+
+
+                                                mov   di, cell_size
+                                                mov   si, 0
+
+                                                mov   ax, 0
+                                                add   ax, 8
+                                                mul   di
+                                                add   ax, margin_x
+                                                sub   ax, 31d
+                                                sub   ax, 13d
+                                                mov   bp, ax
+
+                                                mov   ax, 0
+                                                add   ax, margin_y
+                                                sub   ax, 4
+                                                sub   ax, 19d
+                                                mov   sp, ax
+
+                                                mov   ax, 0
+                                                add   ax, 8
+                                                mul   di
+                                                add   ax, margin_x
+                                                sub   ax, 31d
+                                                mov   bx, ax
+
+                                                mov   ax, 0
+                                                add   ax, 8
+                                                mul   di
+                                                add   ax, margin_x
+                                                sub   ax, 31d
+                                                mov   cx, ax
+
+                                                mov   ax, 0
+                                                add   ax, margin_y
+                                                sub   ax, 4
+                                                mov   dx, ax
+
+                                                mov   al, 0fh
+                                                mov   ah, 0ch
+
+                                                mov   di, 8
+
+    draw_letters_2_inverted:                             
+
+    loop_y_letter_2_inverted:                            
+
+    loop_x_letter_2_inverted:                            
+                                                cmp   letters + [si], 1
+                                                je    draw_the_letter_2_inverted
+    back_2_inverted:                                     
+                                                inc   si
+                                                dec   cx
+                                                cmp   cx, bp
+                                                jnz   loop_x_letter_2_inverted
+
+                                                dec   dx
+                                                mov   cx, bx
+                                                cmp   dx, sp
+                                                jnz   loop_y_letter_2_inverted
+
+                                                sub   cx, cell_size
+                                                sub   bp, cell_size
+                                                sub   bx, cell_size
+                                                add   dx, 19d
+                                                dec   di
+                                                jnz   draw_letters_2_inverted
+                                                jmp   end_draw_letters_2_inverted
+
+    draw_the_letter_2_inverted:                          
+                                                int   10h
+                                                jmp   back_2_inverted
+
+    end_draw_letters_2_inverted:                         
+
+                                                mov   sp, temp_sp
+
+                                                popa
+
+                                                mov   temp_sp, di
+
+                                                ret
+
+draw_letters_inverted endp
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 draw_timer_1 proc
@@ -1478,10 +1648,170 @@ draw_numbers proc
 
 draw_numbers endp
 
+;---------------------------------------------------------------------------------------------------------------------------------------------
+
+draw_numbers_inverted proc
+
+                                                pusha
+
+                                                mov   temp_sp, sp
+
+                                                mov   di, cell_size
+                                                mov   si, 0
+
+                                                mov   ax, 0
+                                                add   ax, margin_x
+                                                sub   ax, 6
+                                                add   ax, 1
+                                                mov   bp, ax
+
+                                                mov   ax, 0
+                                                add   ax, margin_y
+                                                add   ax, 31d
+                                                add   ax, 19d
+                                                mov   sp, ax
+
+                                                mov   ax, 0
+                                                add   ax, margin_x
+                                                sub   ax, 6
+                                                sub   ax, 13d
+                                                add   ax, 1
+                                                mov   bx, ax
+
+                                                mov   ax, 0
+                                                add   ax, margin_x
+                                                sub   ax, 6
+                                                sub   ax, 13d
+                                                add   ax, 1
+                                                mov   cx, ax
+
+                                                mov   ax, 0
+                                                add   ax, margin_y
+                                                add   ax, 31d
+                                                mov   dx, ax
+
+                                                mov   al, 0fh
+                                                mov   ah, 0ch
+
+                                                mov   di, 8
+
+    draw_numbers_1_inverted:                             
+
+    loop_y_number_1_inverted:                            
+
+    loop_x_number_1_inverted:                            
+                                                cmp   numbers + [si], 1
+                                                je    draw_the_number_1_inverted
+    back_number_1_inverted:                              
+                                                inc   si
+                                                inc   cx
+                                                cmp   cx, bp
+                                                jnz   loop_x_number_1_inverted
+
+                                                inc   dx
+                                                mov   cx, bx
+                                                cmp   dx, sp
+                                                jnz   loop_y_number_1_inverted
+
+                                                add   dx, cell_size
+                                                add   sp, cell_size
+                                                sub   dx, 19d
+                                                dec   di
+                                                jnz   draw_numbers_1_inverted
+                                                jmp   end_draw_numbers_1_inverted
+
+    draw_the_number_1_inverted:                          
+                                                int   10h
+                                                jmp   back_number_1_inverted
+
+    end_draw_numbers_1_inverted:                         
+
+
+                                                mov   di, cell_size
+                                                mov   si, 0
+
+                                                mov   ax, 0
+                                                add   ax, 8
+                                                mul   di
+                                                add   ax, margin_x
+                                                add   ax, 6
+                                                mov   bp, ax
+
+                                                mov   ax, 0
+                                                add   ax, margin_y
+                                                add   ax, 31d
+                                                mov   sp, ax
+
+                                                mov   ax, 0
+                                                add   ax, 8
+                                                mul   di
+                                                add   ax, margin_x
+                                                add   ax, 6
+                                                add   ax, 13d
+                                                mov   bx, ax
+
+                                                mov   ax, 0
+                                                add   ax, 8
+                                                mul   di
+                                                add   ax, margin_x
+                                                add   ax, 6
+                                                add   ax, 13d
+                                                mov   cx, ax
+
+                                                mov   ax, 0
+                                                add   ax, margin_y
+                                                add   ax, 31d
+                                                add   ax, 19d
+                                                mov   dx, ax
+
+                                                mov   al, 0fh
+                                                mov   ah, 0ch
+
+                                                mov   di, 8
+
+    draw_numbers_2_inverted:                             
+
+    loop_y_number_2_inverted:                            
+
+    loop_x_number_2_inverted:                            
+                                                cmp   numbers + [si], 1
+                                                je    draw_the_number_2_inverted
+    back_number_2_inverted:                              
+                                                inc   si
+                                                dec   cx
+                                                cmp   cx, bp
+                                                jnz   loop_x_number_2_inverted
+
+                                                dec   dx
+                                                mov   cx, bx
+                                                cmp   dx, sp
+                                                jnz   loop_y_number_2_inverted
+
+                                                add   dx, cell_size
+                                                add   sp, cell_size
+                                                add   dx, 19d
+                                                dec   di
+                                                jnz   draw_numbers_2_inverted
+                                                jmp   end_draw_numbers_2_inverted
+
+    draw_the_number_2_inverted:                          
+                                                int   10h
+                                                jmp   back_number_2_inverted
+
+    end_draw_numbers_2_inverted:                         
+
+                                                mov   sp, temp_sp
+
+                                                popa
+
+                                                ret
+
+draw_numbers_inverted endp
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 input_move_down proc
-                                                mov   ICursor_X,1
+                                                mov   ICursor_X,1d
                                                 inc   ICursor_Y
 
                                                 mov   AH,2
@@ -1491,17 +1821,46 @@ input_move_down proc
                                                 ret
 input_move_down endp
 
+;---------------------------------------------------------------------------------------------------------------------------------------------
+
+inline_input_move_down proc
+                                                mov   ICursor_X,120d
+                                                inc   ICursor_Y
+
+                                                mov   AH,2
+                                                mov   DL,ICursor_X
+                                                MOV   DH,ICursor_Y
+                                                int   10h
+                                                ret
+inline_input_move_down endp
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 output_move_down proc
-                                                mov   OCursor_X,42d
+                                                mov   OCursor_X,41d
                                                 inc   OCursor_Y
+
                                                 mov   AH,2
                                                 mov   DL,OCursor_X
                                                 MOV   DH,OCursor_Y
                                                 int   10h
                                                 ret
 output_move_down endp
+
+;---------------------------------------------------------------------------------------------------------------------------------------------
+
+inline_output_move_down proc
+                                                mov   OCursor_X,120d
+                                                inc   OCursor_Y
+
+                                                mov   AH,2
+                                                mov   DL,OCursor_X
+                                                MOV   DH,OCursor_Y
+                                                int   10h
+                                                ret
+inline_output_move_down endp
+
+;---------------------------------------------------------------------------------------------------------------------------------------------
 
 inializeScreen proc
 
@@ -1574,7 +1933,7 @@ inializeScreen endp
 input_scroll_up proc
                                                 pusha
                                                 
-                                                mov ICursor_X, 1
+                                                mov ICursor_X, 1d
                                                 dec ICursor_Y
 
                                                 mov   AH,2
@@ -1585,10 +1944,10 @@ input_scroll_up proc
                                                 mov   al,1d                                         ; function 6
                                                 mov   ah,6h
                                                 mov   bh,07h                                         ; normal video attribute
-                                                mov   cl,0                                           ; upper left X
-                                                mov   ch,0                                           ; upper left Y
-                                                mov   dl,37                                          ; lower right X
-                                                mov   dh,24                                          ; lower right Y
+                                                mov   cl,0d                                           ; upper left X
+                                                mov   ch,0d                                           ; upper left Y
+                                                mov   dl,37d                                          ; lower right X
+                                                mov   dh,24d                                          ; lower right Y
                                                 int   10h
                                                 ; mov   ah,3
                                                 ; mov   bh,0
@@ -1625,10 +1984,10 @@ inline_input_scroll_up proc
                                                 mov   al,1d                                         ; function 6
                                                 mov   ah,6h
                                                 mov   bh,07h                                         ; normal video attribute
-                                                mov   cl,0                                           ; upper left X
-                                                mov   ch,0                                           ; upper left Y
-                                                mov   dl,37                                          ; lower right X
-                                                mov   dh,24                                          ; lower right Y
+                                                mov   cl,80d                                           ; upper left X
+                                                mov   ch,1d                                           ; upper left Y
+                                                mov   dl,150d                                          ; lower right X
+                                                mov   dh,5d                                          ; lower right Y
                                                 int   10h
                                                 ; mov   ah,3
                                                 ; mov   bh,0
@@ -1766,7 +2125,7 @@ WRITEINPUT PROC
                                                 ret
 
             WRITEINPUT_backspace_continue2:
-                                                mov ICursor_X, 38d
+                                                mov ICursor_X, 39d
                                                 dec ICursor_Y
                                                             
             
@@ -1804,14 +2163,14 @@ WRITEINPUT ENDP
 INLINE_WRITEINPUT PROC
 pusha
 
-                                                cmp   ICursor_X,38d
+                                                cmp   ICursor_X,158d
                                                 jnz   INLINE_WRITEINPUT_check_key_pressed
-                                                call  input_move_down
+                                                call  inline_input_move_down
 
-                                                cmp   ICursor_Y,25d
+                                                cmp   ICursor_Y,31d
                                                 jb    INLINE_WRITEINPUT_check_key_pressed
                                             
-                                                call  input_scroll_up
+                                                ;call  input_scroll_up
                                                 jmp   INLINE_WRITEINPUT_check_key_pressed                                               
                                                 
     INLINE_WRITEINPUT_check_key_pressed:                                      
@@ -1829,6 +2188,7 @@ pusha
                                                 mov   dl,AL
                                                 int   21h
                                                 INC   ICursor_X
+                                                popa
                                                 RET
 
     INLINE_WRITEINPUT_backspace:
@@ -1838,11 +2198,11 @@ pusha
                                                 
                                                 cmp ICursor_Y, 0
                                                 jne INLINE_WRITEINPUT_backspace_continue2
-
+                                                popa
                                                 ret
 
             INLINE_WRITEINPUT_backspace_continue2:
-                                                mov ICursor_X, 38d
+                                                mov ICursor_X, 159d
                                                 dec ICursor_Y
                                                             
             
@@ -1861,14 +2221,15 @@ pusha
                                                 mov   DL,ICursor_X
                                                 MOV   DH,ICursor_Y
                                                 int   10h
+                                                popa
                                                 ret
     INLINE_IENTER:                                     
-                                                CALL  input_move_down
-                                                cmp   ICursor_Y, 25d
+                                                CALL  inline_input_move_down
+                                                cmp   ICursor_Y, 31d
 
                                                 jnz  INLINE_WRITEINPUT_end
 
-                                                call input_scroll_up
+                                                ;call input_scroll_up
                                                 
     INLINE_WRITEINPUT_end:
 
@@ -2035,14 +2396,15 @@ WRITEOUTPUT ENDP
 ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 INLINE_WRITEOUTPUT PROC
-                                                cmp   OCursor_X, 79d
+    pusha
+                                                cmp   OCursor_X, 158d
                                                 jnz   INLINE_WRITEOUTPUT_check_key_pressed
-                                                call  output_move_down
+                                                call  inline_output_move_down
 
-                                                cmp   OCursor_Y, 25d
+                                                cmp   OCursor_Y, 60d
                                                 jb    INLINE_WRITEOUTPUT_check_key_pressed
                                             
-                                                call  output_scroll_up
+                                                ;call  output_scroll_up
                                                 jmp   INLINE_WRITEOUTPUT_check_key_pressed                                               
                                                 
     INLINE_WRITEOUTPUT_check_key_pressed:                                      
@@ -2063,21 +2425,22 @@ INLINE_WRITEOUTPUT PROC
                                                 mov   dl,AL
                                                 int   21h
                                                 INC   OCursor_X
+                                                popa
                                                 RET
 
 
     INLINE_WRITEOUTPUT_backspace:               
                                                 
-                                                cmp OCursor_X, 42d
+                                                cmp OCursor_X, 159d
                                                 jne INLINE_WRITEOUTPUT_backspace_continue
                                                 
                                                 cmp OCursor_Y, 0
                                                 jne INLINE_WRITEOUTPUT_backspace_continue2
-
+                                                popa
                                                 ret
 
             INLINE_WRITEOUTPUT_backspace_continue2:
-                                                mov OCursor_X, 79d
+                                                mov OCursor_X, 120d
                                                 dec OCursor_Y                                                 
             
             
@@ -2096,16 +2459,18 @@ INLINE_WRITEOUTPUT PROC
                                                 mov   DL, OCursor_X
                                                 MOV   DH, OCursor_Y
                                                 int   10h
+                                                popa
                                                 ret
     INLINE_OENTER:                                     
-                                                CALL  output_move_down
-                                                cmp   OCursor_Y, 25d
+                                                CALL  inline_output_move_down
+                                                cmp   OCursor_Y, 60d
 
                                                 jnz  INLINE_WRITEOUTPUT_end
 
-                                                call output_scroll_up
+                                                ;call output_scroll_up
                                                 
     INLINE_WRITEOUTPUT_end:
+                                                popa
                                                 RET
 
 INLINE_WRITEOUTPUT ENDP
@@ -2735,7 +3100,7 @@ inline_chat_window proc
 
                                                 mov   cx, 950d
                                                 mov   dx, 0
-                                                mov   al, 5h
+                                                mov   al, 1ch
                                                 mov   ah, 0ch
 
     draw_inline_chat_y:                         
@@ -6149,6 +6514,31 @@ setPieceColors PROC
                                                 ret
 setPieceColors ENDP
 
+;---------------------------------------------------------------------------------------------------------------------------------------------
+
+sendStartSignal PROC
+                                                push  ax
+                                                push  bx
+                                                push  dx
+
+    ;; check if THR is empty
+    try_to_sendStartSignal:                     
+                                                mov   dx, 3FDh
+                                                In    al, dx
+                                                and   al, 00100000b
+                                                jz    try_to_sendStartSignal
+            
+                                                mov   dx, 3F8h
+                                                mov   al, startSignal
+                                                out   dx, al
+                    
+                                                pop   dx
+                                                pop   bx
+                                                pop   ax
+
+                                                ret
+sendStartSignal ENDP
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;PROCEDURES USED IN THE GAME SCREEN:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -6157,14 +6547,17 @@ inline_chat proc
 
 pusha
 
-inline_chat_window_2_check_for_input:                            
+;inline_chat_window_2_check_for_input:                            
 
                                                 
     ;CHECK IF THERE IS A KEY PRESSESD SEND TO THE OTHER USER
                                                 cmp   ax, ax
                                                 MOV   AH,01h
                                                 INT   16H
-                                                JZ   inline_chat_window_2_check_sent_key
+
+                                                ;JZ   inline_chat_window_2_check_sent_key
+                                                JZ    inline_EXIT
+
                                                 MOV   AH,00
                                                 INT   16H
                                                 CMP   AL,1BH
@@ -6183,7 +6576,10 @@ inline_chat_window_2_check_for_input:
                                                 MOV   DX,3FDH
                                                 IN    AL,DX
                                                 AND   AL,1
-                                                JZ    inline_chat_window_2_check_for_input
+
+                                                ;JZ    inline_chat_window_2_check_for_input
+                                                JZ inline_EXIT
+
     ;IF THERE IS DATA RECIVED
     ;RECIVE DATA AND CALL WRITE IN OUTPUT PROC
                                                 MOV   DX,03F8H
@@ -6192,28 +6588,28 @@ inline_chat_window_2_check_for_input:
                                                 cmp al, startSignal
                                                 jnz  inline_chatting
 
-                                                ; call sendStartSignal
-                                                call  inline_input_scroll_up
-                                                call  inline_output_scroll_up
+                                                call sendStartSignal
+                                                ;call  inline_input_scroll_up
+                                                ;call  inline_output_scroll_up
 
-                                                popa
+                                                ;popa
                                                 
                                                 ;mov   blackPlayer, 1
                                                 ;call game_window
 
-                                                ret
+                                                ;ret
                             
                             inline_chatting:
                                                 CALL  INLINE_WRITEOUTPUT
                                                 
-                                                JMP   inline_chat_window_2_check_for_input
+                                                ;JMP   inline_chat_window_2_check_for_input
     ;END CODE
 	           
                  
                  
     inline_EXIT:                                       
-                                                call  inline_input_scroll_up
-                                                call  inline_output_scroll_up
+                                                ;call  inline_input_scroll_up
+                                                ;call  inline_output_scroll_up
 
 popa
 
@@ -6244,22 +6640,62 @@ call draw_labels
 
 
     call set_border
-    call draw_letters
-    call draw_numbers
+    call draw_letters_inverted
+    call draw_numbers_inverted
 
     call status_bar
 
     call inline_chat_window
 
+    mov ICursor_Y,1D
+    mov ICursor_X,120D
+    mov OCursor_X,120D
+    mov OCursor_Y,33D
+
+    mov ah, 2
+    mov bh, 0
+    mov dl, ICursor_X
+    mov dh, ICursor_Y
+    int 10h
+
+    ; mov ah, 9
+    ; mov dx, offset test1
+    ; int 21h
+
     ; mov ah, 2
     ; mov bh, 0
     ; mov dl, 120d
-    ; mov dh, 1d
+    ; mov dh, 2d
     ; int 10h
 
     ; mov ah, 9
     ; mov dx, offset test1
     ; int 21h
+
+    ; mov ah, 2
+    ; mov bh, 0
+    ; mov dl, OCursor_X
+    ; mov dh, OCursor_Y
+    ; int 10h
+
+    ; mov ah, 9
+    ; mov dx, offset test1
+    ; int 21h
+
+    ; mov ah, 2
+    ; mov bh, 0
+    ; mov dl, 157d
+    ; mov dh, 30d
+    ; int 10h
+
+    ; mov ah, 9
+    ; mov bh, 0
+    ; mov al, 44h
+    ; mov cx, 1
+    ; mov bl, 0fah
+    ; int 10h
+
+    call intializePort
                          
                                                 mov   si, 3d
                                                 mov   di, 6d
@@ -6322,31 +6758,6 @@ call draw_labels
                                                 ret
 
 game_window endp
-
-    ;---------------------------------------------------------------------------------------------------------------------------------------------
-
-sendStartSignal PROC
-                                                push  ax
-                                                push  bx
-                                                push  dx
-
-    ;; check if THR is empty
-    try_to_sendStartSignal:                     
-                                                mov   dx, 3FDh
-                                                In    al, dx
-                                                and   al, 00100000b
-                                                jz    try_to_sendStartSignal
-            
-                                                mov   dx, 3F8h
-                                                mov   al, startSignal
-                                                out   dx, al
-                    
-                                                pop   dx
-                                                pop   bx
-                                                pop   ax
-
-                                                ret
-sendStartSignal ENDP
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -6431,7 +6842,7 @@ chat_window_2 proc
                                                 pusha
 
                                                 call  inializeScreen
-                                                ; call initPort
+                                                ;call  initPort
 	
     ;CODE
     chat_window_2_check_for_input:                            
@@ -6699,9 +7110,9 @@ identification_window proc
                                                 mov   ah,00H
                                                 int   16h
 
-                                                call  main_window
-
                                                 popa
+
+                                                call  main_window
 
                                                 ret
 
@@ -6740,17 +7151,17 @@ test_window proc
     ;call  sendStartSignal
     ;call  resetEverything
                                                 ;call  setPieceColors
-                                                call  init_board
+                                                ;call  init_board
                                                 call  init_video_mode
                                                 mov   al, 14h
                                                 call  clear_screen
-                                                call  draw_labels
-                                                call  set_board_base
-                                                call  draw_board
-                                                call  set_border
-                                                call  draw_letters
-                                                call  draw_numbers
-                                                call  status_bar
+                                                ;call  draw_labels
+                                                ;call  set_board_base
+                                                ;call  draw_board
+                                                ;call  set_border
+                                                ;call  draw_letters
+                                                ;call  draw_numbers
+                                                ;call  status_bar
 
                                                 ;mov   di, 100d
                                                 ;mov   si, 100d
@@ -6764,6 +7175,22 @@ test_window proc
     ;mov   bx,1
     ;call  update_status
     call  inline_chat_window
+    call intializePort
+
+    mov ICursor_Y,1D
+    mov ICursor_X,120D
+    mov OCursor_X,120D
+    mov OCursor_Y,33D
+
+    mov ah, 2
+    mov bh, 0
+    mov dl, ICursor_X
+    mov dh, ICursor_Y
+    int 10h
+
+    loopdeloop:
+    call inline_chat
+    jmp loopdeloop
 
     ;ctrl k u uncomment
     ;ctrl k c comment
@@ -6790,7 +7217,7 @@ main proc far
                                                 mov   dx, offset pieces_wd
                                                 int   21h
 
-                                                call  test_window
+                                                call  identification_window
 
 main endp
 end main

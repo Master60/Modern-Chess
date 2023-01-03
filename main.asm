@@ -36,6 +36,8 @@
 
     current_player           db      1
 
+    request                  db      'A player sent you a game invitation', '$'
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;VARIABLES USED IN THE MAIN MENU:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -46,6 +48,8 @@
     cmd2                     db      'To start the game press F2', '$'
 
     cmd3                     db      'To end the program press ESC', '$'
+
+    border                   db      '--------------------------------------------------------------------------------', '$'
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;VARIABLES USED IN THE CHAT MENU:
@@ -6924,6 +6928,28 @@ chat_window_2 endp
 
 ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+display_notification proc
+
+pusha
+
+mov   ah, 2
+mov   bh, 0
+mov   dl, 20d
+mov   dh, 23d
+int   10h
+
+mov   ah, 9
+mov   dx, offset request
+int   21h
+
+popa
+
+ret
+
+display_notification endp
+
+;---------------------------------------------------------------------------------------------------------------------------------------------
+
 main_window proc
 
                                                 pusha
@@ -6965,10 +6991,17 @@ main_window proc
                                                 mov   dx, offset cmd3
                                                 int   21h
 
-                                            
                                                 mov   ah, 2
-                                                mov   dl, 'A'
+                                                mov   bh, 0
+                                                mov   dl, 00d
+                                                mov   dh, 21d
+                                                int   10h
+
+                                                mov   ah, 9
+                                                mov   dx, offset border
                                                 int   21h
+
+                                                call display_notification
                                                 
     checkForSelection:                          
                                                 call  checkForStartSignal
@@ -7217,7 +7250,7 @@ main proc far
                                                 mov   dx, offset pieces_wd
                                                 int   21h
 
-                                                call  identification_window
+                                                call  main_window
 
 main endp
 end main

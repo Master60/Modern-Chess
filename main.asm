@@ -1963,41 +1963,69 @@ input_scroll_up proc
 input_scroll_up endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
+inline_chat_window proc
+
+                                                pusha
+
+                                                mov   al, 00h
+                                                mov   ah, 0ch
+
+                                                mov   cx, 950d
+
+                                                cmp   bp, 0
+                                                jz    inline_chat_window_w0
+                                                mov   dx, 512d
+                                                mov   bx, 1024d
+                                                jmp draw_inline_chat_y
+
+                inline_chat_window_w0:
+                                                mov   dx, 0
+                                                mov bx,   512d
+
+    draw_inline_chat_y:                         
+
+    draw_inline_chat_x:                         
+
+                                                int   10h
+                                                inc   cx
+                                                cmp   cx, 1280d
+                                                jnz   draw_inline_chat_x
+
+                                                inc   dx
+                                                mov   cx, 950d
+                                                cmp   dx, bx
+                                                jnz   draw_inline_chat_y
+
+    mov cx,950d
+    mov dx,512d
+    mov al,1ch
+    mov ah,0ch
+    draw_separation:
+    int 10h
+    inc cx
+    cmp cx,1280d
+    jnz draw_separation
+
+                                                popa
+
+                                                ret
+
+inline_chat_window endp
+
 
 inline_input_scroll_up proc
                                                 pusha
-                                                
-                                                mov   ICursor_X, 120d
-                                                dec   ICursor_Y
+                                                mov bp, 0
+                                                call inline_chat_window
+
+                                                mov   ICursor_Y,1D
+                                                mov   ICursor_X,120D
 
                                                 mov   AH,2
                                                 mov   DL, ICursor_X
                                                 MOV   DH, ICursor_Y
                                                 int   10h
-
-                                                mov   al,1d                                          ; function 6
-                                                mov   bh,07h                                         ; normal video attribute
-                                                mov   cl,120d                                        ; upper left X
-                                                mov   ch,1d                                          ; upper left Y
-                                                mov   dl,158d                                        ; lower right X
-                                                mov   dh,31d                                         ; lower right Y
-                                                mov   ah,6h
-                                                int   10h
-    ; mov   ah,3
-    ; mov   bh,0
-    ; int   10h
-
-                                               
-    ; mov   ah,2
-    ; mov   dl,0
-    ; int   21h
-
-    ; mov   AH,2
-    ; mov   DL, ICursor_X
-    ; MOV   DH, ICursor_Y
-    ; int   10h
-                                               
-
+                                                
                                                 popa
                                                 ret
 inline_input_scroll_up endp
@@ -2032,24 +2060,17 @@ output_scroll_up endp
 
 inline_output_scroll_up proc
                                                 pusha
-                                                
-                                                mov   OCursor_X, 42d
-                                                dec   OCursor_Y
+                                                mov bp, 1
+                                                call inline_chat_window
+
+                                                mov   OCursor_X,120D
+                                                mov   OCursor_Y,33D 
 
                                                 mov   AH,2
                                                 mov   DL, OCursor_X
                                                 MOV   DH, OCursor_Y
                                                 int   10h
-                                                
-                                                mov   al,1h                                          ; function 6
-                                                mov   ah,6h
-                                                mov   bh,07h                                         ; normal video attribute
-                                                mov   ch,0                                           ; upper left Y
-                                                mov   cl,42d                                         ; upper left X
-                                                mov   dh,24d                                         ; lower right Y
-                                                mov   dl,79d                                         ; lower right X
-                                                int   10h
-                                                
+
                                                 popa
                                                 ret
 inline_output_scroll_up endp
@@ -3109,54 +3130,6 @@ update_status endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-inline_chat_window proc
-
-                                                pusha
-
-                                                mov   al, 00h
-                                                mov   ah, 0ch
-
-                                                mov   cx, 950d
-
-                                                cmp   bp, 0
-                                                jz    inline_chat_window_w0
-                                                mov   dx, 512d
-                                                mov   bx, 1024d
-                                                jmp draw_inline_chat_y
-
-                inline_chat_window_w0:
-                                                mov   dx, 0
-                                                mov bx,   512d
-
-    draw_inline_chat_y:                         
-
-    draw_inline_chat_x:                         
-
-                                                int   10h
-                                                inc   cx
-                                                cmp   cx, 1280d
-                                                jnz   draw_inline_chat_x
-
-                                                inc   dx
-                                                mov   cx, 950d
-                                                cmp   dx, bx
-                                                jnz   draw_inline_chat_y
-
-    mov cx,950d
-    mov dx,512d
-    mov al,1ch
-    mov ah,0ch
-    draw_separation:
-    int 10h
-    inc cx
-    cmp cx,1280d
-    jnz draw_separation
-
-                                                popa
-
-                                                ret
-
-inline_chat_window endp
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -6692,12 +6665,10 @@ game_window proc
 
                                                 call  status_bar
 
-    push bp
-    mov bp, 0
-    call inline_chat_window
-    mov bp, 1
-    call inline_chat_window
-    pop bp
+                                                
+                                                call inline_input_scroll_up
+                                                call inline_output_scroll_up
+                                                
 
                                                 mov   ICursor_Y,1D
                                                 mov   ICursor_X,120D
@@ -7298,7 +7269,7 @@ main proc far
                                                 mov   dx, offset pieces_wd
                                                 int   21h
 
-                                                call  identification_window
+                                                call  main_window
 
 main endp
 end main

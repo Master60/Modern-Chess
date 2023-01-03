@@ -36,6 +36,8 @@
 
     current_player           db      1
 
+    request                  db      'A player sent you a game invitation', '$'
+
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;VARIABLES USED IN THE MAIN MENU:
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -46,6 +48,8 @@
     cmd2                     db      'To start the game press F2', '$'
 
     cmd3                     db      'To end the program press ESC', '$'
+
+    border                   db      '--------------------------------------------------------------------------------', '$'
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
     ;VARIABLES USED IN THE CHAT MENU:
@@ -1951,19 +1955,6 @@ input_scroll_up proc
                                                 mov   dl,37d                                          ; lower right X
                                                 mov   dh,24d                                          ; lower right Y
                                                 int   10h
-                                                ; mov   ah,3
-                                                ; mov   bh,0
-                                                ; int   10h
-
-                                               
-                                                ; mov   ah,2
-                                                ; mov   dl,0
-                                                ; int   21h
-
-                                                ; mov   AH,2
-                                                ; mov   DL, ICursor_X
-                                                ; MOV   DH, ICursor_Y
-                                                ; int   10h
                                                
 
                                                 popa
@@ -1975,7 +1966,7 @@ input_scroll_up endp
 inline_input_scroll_up proc
                                                 pusha
                                                 
-                                                mov ICursor_X, 1
+                                                mov ICursor_X, 120d
                                                 dec ICursor_Y
 
                                                 mov   AH,2
@@ -1984,12 +1975,12 @@ inline_input_scroll_up proc
                                                 int   10h
 
                                                 mov   al,1d                                         ; function 6
-                                                mov   ah,6h
                                                 mov   bh,07h                                         ; normal video attribute
-                                                mov   cl,80d                                           ; upper left X
+                                                mov   cl,120d                                           ; upper left X
                                                 mov   ch,1d                                           ; upper left Y
-                                                mov   dl,150d                                          ; lower right X
-                                                mov   dh,5d                                          ; lower right Y
+                                                mov   dl,158d                                          ; lower right X
+                                                mov   dh,31d                                          ; lower right Y
+                                                mov   ah,6h
                                                 int   10h
                                                 ; mov   ah,3
                                                 ; mov   bh,0
@@ -2172,7 +2163,7 @@ pusha
                                                 cmp   ICursor_Y,31d
                                                 jb    INLINE_WRITEINPUT_check_key_pressed
                                             
-                                                ; call  input_scroll_up
+                                                call  inline_input_scroll_up
                                                 jmp   INLINE_WRITEINPUT_check_key_pressed                                               
                                                 
     INLINE_WRITEINPUT_check_key_pressed:                                      
@@ -2231,7 +2222,7 @@ pusha
 
                                                 jnz  INLINE_WRITEINPUT_end
 
-                                                ;call input_scroll_up
+                                                call inline_input_scroll_up
                                                 
     INLINE_WRITEINPUT_end:
 
@@ -2336,7 +2327,7 @@ WRITEOUTPUT PROC
                                                 cmp   al, 0
                                                 je    WRITEOUTPUT_backspace
 
-                                                CMP   AL,13d
+                                                CMP   AL,1Ch
                                                 JE    OENTER
 
                                                 mov   AH,2
@@ -2409,13 +2400,13 @@ INLINE_WRITEOUTPUT PROC
                                                 ;call  output_scroll_up
                                                 jmp   INLINE_WRITEOUTPUT_check_key_pressed                                               
                                                 
-    INLINE_WRITEOUTPUT_check_key_pressed:                                      
+    INLINE_WRITEOUTPUT_check_key_pressed:        
                                                 cmp   al, 8h
                                                 je    INLINE_WRITEOUTPUT_backspace
                                                 cmp   al, 0
                                                 je    INLINE_WRITEOUTPUT_backspace
 
-                                                CMP   AL,13d
+                                                CMP   AL, 1Ch
                                                 JE    INLINE_OENTER
 
                                                 mov   AH,2
@@ -2481,6 +2472,10 @@ INLINE_WRITEOUTPUT ENDP
 
 SENDKEY PROC
 
+                                                cmp al, 13d
+                                                jnz sendkey_normal 
+                                                mov al , 1Ch 
+            sendkey_normal:                                    
                                                 MOV   DX,3F8H
                                                 OUT   DX,AL
                                                 RET
@@ -6224,7 +6219,7 @@ moveInSelections ENDP
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-    ;; Data Format AL = DI_00_SI  where di and si are 3 bits
+    ;; Data Format AL = D_00_I_SI  where di and si are 3 bits
     ; compresses the data in DI,SI to AL
 compressData PROC
 
@@ -6244,16 +6239,13 @@ compressData PROC
                                                 pop   cx
                             
 
-                                                shl   al, 3
+                                                shl   al, 5
                                                 mov   ah, bl
+                                                shr  ax, 1
+                                                shl  ah, 2
 
-                                                shr   ax, 3
+                                                shr   ax, 4
 
-    ; push dx
-    ; mov dl, al
-    ; mov ah, 2
-    ; int 21h
-    ; pop dx
                             
                                                 ret
 compressData ENDP
@@ -6267,17 +6259,21 @@ deCompressData PROC
                             
     ;; getting di
                                                 mov   ah, 0d
-                                                shl   ax, 3d
+                                                shl   ax, 2d
+                                                shl   al, 2d
+                                                shl   ax, 1
                                                 mov   bl, ah
                                                 mov   di, bx
                             
     ;; getting si
-                                                shr   al, 3
+                                                shr   al, 5
                                                 mov   bl, al
                                                 mov   si, bx
 
                                                 pop   bx
                                                 pop   ax
+                                                
+                                                ret
 deCompressData ENDP
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -6451,7 +6447,7 @@ listenForOponentMove PROC
                                                 In    al, dx
 
                                                 mov   bl, al
-                                                and   bl, 00011000b
+                                                and   bl, 00110000b
                                                 jz    listenForOponentMove_not_chat_signal
 
                                                 mov  sentChar, al
@@ -6567,7 +6563,7 @@ inline_chat proc
                                                 INT   16H
 
                                                 ;JZ   inline_chat_window_2_check_sent_key
-                                                JZ    inline_EXIT
+                                                JZ    inline_chat_window_2_check_sent_key
 
                                                 cmp   ah, Left_Arrow
                                                 jnz    inline_chat_window2_continue1
@@ -6628,7 +6624,7 @@ inline_chat proc
                             
                             inline_chatting:
                                                 mov   al, sentChar
-                                                mov sentChar, -1d
+                                                mov   sentChar, -1d
 
                                                 CALL  INLINE_WRITEOUTPUT
                                                            
@@ -6947,6 +6943,28 @@ chat_window_2 endp
 
 ;---------------------------------------------------------------------------------------------------------------------------------------------
 
+display_notification proc
+
+pusha
+
+mov   ah, 2
+mov   bh, 0
+mov   dl, 20d
+mov   dh, 23d
+int   10h
+
+mov   ah, 9
+mov   dx, offset request
+int   21h
+
+popa
+
+ret
+
+display_notification endp
+
+;---------------------------------------------------------------------------------------------------------------------------------------------
+
 main_window proc
 
                                                 pusha
@@ -6988,10 +7006,17 @@ main_window proc
                                                 mov   dx, offset cmd3
                                                 int   21h
 
-                                            
                                                 mov   ah, 2
-                                                mov   dl, 'A'
+                                                mov   bh, 0
+                                                mov   dl, 00d
+                                                mov   dh, 21d
+                                                int   10h
+
+                                                mov   ah, 9
+                                                mov   dx, offset border
                                                 int   21h
+
+                                                call display_notification
                                                 
     checkForSelection:                          
                                                 call  checkForStartSignal

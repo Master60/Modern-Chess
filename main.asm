@@ -28,7 +28,6 @@
 
     Welcome_Mes              db      'Welcome To Our Game...$'
     Get_Name                 db      'Please Enter Your Name: $'
-    User_Name                db      16,?,16 dup('$')
     dummy                    db      '$'
     Error_Mes                db      'Please Enter a valid Name (Name must start with English Letter) $'
     Hello                    db      'Hello $'
@@ -63,6 +62,8 @@
 
     temp_name2               db      'Bas', '$'
 
+    User_Name                db      16,?,16 dup('$')
+
     ;Dummy text to be displayed
     dummy1                   db      'This window is to be further developed in phase 2, thanks for checking in.', '$'
 
@@ -70,10 +71,10 @@
 
     test1                    db      'This is a message from me to you','$'
 
-    ICursor_Y                       DB      0D
-    ICursor_X                       DB      0D
-    OCursor_X                       DB      42D
-    OCursor_Y                       DB      0D
+    ICursor_Y                DB      0D
+    ICursor_X                DB      0D
+    OCursor_X                DB      42D
+    OCursor_Y                DB      0D
     VLine                    db      '#'
 
     ;---------------------------------------------------------------------------------------------------------------------------------------------
@@ -177,7 +178,7 @@
 
     blackPlayer              db      1
 
-    sentChar                 db     -1d
+    sentChar                 db      -1d
 
 
     ;; plays that will be sent to the oponent
@@ -224,7 +225,7 @@
     ; hover_cell_color         db      80d   -> purple helw
     ; hover_cell_color         db      183d
     possible_take_cell_color db      12d
-    oponent_move_color       db      147d                                                                                 ;-> green brdoo
+    oponent_move_color       db      147d                                                                                       ;-> green brdoo
     ;Stores the color of the cell being drawn at a specific iteration.
     temp_color               db      ?
 
@@ -756,33 +757,33 @@ getCurrentTime proc
 
 getCurrentTime endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-;description
+    ;description
 genRandomPos PROC
-                                                push ax
-                                                push bx
-                                                push cx
-                                                push dx
+                                                push  ax
+                                                push  bx
+                                                push  cx
+                                                push  dx
 
                                                 mov   ah, 2ch
                                                 int   21h
 
-                                                mov dl, 0
+                                                mov   dl, 0
 
-                                                and dh, 31d
-                                                add dh, 16d
+                                                and   dh, 31d
+                                                add   dh, 16d
                                                 
-                                                shr dx, 8d
+                                                shr   dx, 8d
 
 
-                                                mov si, dx
+                                                mov   si, dx
                                                 
 
-                                                pop dx
-                                                pop cx
-                                                pop bx
-                                                pop ax
+                                                pop   dx
+                                                pop   cx
+                                                pop   bx
+                                                pop   ax
 
                                                 ret
 genRandomPos ENDP
@@ -1116,7 +1117,7 @@ draw_letters proc
 
 draw_letters endp
 
-   ;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 draw_letters_inverted proc
 
@@ -1170,14 +1171,14 @@ draw_letters_inverted proc
 
                                                 mov   di, 8
 
-    draw_letters_1_inverted:                             
+    draw_letters_1_inverted:                    
 
-    loop_y_letter_1_inverted:                            
+    loop_y_letter_1_inverted:                   
 
-    loop_x_letter_1_inverted:                            
+    loop_x_letter_1_inverted:                   
                                                 cmp   letters + [si], 1
                                                 je    draw_the_letter_1_inverted
-    back_1_inverted:                                     
+    back_1_inverted:                            
                                                 inc   si
                                                 inc   cx
                                                 cmp   cx, bp
@@ -1196,11 +1197,11 @@ draw_letters_inverted proc
                                                 jnz   draw_letters_1_inverted
                                                 jmp   end_draw_letters_1_inverted
 
-    draw_the_letter_1_inverted:                          
+    draw_the_letter_1_inverted:                 
                                                 int   10h
                                                 jmp   back_1_inverted
 
-    end_draw_letters_1_inverted:                         
+    end_draw_letters_1_inverted:                
 
 
                                                 mov   di, cell_size
@@ -1244,14 +1245,14 @@ draw_letters_inverted proc
 
                                                 mov   di, 8
 
-    draw_letters_2_inverted:                             
+    draw_letters_2_inverted:                    
 
-    loop_y_letter_2_inverted:                            
+    loop_y_letter_2_inverted:                   
 
-    loop_x_letter_2_inverted:                            
+    loop_x_letter_2_inverted:                   
                                                 cmp   letters + [si], 1
                                                 je    draw_the_letter_2_inverted
-    back_2_inverted:                                     
+    back_2_inverted:                            
                                                 inc   si
                                                 dec   cx
                                                 cmp   cx, bp
@@ -1270,11 +1271,11 @@ draw_letters_inverted proc
                                                 jnz   draw_letters_2_inverted
                                                 jmp   end_draw_letters_2_inverted
 
-    draw_the_letter_2_inverted:                          
+    draw_the_letter_2_inverted:                 
                                                 int   10h
                                                 jmp   back_2_inverted
 
-    end_draw_letters_2_inverted:                         
+    end_draw_letters_2_inverted:                
 
                                                 mov   sp, temp_sp
 
@@ -1654,7 +1655,7 @@ draw_numbers proc
 
 draw_numbers endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 draw_numbers_inverted proc
 
@@ -1701,14 +1702,14 @@ draw_numbers_inverted proc
 
                                                 mov   di, 8
 
-    draw_numbers_1_inverted:                             
+    draw_numbers_1_inverted:                    
 
-    loop_y_number_1_inverted:                            
+    loop_y_number_1_inverted:                   
 
-    loop_x_number_1_inverted:                            
+    loop_x_number_1_inverted:                   
                                                 cmp   numbers + [si], 1
                                                 je    draw_the_number_1_inverted
-    back_number_1_inverted:                              
+    back_number_1_inverted:                     
                                                 inc   si
                                                 inc   cx
                                                 cmp   cx, bp
@@ -1726,11 +1727,11 @@ draw_numbers_inverted proc
                                                 jnz   draw_numbers_1_inverted
                                                 jmp   end_draw_numbers_1_inverted
 
-    draw_the_number_1_inverted:                          
+    draw_the_number_1_inverted:                 
                                                 int   10h
                                                 jmp   back_number_1_inverted
 
-    end_draw_numbers_1_inverted:                         
+    end_draw_numbers_1_inverted:                
 
 
                                                 mov   di, cell_size
@@ -1775,14 +1776,14 @@ draw_numbers_inverted proc
 
                                                 mov   di, 8
 
-    draw_numbers_2_inverted:                             
+    draw_numbers_2_inverted:                    
 
-    loop_y_number_2_inverted:                            
+    loop_y_number_2_inverted:                   
 
-    loop_x_number_2_inverted:                            
+    loop_x_number_2_inverted:                   
                                                 cmp   numbers + [si], 1
                                                 je    draw_the_number_2_inverted
-    back_number_2_inverted:                              
+    back_number_2_inverted:                     
                                                 inc   si
                                                 dec   cx
                                                 cmp   cx, bp
@@ -1800,11 +1801,11 @@ draw_numbers_inverted proc
                                                 jnz   draw_numbers_2_inverted
                                                 jmp   end_draw_numbers_2_inverted
 
-    draw_the_number_2_inverted:                          
+    draw_the_number_2_inverted:                 
                                                 int   10h
                                                 jmp   back_number_2_inverted
 
-    end_draw_numbers_2_inverted:                         
+    end_draw_numbers_2_inverted:                
 
                                                 mov   sp, temp_sp
 
@@ -1827,7 +1828,7 @@ input_move_down proc
                                                 ret
 input_move_down endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 inline_input_move_down proc
                                                 mov   ICursor_X,120d
@@ -1853,7 +1854,7 @@ output_move_down proc
                                                 ret
 output_move_down endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 inline_output_move_down proc
                                                 mov   OCursor_X,120d
@@ -1866,7 +1867,7 @@ inline_output_move_down proc
                                                 ret
 inline_output_move_down endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 inializeScreen proc
 
@@ -1892,7 +1893,7 @@ inializeScreen proc
                                                 mov   dl,40
                                                 mov   dh,0
                                                 mov   cx,25
-    lp2:                                         
+    lp2:                                        
                                                 mov   ah, 2
                                                 int   10h
                                                 mov   dl,'#'
@@ -1907,7 +1908,7 @@ inializeScreen proc
     ;                                             mov   dl,40
     ;                                             mov   dh,0
     ;                                             mov   cx,25
-    ; lp2:                                         
+    ; lp2:
     ;                                             mov   ah, 2
     ;                                             int   10h
     ;                                             mov   dl,'#'
@@ -1917,8 +1918,8 @@ inializeScreen proc
     ;                                             LOOP  lp2
 
 
-                                                mov ICursor_X, 1
-                                                mov ICursor_Y, 0
+                                                mov   ICursor_X, 1
+                                                mov   ICursor_Y, 0
 
                                                 mov   AH,2
                                                 mov   DL, ICursor_X
@@ -1926,8 +1927,8 @@ inializeScreen proc
                                                 int   10h
 
 
-                                                mov OCursor_X, 42d
-                                                mov OCursor_Y, 0
+                                                mov   OCursor_X, 42d
+                                                mov   OCursor_Y, 0
 
 
                                                 ret
@@ -1939,21 +1940,21 @@ inializeScreen endp
 input_scroll_up proc
                                                 pusha
                                                 
-                                                mov ICursor_X, 1d
-                                                dec ICursor_Y
+                                                mov   ICursor_X, 1d
+                                                dec   ICursor_Y
 
                                                 mov   AH,2
                                                 mov   DL, ICursor_X
                                                 MOV   DH, ICursor_Y
                                                 int   10h
 
-                                                mov   al,1d                                         ; function 6
+                                                mov   al,1d                                          ; function 6
                                                 mov   ah,6h
                                                 mov   bh,07h                                         ; normal video attribute
-                                                mov   cl,0d                                           ; upper left X
-                                                mov   ch,0d                                           ; upper left Y
-                                                mov   dl,37d                                          ; lower right X
-                                                mov   dh,24d                                          ; lower right Y
+                                                mov   cl,0d                                          ; upper left X
+                                                mov   ch,0d                                          ; upper left Y
+                                                mov   dl,37d                                         ; lower right X
+                                                mov   dh,24d                                         ; lower right Y
                                                 int   10h
                                                
 
@@ -1961,40 +1962,40 @@ input_scroll_up proc
                                                 ret
 input_scroll_up endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 inline_input_scroll_up proc
                                                 pusha
                                                 
-                                                mov ICursor_X, 120d
-                                                dec ICursor_Y
+                                                mov   ICursor_X, 120d
+                                                dec   ICursor_Y
 
                                                 mov   AH,2
                                                 mov   DL, ICursor_X
                                                 MOV   DH, ICursor_Y
                                                 int   10h
 
-                                                mov   al,1d                                         ; function 6
+                                                mov   al,1d                                          ; function 6
                                                 mov   bh,07h                                         ; normal video attribute
-                                                mov   cl,120d                                           ; upper left X
-                                                mov   ch,1d                                           ; upper left Y
-                                                mov   dl,158d                                          ; lower right X
-                                                mov   dh,31d                                          ; lower right Y
+                                                mov   cl,120d                                        ; upper left X
+                                                mov   ch,1d                                          ; upper left Y
+                                                mov   dl,158d                                        ; lower right X
+                                                mov   dh,31d                                         ; lower right Y
                                                 mov   ah,6h
                                                 int   10h
-                                                ; mov   ah,3
-                                                ; mov   bh,0
-                                                ; int   10h
+    ; mov   ah,3
+    ; mov   bh,0
+    ; int   10h
 
                                                
-                                                ; mov   ah,2
-                                                ; mov   dl,0
-                                                ; int   21h
+    ; mov   ah,2
+    ; mov   dl,0
+    ; int   21h
 
-                                                ; mov   AH,2
-                                                ; mov   DL, ICursor_X
-                                                ; MOV   DH, ICursor_Y
-                                                ; int   10h
+    ; mov   AH,2
+    ; mov   DL, ICursor_X
+    ; MOV   DH, ICursor_Y
+    ; int   10h
                                                
 
                                                 popa
@@ -2006,8 +2007,8 @@ inline_input_scroll_up endp
 output_scroll_up proc
                                                 pusha
                                                 
-                                                mov OCursor_X, 42d
-                                                dec OCursor_Y
+                                                mov   OCursor_X, 42d
+                                                dec   OCursor_Y
 
                                                 mov   AH,2
                                                 mov   DL, OCursor_X
@@ -2027,13 +2028,13 @@ output_scroll_up proc
                                                 ret
 output_scroll_up endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 inline_output_scroll_up proc
                                                 pusha
                                                 
-                                                mov OCursor_X, 42d
-                                                dec OCursor_Y
+                                                mov   OCursor_X, 42d
+                                                dec   OCursor_Y
 
                                                 mov   AH,2
                                                 mov   DL, OCursor_X
@@ -2053,7 +2054,7 @@ inline_output_scroll_up proc
                                                 ret
 inline_output_scroll_up endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 intializePort proc
 
@@ -2088,9 +2089,9 @@ WRITEINPUT PROC
                                                 jb    WRITEINPUT_check_key_pressed
                                             
                                                 call  input_scroll_up
-                                                jmp   WRITEINPUT_check_key_pressed                                               
+                                                jmp   WRITEINPUT_check_key_pressed
                                                 
-    WRITEINPUT_check_key_pressed:                                      
+    WRITEINPUT_check_key_pressed:               
                                                 cmp   al, 8h
                                                 je    WRITEINPUT_backspace
                                                 CMP   AL,13d
@@ -2107,31 +2108,31 @@ WRITEINPUT PROC
                                                 INC   ICursor_X
                                                 RET
 
-    WRITEINPUT_backspace:
+    WRITEINPUT_backspace:                       
                                                 
-                                                cmp ICursor_X, 1
-                                                jne WRITEINPUT_backspace_continue
+                                                cmp   ICursor_X, 1
+                                                jne   WRITEINPUT_backspace_continue
                                                 
-                                                cmp ICursor_Y, 0
-                                                jne WRITEINPUT_backspace_continue2
+                                                cmp   ICursor_Y, 0
+                                                jne   WRITEINPUT_backspace_continue2
 
                                                 ret
 
-            WRITEINPUT_backspace_continue2:
-                                                mov ICursor_X, 39d
-                                                dec ICursor_Y
+    WRITEINPUT_backspace_continue2:             
+                                                mov   ICursor_X, 39d
+                                                dec   ICursor_Y
                                                             
             
-            WRITEINPUT_backspace_continue:                                                        
+    WRITEINPUT_backspace_continue:              
                                                 dec   ICursor_X
                                                 mov   AH,2
                                                 mov   DL,ICursor_X
                                                 MOV   DH,ICursor_Y
                                                 int   10h
 
-                                                mov dl, 0
-                                                mov ah, 2
-                                                int 21h
+                                                mov   dl, 0
+                                                mov   ah, 2
+                                                int   21h
 
                                                 mov   AH,2
                                                 mov   DL,ICursor_X
@@ -2142,19 +2143,19 @@ WRITEINPUT PROC
                                                 CALL  input_move_down
                                                 cmp   ICursor_Y, 25d
 
-                                                jnz  WRITEINPUT_end
+                                                jnz   WRITEINPUT_end
 
-                                                call input_scroll_up
+                                                call  input_scroll_up
                                                 
-    WRITEINPUT_end:
+    WRITEINPUT_end:                             
                                                 RET
 
 WRITEINPUT ENDP
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 INLINE_WRITEINPUT PROC
-pusha
+                                                pusha
 
                                                 cmp   ICursor_X,158d
                                                 jnz   INLINE_WRITEINPUT_check_key_pressed
@@ -2164,9 +2165,9 @@ pusha
                                                 jb    INLINE_WRITEINPUT_check_key_pressed
                                             
                                                 call  inline_input_scroll_up
-                                                jmp   INLINE_WRITEINPUT_check_key_pressed                                               
+                                                jmp   INLINE_WRITEINPUT_check_key_pressed
                                                 
-    INLINE_WRITEINPUT_check_key_pressed:                                      
+    INLINE_WRITEINPUT_check_key_pressed:        
                                                 cmp   al, 8h
                                                 je    INLINE_WRITEINPUT_backspace
                                                 CMP   AL,13d
@@ -2184,31 +2185,31 @@ pusha
                                                 popa
                                                 RET
 
-    INLINE_WRITEINPUT_backspace:
+    INLINE_WRITEINPUT_backspace:                
                                                 
-                                                cmp ICursor_X, 1
-                                                jne INLINE_WRITEINPUT_backspace_continue
+                                                cmp   ICursor_X, 1
+                                                jne   INLINE_WRITEINPUT_backspace_continue
                                                 
-                                                cmp ICursor_Y, 0
-                                                jne INLINE_WRITEINPUT_backspace_continue2
+                                                cmp   ICursor_Y, 0
+                                                jne   INLINE_WRITEINPUT_backspace_continue2
                                                 popa
                                                 ret
 
-            INLINE_WRITEINPUT_backspace_continue2:
-                                                mov ICursor_X, 159d
-                                                dec ICursor_Y
+    INLINE_WRITEINPUT_backspace_continue2:      
+                                                mov   ICursor_X, 159d
+                                                dec   ICursor_Y
                                                             
             
-            INLINE_WRITEINPUT_backspace_continue:                                                        
+    INLINE_WRITEINPUT_backspace_continue:       
                                                 dec   ICursor_X
                                                 mov   AH,2
                                                 mov   DL,ICursor_X
                                                 MOV   DH,ICursor_Y
                                                 int   10h
 
-                                                mov dl, 0
-                                                mov ah, 2
-                                                int 21h
+                                                mov   dl, 0
+                                                mov   ah, 2
+                                                int   21h
 
                                                 mov   AH,2
                                                 mov   DL,ICursor_X
@@ -2216,17 +2217,17 @@ pusha
                                                 int   10h
                                                 popa
                                                 ret
-    INLINE_IENTER:                                     
+    INLINE_IENTER:                              
                                                 CALL  inline_input_move_down
                                                 cmp   ICursor_Y, 31d
 
-                                                jnz  INLINE_WRITEINPUT_end
+                                                jnz   INLINE_WRITEINPUT_end
 
-                                                call inline_input_scroll_up
+                                                call  inline_input_scroll_up
                                                 
-    INLINE_WRITEINPUT_end:
+    INLINE_WRITEINPUT_end:                      
 
-    popa
+                                                popa
                                                 RET
 
 INLINE_WRITEINPUT ENDP
@@ -2234,81 +2235,81 @@ INLINE_WRITEINPUT ENDP
     ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 
-;description
+    ;description
 resetEverything PROC
     ; Keeps track of the possible move that the player is currently selecting and are used to write the moves to memory in "recordMove"
-    mov   directionPtr       , -1d
-    mov   currMovePtr        , -1d
+                                                mov   directionPtr       , -1d
+                                                mov   currMovePtr        , -1d
 
     ; the position (containing a piece) that the player is currently selecting
-    mov   currSelectedPos_SI , -1d
-    mov   currSelectedPos_DI , -1d
-    mov   currHoverPos_SI , -1d
-    mov   currHoverPos_DI , -1d
+                                                mov   currSelectedPos_SI , -1d
+                                                mov   currSelectedPos_DI , -1d
+                                                mov   currHoverPos_SI , -1d
+                                                mov   currHoverPos_DI , -1d
     
     ; Helpful Flags
-    mov   outOfBound         , 0d
-    mov   startSending       , 0d
-    mov   startPosSent       , 0d
-    mov   gotOponentStartPos , 0d
-    mov   end_game           , -1d
-    mov   king_in_danger     , 0d
-    mov   killedOpKing       , 0d
+                                                mov   outOfBound         , 0d
+                                                mov   startSending       , 0d
+                                                mov   startPosSent       , 0d
+                                                mov   gotOponentStartPos , 0d
+                                                mov   end_game           , -1d
+                                                mov   king_in_danger     , 0d
+                                                mov   killedOpKing       , 0d
     
 
-    mov   checked_up         , 0d
-    mov   checked_down       , 0d
-    mov   checked_right      , 0d
-    mov   checked_left       , 0d
-    mov   checked_upright    , 0d
-    mov   checked_upleft     , 0d
-    mov   checked_downright  , 0d
-    mov   checked_downleft   , 0d
+                                                mov   checked_up         , 0d
+                                                mov   checked_down       , 0d
+                                                mov   checked_right      , 0d
+                                                mov   checked_left       , 0d
+                                                mov   checked_upright    , 0d
+                                                mov   checked_upleft     , 0d
+                                                mov   checked_downright  , 0d
+                                                mov   checked_downleft   , 0d
 
     ;Variables for check
 
-    cmp blackPlayer, 1
-    jz reset_black
+                                                cmp   blackPlayer, 1
+                                                jz    reset_black
 
-    mov   Kingpos_si         , 4d
-    mov   Kingpos_di         , 7d
-    jmp   reset_everything_continue
+                                                mov   Kingpos_si         , 4d
+                                                mov   Kingpos_di         , 7d
+                                                jmp   reset_everything_continue
 
-    reset_black:
+    reset_black:                                
     
-    mov   Kingpos_si         , 3d
-    mov   Kingpos_di         , 7d
+                                                mov   Kingpos_si         , 3d
+                                                mov   Kingpos_di         , 7d
 
-    reset_everything_continue:
+    reset_everything_continue:                  
 
     ;; plays that will be sent to the oponent
-    mov   startPos_SI        , -1d
-    mov   startPos_DI        , -1d
+                                                mov   startPos_SI        , -1d
+                                                mov   startPos_DI        , -1d
 
-    mov   endPos_SI          , -1d
-    mov   endPos_DI          , -1d
+                                                mov   endPos_SI          , -1d
+                                                mov   endPos_DI          , -1d
     
     ;; plays that will be received from the oponent
-    mov   oponent_startPos_SI, -1d
-    mov   oponent_startPos_DI, -1d
+                                                mov   oponent_startPos_SI, -1d
+                                                mov   oponent_startPos_DI, -1d
 
-    mov   oponent_endPos_SI  , -1d
-    mov   oponent_endPos_DI  , -1d
+                                                mov   oponent_endPos_SI  , -1d
+                                                mov   oponent_endPos_DI  , -1d
 
-    mov   oponent_checkpos_SI, -1d
-    mov   oponent_checkpos_DI, -1d
+                                                mov   oponent_checkpos_SI, -1d
+                                                mov   oponent_checkpos_DI, -1d
 
     ; Navigation Buttons
-    mov   Left_Arrow         , 4Bh
-    mov   Right_Arrow        , 4Dh
-    mov   Up_Arrow           , 48h
-    mov   Down_Arrow         , 50h
+                                                mov   Left_Arrow         , 4Bh
+                                                mov   Right_Arrow        , 4Dh
+                                                mov   Up_Arrow           , 48h
+                                                mov   Down_Arrow         , 50h
 
-    ret
+                                                ret
 
 resetEverything ENDP
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 WRITEOUTPUT PROC
                                                 cmp   OCursor_X, 79d
@@ -2319,9 +2320,9 @@ WRITEOUTPUT PROC
                                                 jb    WRITEOUTPUT_check_key_pressed
                                             
                                                 call  output_scroll_up
-                                                jmp   WRITEOUTPUT_check_key_pressed                                               
+                                                jmp   WRITEOUTPUT_check_key_pressed
                                                 
-    WRITEOUTPUT_check_key_pressed:                                      
+    WRITEOUTPUT_check_key_pressed:              
                                                 cmp   al, 8h
                                                 je    WRITEOUTPUT_backspace
                                                 cmp   al, 0
@@ -2342,31 +2343,31 @@ WRITEOUTPUT PROC
                                                 RET
 
 
-    WRITEOUTPUT_backspace:               
+    WRITEOUTPUT_backspace:                      
                                                 
-                                                cmp OCursor_X, 42d
-                                                jne WRITEOUTPUT_backspace_continue
+                                                cmp   OCursor_X, 42d
+                                                jne   WRITEOUTPUT_backspace_continue
                                                 
-                                                cmp OCursor_Y, 0
-                                                jne WRITEOUTPUT_backspace_continue2
+                                                cmp   OCursor_Y, 0
+                                                jne   WRITEOUTPUT_backspace_continue2
 
                                                 ret
 
-            WRITEOUTPUT_backspace_continue2:
-                                                mov OCursor_X, 79d
-                                                dec OCursor_Y                                                 
+    WRITEOUTPUT_backspace_continue2:            
+                                                mov   OCursor_X, 79d
+                                                dec   OCursor_Y
             
             
-            WRITEOUTPUT_backspace_continue:                                                        
+    WRITEOUTPUT_backspace_continue:             
                                                 dec   OCursor_X
                                                 mov   AH,2
                                                 mov   DL, OCursor_X
                                                 MOV   DH, OCursor_Y
                                                 int   10h
 
-                                                mov dl, 0
-                                                mov ah, 2
-                                                int 21h
+                                                mov   dl, 0
+                                                mov   ah, 2
+                                                int   21h
 
                                                 mov   AH,2
                                                 mov   DL, OCursor_X
@@ -2377,19 +2378,19 @@ WRITEOUTPUT PROC
                                                 CALL  output_move_down
                                                 cmp   OCursor_Y, 25d
 
-                                                jnz  WRITEOUTPUT_end
+                                                jnz   WRITEOUTPUT_end
 
-                                                call output_scroll_up
+                                                call  output_scroll_up
                                                 
-    WRITEOUTPUT_end:
+    WRITEOUTPUT_end:                            
                                                 RET
 
 WRITEOUTPUT ENDP
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 INLINE_WRITEOUTPUT PROC
-    pusha
+                                                pusha
                                                 cmp   OCursor_X, 158d
                                                 jnz   INLINE_WRITEOUTPUT_check_key_pressed
                                                 call  inline_output_move_down
@@ -2397,10 +2398,10 @@ INLINE_WRITEOUTPUT PROC
                                                 cmp   OCursor_Y, 60d
                                                 jb    INLINE_WRITEOUTPUT_check_key_pressed
                                             
-                                                ;call  output_scroll_up
-                                                jmp   INLINE_WRITEOUTPUT_check_key_pressed                                               
+    ;call  output_scroll_up
+                                                jmp   INLINE_WRITEOUTPUT_check_key_pressed
                                                 
-    INLINE_WRITEOUTPUT_check_key_pressed:        
+    INLINE_WRITEOUTPUT_check_key_pressed:       
                                                 cmp   al, 8h
                                                 je    INLINE_WRITEOUTPUT_backspace
                                                 cmp   al, 0
@@ -2424,29 +2425,29 @@ INLINE_WRITEOUTPUT PROC
 
     INLINE_WRITEOUTPUT_backspace:               
                                                 
-                                                cmp OCursor_X, 159d
-                                                jne INLINE_WRITEOUTPUT_backspace_continue
+                                                cmp   OCursor_X, 159d
+                                                jne   INLINE_WRITEOUTPUT_backspace_continue
                                                 
-                                                cmp OCursor_Y, 0
-                                                jne INLINE_WRITEOUTPUT_backspace_continue2
+                                                cmp   OCursor_Y, 0
+                                                jne   INLINE_WRITEOUTPUT_backspace_continue2
                                                 popa
                                                 ret
 
-            INLINE_WRITEOUTPUT_backspace_continue2:
-                                                mov OCursor_X, 120d
-                                                dec OCursor_Y                                                 
+    INLINE_WRITEOUTPUT_backspace_continue2:     
+                                                mov   OCursor_X, 120d
+                                                dec   OCursor_Y
             
             
-            INLINE_WRITEOUTPUT_backspace_continue:                                                        
+    INLINE_WRITEOUTPUT_backspace_continue:      
                                                 dec   OCursor_X
                                                 mov   AH,2
                                                 mov   DL, OCursor_X
                                                 MOV   DH, OCursor_Y
                                                 int   10h
 
-                                                mov dl, 0
-                                                mov ah, 2
-                                                int 21h
+                                                mov   dl, 0
+                                                mov   ah, 2
+                                                int   21h
 
                                                 mov   AH,2
                                                 mov   DL, OCursor_X
@@ -2454,15 +2455,15 @@ INLINE_WRITEOUTPUT PROC
                                                 int   10h
                                                 popa
                                                 ret
-    INLINE_OENTER:                                     
+    INLINE_OENTER:                              
                                                 CALL  inline_output_move_down
                                                 cmp   OCursor_Y, 60d
 
-                                                jnz  INLINE_WRITEOUTPUT_end
+                                                jnz   INLINE_WRITEOUTPUT_end
 
-                                                ;call output_scroll_up
+    ;call output_scroll_up
                                                 
-    INLINE_WRITEOUTPUT_end:
+    INLINE_WRITEOUTPUT_end:                     
                                                 popa
                                                 RET
 
@@ -2472,10 +2473,10 @@ INLINE_WRITEOUTPUT ENDP
 
 SENDKEY PROC
 
-                                                cmp al, 13d
-                                                jnz sendkey_normal 
-                                                mov al , 1Ch 
-            sendkey_normal:                                    
+                                                cmp   al, 13d
+                                                jnz   sendkey_normal
+                                                mov   al , 1Ch
+    sendkey_normal:                             
                                                 MOV   DX,3F8H
                                                 OUT   DX,AL
                                                 RET
@@ -2575,25 +2576,25 @@ chat_window proc
 
 chat_window endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-;description
+    ;description
 sendPowerupPos PROC
-                                                mov bx, offset board
-                                                call genRandomPos
-                                                add bx, si
-                                                mov byte ptr [bx], 'p'
-                                                sub bx, offset board
+                                                mov   bx, offset board
+                                                call  genRandomPos
+                                                add   bx, si
+                                                mov   byte ptr [bx], 'p'
+                                                sub   bx, offset board
 
-                                                ; push ax
-                                                ; push dx
-                                                ; mov  dl, bl
-                                                ; mov  ah, 2
-                                                ; int  21h
-                                                ; pop  dx
-                                                ; pop  ax
+    ; push ax
+    ; push dx
+    ; mov  dl, bl
+    ; mov  ah, 2
+    ; int  21h
+    ; pop  dx
+    ; pop  ax
 
-                    sendPowerupPos_rep:
+    sendPowerupPos_rep:                         
                                                 mov   dx, 3FDh
                                                 In    al, dx
                                                 and   al, 00100000b
@@ -2607,12 +2608,12 @@ sendPowerupPos PROC
                                                 ret
 sendPowerupPos ENDP
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
-;description
+    ;description
 receivePowerupPos PROC
                                                 
-                    receivePowerupPos_rep:
+    receivePowerupPos_rep:                      
                                                 mov   dx, 3FDh
                                                 In    al, dx
                                                 and   al, 1d
@@ -2621,26 +2622,26 @@ receivePowerupPos PROC
                                                 mov   dx, 3F8h
                                                 In    al, dx
 
-                                                mov bh, 0
-                                                mov bl, al
+                                                mov   bh, 0
+                                                mov   bl, al
 
-                                                ; push ax
-                                                ; push dx
-                                                ; mov  dl, bl
-                                                ; mov  ah, 2
-                                                ; int  21h
-                                                ; pop  dx
-                                                ; pop  ax
+    ; push ax
+    ; push dx
+    ; mov  dl, bl
+    ; mov  ah, 2
+    ; int  21h
+    ; pop  dx
+    ; pop  ax
 
 
-                                                mov  cx, 63d
-                                                sub  cx, bx
-                                                xchg bx, cx
+                                                mov   cx, 63d
+                                                sub   cx, bx
+                                                xchg  bx, cx
 
-                                                add  bx, offset board
+                                                add   bx, offset board
                                                 
                                                 
-                                                mov byte ptr [bx], 'p'
+                                                mov   byte ptr [bx], 'p'
 
                                                 ret
     
@@ -2736,17 +2737,17 @@ init_board proc
                                                 mov   al, pKing
                                                 mov   [bx], al
 
-                                                cmp  blackPlayer, 0d
-                                                jnz  receive_pos
+                                                cmp   blackPlayer, 0d
+                                                jnz   receive_pos
                                                 
 
-                                                call sendPowerupPos
-                                                jmp init_board_end
+                                                call  sendPowerupPos
+                                                jmp   init_board_end
 
-                            receive_pos:
-                                                call receivePowerupPos
+    receive_pos:                                
+                                                call  receivePowerupPos
 
-    init_board_end:     
+    init_board_end:                             
     ;Places the pawns on their initial positions on board, 1 indicates a black pawn and -1 indicates a white pawn.
     ;Pawns fill the second and eighth rows.
                                                 mov   bx, offset board + 8
@@ -2857,10 +2858,11 @@ draw_labels proc
                                                 int   10h
 
                                                 mov   ah, 9
-                                                mov   dx, offset temp_name
+                                                mov   dx, offset User_Name + 2
                                                 int   21h
 
                                                 mov   ah, 2
+                                                xor   al, al
                                                 mov   bh, 0
                                                 mov   dl, 89d
                                                 mov   dh, 1d
@@ -3064,7 +3066,7 @@ update_status proc
                                                 int   21h
                                                 jmp   end_status
 
-    piece_taken:                            
+    piece_taken:                                
                                                 mov   ah, 9
                                                 mov   dx, offset status_5
                                                 int   21h
@@ -3114,15 +3116,15 @@ inline_chat_window proc
                                                 cmp   dx, 1024d
                                                 jnz   draw_inline_chat_y
 
-    mov cx,950d
-    mov dx,512d
-    mov al,0h
-    mov ah,0ch
-    draw_separation:
-    int 10h
-    inc cx
-    cmp cx,1280d
-    jnz draw_separation
+                                                mov   cx,950d
+                                                mov   dx,512d
+                                                mov   al,0h
+                                                mov   ah,0ch
+    draw_separation:                            
+                                                int   10h
+                                                inc   cx
+                                                cmp   cx,1280d
+                                                jnz   draw_separation
 
                                                 popa
 
@@ -3618,15 +3620,15 @@ draw_cell proc
                                                 mov   al, hover_cell_color
                                                 jmp   draw_cell__continue
 
-            draw_cell__check_if_selected_pos:
+    draw_cell__check_if_selected_pos:           
                                                 cmp   si, currSelectedPos_SI
                                                 jnz   draw_cell__continue
                                                 cmp   di, currSelectedPos_DI
                                                 jnz   draw_cell__continue
-                                                ; call  draw_border
+    ; call  draw_border
                                                 mov   al, highlighted_cell_color
 
-            draw_cell__continue:
+    draw_cell__continue:                        
                                                  
                                                  
 
@@ -4187,7 +4189,7 @@ hover proc
     hover_not_prev_enemy_move:                  
                                                 call  get_cell_colour
     hover_redraw_prev_cell:                     
-                                                mov   currHoverPos_SI, -1d 
+                                                mov   currHoverPos_SI, -1d
                                                 mov   currHoverPos_DI, -1d
                                                 call  draw_cell
 
@@ -4196,8 +4198,8 @@ hover proc
                                                 pop   si
                                                 mov   al, hover_cell_color
                                                 call  draw_cell
-                                                mov   currHoverPos_SI, si 
-                                                mov   currHoverPos_DI, di 
+                                                mov   currHoverPos_SI, si
+                                                mov   currHoverPos_DI, di
 
     dont_move:                                  
                                                 pop   dx
@@ -5138,7 +5140,7 @@ movePiece PROC
                                                 mov   killedOpKing, 1
 
 
-    movePiece_capture_piece:                        
+    movePiece_capture_piece:                    
     ;;; logic for if piece exists (displaying it next to board)
                                                 mov   current_captured_piece, al
                                                 call  draw_captured_piece
@@ -5150,7 +5152,7 @@ movePiece PROC
 
                                                 dec   waitingTime_black
 
-                                                jmp conitnue_movePiece
+                                                jmp   conitnue_movePiece
 
     white_powerup:                              
                                                 dec   waitingTime_white
@@ -5185,13 +5187,13 @@ movePiece PROC
                                                 mov   king_in_danger, 0d
                                                 call  update_status
 
-                                                ; push  dx
-                                                ; push  ax
-                                                ; mov   dl, 's'
-                                                ; mov   ah, 2
-                                                ; int   21h
-                                                ; pop   ax
-                                                ; pop   dx
+    ; push  dx
+    ; push  ax
+    ; mov   dl, 's'
+    ; mov   ah, 2
+    ; int   21h
+    ; pop   ax
+    ; pop   dx
     ; push dx
     ; push ax
     ; mov dl, king_in_danger
@@ -5237,8 +5239,8 @@ movePiece PROC
                                                 mov   currSelectedPos_DI, -1d
                                                 mov   currSelectedPos_SI, -1d
 
-                                                mov   currHoverPos_SI, si 
-                                                mov   currHoverPos_DI, di 
+                                                mov   currHoverPos_SI, si
+                                                mov   currHoverPos_DI, di
 
                                                 mov   startSending, 1d
                                                  
@@ -5430,13 +5432,13 @@ check_king_vertical proc
 
                                                 mov   king_in_danger, 1d
                                                 call  update_status
-                                                ; push  dx
-                                                ; push  ax
-                                                ; mov   dl, king_in_danger
-                                                ; mov   ah, 2
-                                                ; int   21h
-                                                ; pop   ax
-                                                ; pop   dx
+    ; push  dx
+    ; push  ax
+    ; mov   dl, king_in_danger
+    ; mov   ah, 2
+    ; int   21h
+    ; pop   ax
+    ; pop   dx
     ;display message
     check_king_vertical_end:                    
                                                 popa
@@ -5551,13 +5553,13 @@ check_king_horizontal proc
                                                 mov   oponent_checkpos_DI, di
                                                 mov   oponent_checkpos_SI, si
 
-                                                ; push  dx
-                                                ; push  ax
-                                                ; mov   dl, king_in_danger
-                                                ; mov   ah, 2
-                                                ; int   21h
-                                                ; pop   ax
-                                                ; pop   dx
+    ; push  dx
+    ; push  ax
+    ; mov   dl, king_in_danger
+    ; mov   ah, 2
+    ; int   21h
+    ; pop   ax
+    ; pop   dx
     ;display message
     check_king_horizontal_end:                  
                                                 popa
@@ -5706,13 +5708,13 @@ check_up_diagonals PROC
                                                 call  update_status
                                                 mov   oponent_checkpos_DI, di
                                                 mov   oponent_checkpos_SI, si
-                                                ; push  dx
-                                                ; push  ax
-                                                ; mov   dl, king_in_danger
-                                                ; mov   ah, 2
-                                                ; int   21h
-                                                ; pop   ax
-                                                ; pop   dx
+    ; push  dx
+    ; push  ax
+    ; mov   dl, king_in_danger
+    ; mov   ah, 2
+    ; int   21h
+    ; pop   ax
+    ; pop   dx
     check_up_diagonals_end:                     
                                                 pop   di
                                                 pop   si
@@ -5853,13 +5855,13 @@ check_down_diagonals PROC
                                                 call  update_status
                                                 mov   oponent_checkpos_DI, di
                                                 mov   oponent_checkpos_SI, si
-                                                ; push  dx
-                                                ; push  ax
-                                                ; mov   dl, king_in_danger
-                                                ; mov   ah, 2
-                                                ; int   21h
-                                                ; pop   ax
-                                                ; pop   dx
+    ; push  dx
+    ; push  ax
+    ; mov   dl, king_in_danger
+    ; mov   ah, 2
+    ; int   21h
+    ; pop   ax
+    ; pop   dx
     check_down_diagonals_end:                   
                                                 pop   di
                                                 pop   si
@@ -5985,13 +5987,13 @@ check_knight PROC
                                                 call  update_status
                                                 mov   oponent_checkpos_DI, di
                                                 mov   oponent_checkpos_SI, si
-                                                ; push  dx
-                                                ; push  ax
-                                                ; mov   dl, king_in_danger
-                                                ; mov   ah, 2
-                                                ; int   21h
-                                                ; pop   ax
-                                                ; pop   dx
+    ; push  dx
+    ; push  ax
+    ; mov   dl, king_in_danger
+    ; mov   ah, 2
+    ; int   21h
+    ; pop   ax
+    ; pop   dx
                                                 
                 
     check_knight_end:                           
@@ -6241,8 +6243,8 @@ compressData PROC
 
                                                 shl   al, 5
                                                 mov   ah, bl
-                                                shr  ax, 1
-                                                shl  ah, 2
+                                                shr   ax, 1
+                                                shl   ah, 2
 
                                                 shr   ax, 4
 
@@ -6363,13 +6365,13 @@ showOponentMove PROC
 
                                                 mov   king_in_danger,0d
                                                 call  update_status
-                                                ; push  ax
-                                                ; push  dx
-                                                ; mov   dl,'s'
-                                                ; mov   ah,2
-                                                ; int   21h
-                                                ; pop   dx
-                                                ; pop   ax
+    ; push  ax
+    ; push  dx
+    ; mov   dl,'s'
+    ; mov   ah,2
+    ; int   21h
+    ; pop   dx
+    ; pop   ax
 
     showOponentMove_continue0:                  
 
@@ -6390,7 +6392,7 @@ showOponentMove PROC
                                                 jz    showOponentMove_continue
 
                                                 cmp   ch, 'p'
-                                                jz   showOponentMove_continue
+                                                jz    showOponentMove_continue
 
                                                 cmp   ch, pKing
                                                 jnz   showOponentMove_draw_captured_piece
@@ -6409,10 +6411,10 @@ showOponentMove PROC
     ;; TODO: Talla3 el message eno ettakel ya hamadaaa
                                                 mov   current_captured_piece, ch
                                                 call  draw_captured_piece
-                                                push bx
-                                                mov  bx, 3
-                                                call update_status
-                                                pop bx
+                                                push  bx
+                                                mov   bx, 3
+                                                call  update_status
+                                                pop   bx
 
     showOponentMove_continue:                   
 
@@ -6450,11 +6452,11 @@ listenForOponentMove PROC
                                                 and   bl, 00110000b
                                                 jz    listenForOponentMove_not_chat_signal
 
-                                                mov  sentChar, al
-                                                jmp  listenForOponentMove_end
+                                                mov   sentChar, al
+                                                jmp   listenForOponentMove_end
 
 
-        listenForOponentMove_not_chat_signal:
+    listenForOponentMove_not_chat_signal:       
                                                 cmp   gotOponentStartPos, 1d
                                                 jz    listenForOponentMove_get_oponent_endpos
 
@@ -6521,7 +6523,7 @@ setPieceColors PROC
                                                 ret
 setPieceColors ENDP
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 sendStartSignal PROC
                                                 push  ax
@@ -6554,7 +6556,7 @@ inline_chat proc
 
                                                 pusha
 
-;inline_chat_window_2_check_for_input:                            
+    ;inline_chat_window_2_check_for_input:
 
                                                 
     ;CHECK IF THERE IS A KEY PRESSESD SEND TO THE OTHER USER
@@ -6562,33 +6564,33 @@ inline_chat proc
                                                 MOV   AH,01h
                                                 INT   16H
 
-                                                ;JZ   inline_chat_window_2_check_sent_key
+    ;JZ   inline_chat_window_2_check_sent_key
                                                 JZ    inline_chat_window_2_check_sent_key
 
                                                 cmp   ah, Left_Arrow
-                                                jnz    inline_chat_window2_continue1
-                                                jmp    inline_EXIT
-            inline_chat_window2_continue1:
+                                                jnz   inline_chat_window2_continue1
+                                                jmp   inline_EXIT
+    inline_chat_window2_continue1:              
                                                 cmp   ah, Right_Arrow
-                                                jnz    inline_chat_window2_continue2
-                                                jmp    inline_EXIT
+                                                jnz   inline_chat_window2_continue2
+                                                jmp   inline_EXIT
 
-            inline_chat_window2_continue2:
+    inline_chat_window2_continue2:              
                                                 cmp   ah, Up_Arrow
-                                                jnz    inline_chat_window2_continue3
-                                                jmp    inline_EXIT
+                                                jnz   inline_chat_window2_continue3
+                                                jmp   inline_EXIT
 
-            inline_chat_window2_continue3:  
+    inline_chat_window2_continue3:              
                                                 cmp   ah, Down_Arrow
-                                                jnz    inline_chat_window2_continue4
-                                                jmp    inline_EXIT
+                                                jnz   inline_chat_window2_continue4
+                                                jmp   inline_EXIT
 
-            inline_chat_window2_continue4:
+    inline_chat_window2_continue4:              
                                                 cmp   ah, Enter_Key
-                                                jnz    inline_chat_window2_continue
-                                                jmp    inline_EXIT
+                                                jnz   inline_chat_window2_continue
+                                                jmp   inline_EXIT
 
-                    inline_chat_window2_continue:
+    inline_chat_window2_continue:               
                                                 MOV   AH,00
                                                 INT   16H
                                                 
@@ -6598,7 +6600,7 @@ inline_chat proc
                                                 
 
 
-    inline_chat_window_2_check_sent_key:                               
+    inline_chat_window_2_check_sent_key:        
     ;CHECK STATE IF THERE IS DATA RECIVED
     ;IF THERE IS NO DATA RECIVED
                                                
@@ -6617,31 +6619,31 @@ inline_chat proc
 
     ;                                             mov   s
 
-                                                cmp sentChar, -1D
-                                                jnz inline_chatting
-                                                jmp inline_EXIT
+                                                cmp   sentChar, -1D
+                                                jnz   inline_chatting
+                                                jmp   inline_EXIT
 
                             
-                            inline_chatting:
+    inline_chatting:                            
                                                 mov   al, sentChar
                                                 mov   sentChar, -1d
 
                                                 CALL  INLINE_WRITEOUTPUT
                                                            
                  
-    inline_EXIT:                                       
+    inline_EXIT:                                
                                                 popa
 
                                                 ret
 
 inline_chat endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 game_window proc
 
-                                                ; mov   end_game, 1
-                                                ; call initPort
+    ; mov   end_game, 1
+    ; call initPort
                                                 call  resetEverything
                                                 call  setPieceColors
                                                 call  init_video_mode                                ;Prepare video mode
@@ -6650,32 +6652,32 @@ game_window proc
                                                 call  clear_screen
                                                 call  init_board                                     ;Initialize board
 
-call draw_labels
+                                                call  draw_labels
 
-    call set_board_base
+                                                call  set_board_base
 
 
                                                 call  draw_board                                     ;Draw the board
 
 
-    call set_border
-    call draw_letters
-    call draw_numbers
+                                                call  set_border
+                                                call  draw_letters
+                                                call  draw_numbers
 
-    call status_bar
+                                                call  status_bar
 
-    call inline_chat_window
+                                                call  inline_chat_window
 
-    mov ICursor_Y,1D
-    mov ICursor_X,120D
-    mov OCursor_X,120D
-    mov OCursor_Y,33D
+                                                mov   ICursor_Y,1D
+                                                mov   ICursor_X,120D
+                                                mov   OCursor_X,120D
+                                                mov   OCursor_Y,33D
 
-    mov ah, 2
-    mov bh, 0
-    mov dl, ICursor_X
-    mov dh, ICursor_Y
-    int 10h
+                                                mov   ah, 2
+                                                mov   bh, 0
+                                                mov   dl, ICursor_X
+                                                mov   dh, ICursor_Y
+                                                int   10h
 
     ; mov ah, 9
     ; mov dx, offset test1
@@ -6719,8 +6721,8 @@ call draw_labels
                                                 mov   si, 3d
                                                 mov   di, 6d
 
-                                                mov   currHoverPos_SI, si 
-                                                mov   currHoverPos_DI, di 
+                                                mov   currHoverPos_SI, si
+                                                mov   currHoverPos_DI, di
 
                                                 mov   al, hover_cell_color
                                                 call  draw_cell
@@ -6754,24 +6756,24 @@ call draw_labels
     ; pop dx
     ; pop ax
     test_continue:                              
-                                                cmp end_game, 1
-                                                jnz play_chess
+                                                cmp   end_game, 1
+                                                jnz   play_chess
 
-                                                mov bx,2
-                                                call update_status
+                                                mov   bx,2
+                                                call  update_status
 
-                        wait_for_any_key:                                                
-                                                cmp ax, ax
-                                                mov ah, 1
-                                                int 16h
-                                                jz  wait_for_any_key
+    wait_for_any_key:                           
+                                                cmp   ax, ax
+                                                mov   ah, 1
+                                                int   16h
+                                                jz    wait_for_any_key
 
-                                                mov ah, 0
-                                                int 16h
+                                                mov   ah, 0
+                                                int   16h
 
-                                                mov ah, 0
-                                                mov al, 3
-                                                int 10h
+                                                mov   ah, 0
+                                                mov   al, 3
+                                                int   10h
                                                 
                                                 
                                                 ret
@@ -6861,30 +6863,30 @@ chat_window_2 proc
                                                 pusha
 
                                                 call  inializeScreen
-                                                ;call  initPort
+    ;call  initPort
 	
     ;CODE
-    chat_window_2_check_for_input:                            
+    chat_window_2_check_for_input:              
 
                                                 
     ;CHECK IF THERE IS A KEY PRESSESD SEND TO THE OTHER USER
                                                 cmp   ax, ax
                                                 MOV   AH,01h
                                                 INT   16H
-                                                JZ   chat_window_2_check_sent_key
+                                                JZ    chat_window_2_check_sent_key
                                                 MOV   AH,00
                                                 INT   16H
                                                 CMP   AL,1BH
                                                 JE    EXIT
                                                 CMP   AH,3Ch
-                                                JNZ    chat_window2_continue
+                                                JNZ   chat_window2_continue
                                                 JMP   chat_window2_go_to_game
 
-                    chat_window2_continue:
+    chat_window2_continue:                      
                                                 call  WRITEINPUT
                                                 CALL  SENDKEY
-                                                jmp chat_window_2_check_sent_key
-                    chat_window2_go_to_game:
+                                                jmp   chat_window_2_check_sent_key
+    chat_window2_go_to_game:                    
                                                 mov   blackPlayer, 0
                                                 call  sendStartSignal
                                                 call  input_scroll_up
@@ -6892,11 +6894,11 @@ chat_window_2 proc
 
                                                 popa
 
-                                                call game_window
+                                                call  game_window
                                                 ret
 
 
-    chat_window_2_check_sent_key:                               
+    chat_window_2_check_sent_key:               
     ;CHECK STATE IF THERE IS DATA RECIVED
     ;IF THERE IS NO DATA RECIVED
                                                
@@ -6909,21 +6911,21 @@ chat_window_2 proc
                                                 MOV   DX,03F8H
                                                 IN    AL,DX
 
-                                                cmp al, startSignal
-                                                jnz  chatting
+                                                cmp   al, startSignal
+                                                jnz   chatting
 
-                                                ; call sendStartSignal
+    ; call sendStartSignal
                                                 call  input_scroll_up
                                                 call  output_scroll_up
 
                                                 popa
                                                 
                                                 mov   blackPlayer, 1
-                                                call game_window
+                                                call  game_window
 
                                                 ret
                             
-                            chatting:
+    chatting:                                   
                                                 CALL  WRITEOUTPUT
                                                 
                                                 JMP   chat_window_2_check_for_input
@@ -6941,29 +6943,29 @@ chat_window_2 proc
 
 chat_window_2 endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 display_notification proc
 
-pusha
+                                                pusha
 
-mov   ah, 2
-mov   bh, 0
-mov   dl, 20d
-mov   dh, 23d
-int   10h
+                                                mov   ah, 2
+                                                mov   bh, 0
+                                                mov   dl, 20d
+                                                mov   dh, 23d
+                                                int   10h
 
-mov   ah, 9
-mov   dx, offset request
-int   21h
+                                                mov   ah, 9
+                                                mov   dx, offset request
+                                                int   21h
 
-popa
+                                                popa
 
-ret
+                                                ret
 
 display_notification endp
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+    ;---------------------------------------------------------------------------------------------------------------------------------------------
 
 main_window proc
 
@@ -7016,7 +7018,7 @@ main_window proc
                                                 mov   dx, offset border
                                                 int   21h
 
-                                                call display_notification
+                                                call  display_notification
                                                 
     checkForSelection:                          
                                                 call  checkForStartSignal
@@ -7198,22 +7200,22 @@ test_window proc
     ;call identification_window
     ;call  sendStartSignal
     ;call  resetEverything
-                                                ;call  setPieceColors
-                                                ;call  init_board
+    ;call  setPieceColors
+    ;call  init_board
                                                 call  init_video_mode
                                                 mov   al, 14h
                                                 call  clear_screen
-                                                ;call  draw_labels
-                                                ;call  set_board_base
-                                                ;call  draw_board
-                                                ;call  set_border
-                                                ;call  draw_letters
-                                                ;call  draw_numbers
-                                                ;call  status_bar
+    ;call  draw_labels
+    ;call  set_board_base
+    ;call  draw_board
+    ;call  set_border
+    ;call  draw_letters
+    ;call  draw_numbers
+    ;call  status_bar
 
-                                                ;mov   di, 100d
-                                                ;mov   si, 100d
-                                                ;call  draw_timer_3
+    ;mov   di, 100d
+    ;mov   si, 100d
+    ;call  draw_timer_3
 
 
     ;mov   bx, 0
@@ -7222,27 +7224,27 @@ test_window proc
     ;int   16h
     ;mov   bx,1
     ;call  update_status
-    call  inline_chat_window
-    call intializePort
+                                                call  inline_chat_window
+                                                call  intializePort
 
-    mov ICursor_Y,1D
-    mov ICursor_X,120D
-    mov OCursor_X,120D
-    mov OCursor_Y,33D
+                                                mov   ICursor_Y,1D
+                                                mov   ICursor_X,120D
+                                                mov   OCursor_X,120D
+                                                mov   OCursor_Y,33D
 
-    mov ah, 2
-    mov bh, 0
-    mov dl, ICursor_X
-    mov dh, ICursor_Y
-    int 10h
+                                                mov   ah, 2
+                                                mov   bh, 0
+                                                mov   dl, ICursor_X
+                                                mov   dh, ICursor_Y
+                                                int   10h
 
-    loopdeloop:
-    call inline_chat
-    jmp loopdeloop
+    loopdeloop:                                 
+                                                call  inline_chat
+                                                jmp   loopdeloop
 
     ;ctrl k u uncomment
     ;ctrl k c comment
-                                                ;hlt
+    ;hlt
 
                                                 ret
 

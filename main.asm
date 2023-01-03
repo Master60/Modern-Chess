@@ -2432,16 +2432,14 @@ INLINE_WRITEOUTPUT PROC
                                                 jnz   INLINE_WRITEOUTPUT_check_key_pressed
                                                 call  inline_output_move_down
 
-                                                cmp   OCursor_Y, 60d
-                                                jb    INLINE_WRITEOUTPUT_check_key_pressed
-                                            
-    ;call  output_scroll_up
+                                                cmp   OCursor_Y, 63d
+                                                jb    INLINE_WRITEOUTPUT_check_key_pressed          
+                                                call  inline_output_scroll_up
+                                                
                                                 jmp   INLINE_WRITEOUTPUT_check_key_pressed
                                                 
     INLINE_WRITEOUTPUT_check_key_pressed:       
-                                                cmp   al, 8h
-                                                je    INLINE_WRITEOUTPUT_backspace
-                                                cmp   al, 0
+                                                cmp   al, 0fdh
                                                 je    INLINE_WRITEOUTPUT_backspace
 
                                                 CMP   AL, 1Ch
@@ -2462,16 +2460,16 @@ INLINE_WRITEOUTPUT PROC
 
     INLINE_WRITEOUTPUT_backspace:               
                                                 
-                                                cmp   OCursor_X, 159d
+                                                cmp   OCursor_X, 120d
                                                 jne   INLINE_WRITEOUTPUT_backspace_continue
                                                 
-                                                cmp   OCursor_Y, 0
+                                                cmp   OCursor_Y, 33d
                                                 jne   INLINE_WRITEOUTPUT_backspace_continue2
                                                 popa
                                                 ret
 
     INLINE_WRITEOUTPUT_backspace_continue2:     
-                                                mov   OCursor_X, 120d
+                                                mov   OCursor_X, 158d
                                                 dec   OCursor_Y
             
             
@@ -2494,11 +2492,11 @@ INLINE_WRITEOUTPUT PROC
                                                 ret
     INLINE_OENTER:                              
                                                 CALL  inline_output_move_down
-                                                cmp   OCursor_Y, 60d
+                                                cmp   OCursor_Y, 63d
 
                                                 jnz   INLINE_WRITEOUTPUT_end
 
-    ;call output_scroll_up
+                                                call inline_output_scroll_up
                                                 
     INLINE_WRITEOUTPUT_end:                     
                                                 popa
@@ -2510,10 +2508,20 @@ INLINE_WRITEOUTPUT ENDP
 
 SENDKEY PROC
 
+                                                cmp al, 0
+                                                jnz  sendkey_normal_continue1
+                                                mov al, 0fdh
+                                                jmp sendkey_normal
+                    sendkey_normal_continue1:                            
+                                                cmp al, 8d
+                                                jnz  sendkey_normal_continue2
+                                                mov al, 0fdh
+                                                jmp sendkey_normal
+                    sendkey_normal_continue2:
                                                 cmp   al, 13d
                                                 jnz   sendkey_normal
                                                 mov   al , 1Ch
-    sendkey_normal:                             
+                    sendkey_normal:                             
                                                 MOV   DX,3F8H
                                                 OUT   DX,AL
                                                 RET

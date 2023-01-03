@@ -7348,7 +7348,7 @@ main proc far
                                                 mov   dx, offset pieces_wd
                                                 int   21h
 
-                                                call  game_window
+                                                call  identification_window
 
 main endp
 end main
